@@ -7,18 +7,22 @@ Application Windows de l'agence : rédaction des **CCTP** et **BPU**, consultati
   Les anciens fichiers `.dce` s'ouvrent aussi.
 - **Données du poste** : `%APPDATA%\AGOA CCTP` (copie de secours `.bak` à chaque enregistrement).
 - **Icône** : carré rouge, « CCTP » en blanc gras.
-- **Mises à jour** : au démarrage, l'application interroge les Releases du dépôt privé `agence-rt/agoa-cctp`
-  (fenêtre « Mise à jour disponible » avec les nouveautés, « Mettre à jour maintenant » / « Plus tard »).
+- **Mises à jour** : au démarrage, l'application interroge les Releases du dépôt `agence-rt/agoa-cctp`
+  (le dépôt est public : aucun jeton nécessaire ; fenêtre « Mise à jour disponible » avec les nouveautés, « Mettre à jour maintenant » / « Plus tard »).
   Menu *Aide, Rechercher des mises à jour…* pour une vérification manuelle.
 
-## Activer les mises à jour sur un poste (dépôt privé)
+## Bibliothèque partagée
 
-Le dépôt est privé : chaque poste a besoin, une seule fois, d'un jeton GitHub en lecture seule.
+La bibliothèque d'articles est un fichier partagé, `bibliotheque-cctp.json`, dans le dossier Dropbox
+`09 - BDD / IA / AGOA-CCTP`. L'application le retrouve seule (via l'installation Dropbox du poste) ;
+sinon : *Aide, Bibliothèque partagée : choisir le dossier…*. Les modifications sont fusionnées entre postes
+(un titre modifié par deux personnes en même temps est conservé en double, « ma version »).
+Sur un article venu de la bibliothèque, le bouton orange **MAJ BDD** remplace le modèle.
 
-1. GitHub, *Settings, Developer settings, Personal access tokens, Fine-grained tokens, Generate new token*.
-2. *Repository access* : seulement `agence-rt/agoa-cctp`. *Permissions* : **Contents : Read-only**.
-3. Dans l'application : *Aide, Accès aux mises à jour (jeton GitHub)…* et coller le jeton.
-   Il est stocké chiffré (compte Windows) dans `%APPDATA%\AGOA CCTP`.
+## Fichiers `.cctp`
+
+Une affaire est enregistrée uniquement dans son fichier `.cctp` (enregistrement automatique). L'application
+ne garde que la liste des derniers fichiers ouverts, pas de copie des affaires.
 
 ## Publier une nouvelle version
 

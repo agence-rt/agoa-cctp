@@ -73,7 +73,7 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .view[hidden]{display:none}
 
 /* ---------- Rédaction ---------- */
-.redac{display:grid;grid-template-columns:320px minmax(470px,1.1fr) minmax(0,.8fr);gap:16px;align-items:start}
+.redac{display:grid;grid-template-columns:var(--treeW,320px) minmax(470px,1.1fr) minmax(0,.8fr);gap:16px;align-items:start}
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:6px}
 .tree{max-height:calc(100vh - 120px);overflow:auto;position:sticky;top:12px;display:flex;flex-direction:column}
 .tree-body{padding:8px 0;flex:1}
@@ -420,7 +420,7 @@ dialog h3{margin:0 0 12px;font-size:17px}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 @media (max-width:1150px){
-  .redac{grid-template-columns:300px minmax(0,1fr)}
+  .redac{grid-template-columns:var(--treeW,300px) minmax(0,1fr)}
   .preview{grid-column:1/-1;position:static;max-height:none}
 }
 @media (max-width:820px){
@@ -441,6 +441,16 @@ dialog h3{margin:0 0 12px;font-size:17px}
   .cartouche .big{font-size:30px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.redac>.tree{position:relative}
+.tree-grip{position:absolute;top:0;bottom:0;right:0;width:8px;cursor:col-resize;z-index:5;touch-action:none}
+.tree-grip::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;border-radius:2px;background:transparent;transition:background .15s}
+.tree-grip:hover::after,.tree-grip.on::after{background:var(--accent)}
+.btn.maj{background:#e8820c;border-color:#c96d00;color:#fff;font-weight:650}
+.btn.maj:hover{background:#d4740a}
+.pl-row .x.pl-ed,.pl-row .x.pl-del{opacity:0}
+.pl-row:hover .x.pl-ed,.pl-row:hover .x.pl-del{opacity:1}
+.lib-stat{font-size:12px;margin:0;color:var(--muted,#6a6a6a)}
+.lib-stat.bad{color:var(--ochre,#b36a00)}
 </style>
 </head>
 <body>
@@ -471,14 +481,14 @@ dialog h3{margin:0 0 12px;font-size:17px}
   <section class="view" id="v-home" hidden>
     <div class="pane home">
       <div class="pane-h">
-        <div><h2>Affaires</h2><p>Choisissez l'affaire à ouvrir, ou créez-en une nouvelle</p></div>
+        <div><h2>Affaires</h2><p>Ouvrez un fichier .cctp, choisissez une affaire récente ou créez-en une nouvelle</p></div>
         <div class="home-tools"><input type="search" id="homeQ" placeholder="Rechercher un code, un immeuble, une adresse…" aria-label="Rechercher une affaire"><button class="btn" id="openAff">Ouvrir un fichier .cctp</button><input type="file" id="openAffFile" accept=".cctp,.dce,.json" hidden><button class="btn primary" id="newAff">Nouvelle affaire</button></div>
       </div>
       <div id="homeList"></div>
     </div>
   </section>
   <section class="view redac" id="v-redaction">
-    <aside class="pane tree" aria-label="Arborescence du CCTP">
+    <aside class="pane tree" aria-label="Arborescence du CCTP"><div class="tree-grip" id="treeGrip" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne de gauche" title="Glisser pour élargir ou réduire (double-clic : largeur d'origine)"></div>
       <div class="tree-top" id="treeTop"></div>
       <div class="tree-body" id="tree"></div>
       <div class="tree-foot"><button class="btn sm" id="addLotBtn">Ajouter un lot</button><button class="btn sm" id="trashBtn">Corbeille</button></div>
@@ -561,6 +571,7 @@ dialog h3{margin:0 0 12px;font-size:17px}
       <div class="rg-row"><input type="search" id="libQ" placeholder="Rechercher (flèches et Entrée pour insérer)" aria-label="Rechercher dans la bibliothèque" autocomplete="off"><button class="btn" id="libNew">Nouveau titre</button></div>
       <div class="lv-row" id="libLv" style="margin:8px 0 2px"></div>
       <div id="libList" class="lib-list" role="listbox" aria-label="Articles de la bibliothèque"></div>
+      <p class="lib-stat" id="libStat"></p>
     </div>
     <div id="libDetail" class="lib-detail"></div>
   </div>
@@ -673,13 +684,36 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.1.0", deploiement: 1};
+const APP = {version: "0.2.0", deploiement: 2};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
-const LS=AG?(()=>{let t=null,last=null;
-  const flush=()=>{if(t){clearTimeout(t);t=null;}if(last!==null){const v=last;last=null;try{AG.saveData(v);}catch(e){}}};
-  window.Store={flush};
-  return {getItem:k=>{if(k!==KEY)return null;try{const d=AG.loadData();return d&&Array.isArray(d.affaires)?JSON.stringify(d):null;}catch(e){return null;}},
-    setItem:(k,v)=>{if(k!==KEY)return;last=v;if(!t)t=setTimeout(flush,400);}};})():localStorage;
+let UI={};
+const baseName=p=>String(p||"").split(/[\\/]/).pop();
+function parseCctp(text){
+  let p; try{p=JSON.parse(text);}catch(e){return null;}
+  if(!p||!["cctp","dce","agoacctp"].includes(p.format)||!p.affaire||!Array.isArray(p.affaire.data))return null;
+  const a=p.affaire; a.op=a.op||EMPTY_OP(); a.trash=a.trash||[]; a.view="redaction"; return a;
+}
+/* Application Windows : les affaires vivent uniquement dans leur fichier .cctp. L'application ne retient que la
+   liste des derniers fichiers ouverts, la bibliothèque (copie locale de la base partagée) et la largeur des colonnes. */
+function nativeLoad(){
+  const d=AG.loadData()||{}, out={affaires:[],cur:null};
+  UI=d.ui||{};
+  if(Array.isArray(d.lib)&&d.lib.length){out.lib=d.lib;out.libVer=d.libVer;}
+  const old=Array.isArray(d.affaires)?d.affaires:[]; // ancien format (v0.1) : affaires copiées dans l'application
+  const paths=[...(d.recent||[])];
+  old.forEach(x=>{if(x&&x.filePath&&!paths.includes(x.filePath))paths.push(x.filePath);});
+  (paths.length?AG.readFiles(paths):[]).forEach(f=>{if(!f)return;const a=parseCctp(f.text);
+    if(a){a.filePath=f.path;a.fileName=baseName(f.path);a.fileSaved=Date.now()+1;out.affaires.push(a);}});
+  old.forEach(x=>{if(x&&Array.isArray(x.data)&&!x.filePath&&!out.affaires.some(y=>y.id===x.id)){x.fileSaved=0;out.affaires.push(x);}});
+  return out;
+}
+const LS=AG?(()=>{let t=null;
+  const snap=()=>{let st=null;try{st=store;}catch(e){}
+    return {v:2,lib:st&&st.lib||undefined,libVer:st&&st.libVer,recent:st?st.affaires.filter(a=>a.filePath).map(a=>a.filePath):undefined,ui:UI};};
+  const flush=()=>{if(t){clearTimeout(t);t=null;}try{const o=snap();if(o.recent===undefined)return;AG.saveData(JSON.stringify(o));}catch(e){}};
+  window.Store={flush:async()=>{flush();try{await libFlush();}catch(e){}}};
+  return {getItem:k=>{if(k!==KEY)return null;try{return JSON.stringify(nativeLoad());}catch(e){return null;}},
+    setItem:(k,v)=>{if(k!==KEY)return;if(!t)t=setTimeout(flush,400);}};})():localStorage;
 
 const fresh=()=>({id:"aff-364",updated:Date.now(),data:DATA,sel:null,view:"redaction",retenue:"B",trash:[],prev:"bpu",
   op:{ref:"364",immeuble:"Les Dryades",objet:"Ravalement des façades",adresse:"27 rue de la Convention",cp:"42000",ville:"Saint-Étienne",mo:"SDC représenté par Foncia Loire Auvergne",syndic:"Foncia Loire Auvergne",adresseSyndic:"5 rue du Lieutenant Morin, 42026 Saint-Étienne Cedex 1",gestionnaire:"",emailGest:"",moe:"Thomas Kochanski Architecte",parcelle:"",nbLots:"",amiante:"Amiante dans les colles des faïences",plomb:"",dateEdition:"Janvier 2024",dateRemise:"15 mars 2024",ragicId:null},
@@ -702,7 +736,7 @@ if(!store){
   store={affaires:[first],cur:null};
 }
 let quotaWarned=false;
-const save=()=>{if(state){state.updated=Date.now();markDirty();autoSaveFile();}try{LS.setItem(KEY,JSON.stringify(store))}catch(e){if(!quotaWarned){quotaWarned=true;setTimeout(()=>toast("Stockage du navigateur saturé : enregistrez le fichier de l'affaire pour ne rien perdre."),0);}}};
+const save=()=>{if(state){state.updated=Date.now();markDirty();autoSaveFile();}try{libSchedule();}catch(e){}try{LS.setItem(KEY,JSON.stringify(store))}catch(e){if(!quotaWarned){quotaWarned=true;setTimeout(()=>toast("Stockage du navigateur saturé : enregistrez le fichier de l'affaire pour ne rien perdre."),0);}}};
 /* Fichier d'affaire .cctp : JSON {format,version,application,enregistre_le,affaire}.
    L'application Windows l'écrira directement en .dce ; une page web n'a droit qu'à une liste
    d'extensions fixe, la maquette l'enregistre donc en .dce.json (même contenu). */
@@ -742,12 +776,15 @@ function autoSaveFile(){
     catch(e){toast("Enregistrement automatique impossible : "+(e&&e.message||"erreur"));}},1200);
 }
 async function importAffaireText(text,fname,fpath){
-  let p; try{p=JSON.parse(text);}catch(e){toast("Ce fichier n'est pas un fichier d'affaire AGOA CCTP lisible.");return;}
-  if(!p||!AGOA_FMT_OLD.includes(p.format)||!p.affaire||!Array.isArray(p.affaire.data)){toast("Ce fichier n'est pas un fichier d'affaire .cctp.");return;}
+  const a=parseCctp(text);
+  if(!a){toast("Ce fichier n'est pas un fichier d'affaire .cctp lisible.");return;}
+  let p; try{p=JSON.parse(text);}catch(e){p={};}
   if(p.version>AGOA_VER){toast("Ce fichier a été créé par une version plus récente de l'application.");return;}
-  const a=p.affaire; a.op=a.op||EMPTY_OP(); a.trash=a.trash||[]; a.view="redaction";
   const ex=store.affaires.find(x=>x.id===a.id);
-  if(ex){if(!await ask(`L'affaire <b>${esc(fileBase(a))}</b> est déjà ouverte dans l'application. Remplacer par la version du fichier ?`,"Remplacer",false))return;
+  if(ex){
+    // même fichier : on relit simplement le fichier (c'est lui qui fait foi), sans question
+    const same=AG&&fpath&&ex.filePath&&ex.filePath.toLowerCase()===fpath.toLowerCase();
+    if(!same&&!await ask(`Une affaire <b>${esc(fileBase(a))}</b> de même identifiant est déjà ouverte dans l'application. Remplacer par la version de ce fichier ?`,"Remplacer",false))return;
     store.affaires=store.affaires.filter(x=>x!==ex);}
   a.fileSaved=Date.now()+1; a.fileName=fname; if(fpath)a.filePath=fpath; store.affaires.push(a);
   try{LS.setItem(KEY,JSON.stringify(store))}catch(e){} openAffaire(a.id); toast(`Affaire ouverte depuis ${fname}`);
@@ -1013,6 +1050,7 @@ function renderEditor(){
     <button class="btn sm" data-act="down" ${i===list.length-1?"disabled":""} title="Alt + ↓">Descendre</button>
     <span class="sep"></span>
     <button class="btn sm" data-act="outdent" ${owner.id?"":"disabled"} title="Alt + ←">Remonter d'un niveau</button>
+    <button class="btn sm" data-act="artToCh" title="L'article devient un chapitre du lot, placé après son chapitre actuel ; ses sous-articles deviennent les articles du chapitre">Passer en chapitre</button>
     <button class="btn sm" data-act="indent" ${prev?"":"disabled"} title="Alt + →${prev?` : devient sous-article de ${prev.code}`:""}">Passer en sous-article</button>
     <span class="sep"></span>
     <button class="btn sm" data-act="dup">Dupliquer</button>
@@ -1025,10 +1063,20 @@ function renderEditor(){
   ${isTitle(ar)?""
    :`<h4 class="sec">Chiffrage</h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
   <div class="actions">
-    <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button></span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${libOrigin(ar)?`<button class="btn maj" data-act="majBdd" title="Remplace l'article modèle de la bibliothèque par cette version">MAJ BDD</button>`:""}</span>
     <button class="btn primary" data-act="addAfter">Ajouter un article après ${ar.code}</button>
   </div>`;
   updateLive();
+}
+const libOrigin=ar=>{if(!ar||!ar.libId)return null;const f=libFind(ar.libId);return f&&f.kind==="article"?f:null;};
+async function majBdd(){
+  const ci=curItem(); if(!ci||ci.node) return; const ar=ci.it, f=libOrigin(ar);
+  if(!f){toast("Cet article n'a plus de modèle dans la bibliothèque : utilisez « Enregistrer dans la bibliothèque »");return;}
+  const where=`${esc(f.t.titre)} › ${esc(f.s.titre)}`;
+  if(!await ask(`Remplacer l'article modèle <b>${esc(f.it.titre)}</b> de la bibliothèque (${where}) par cette version de <b>${ar.code}</b> ${esc(ar.titre)} ?<br><span class="hint">Le modèle précédent sera écrasé pour tous les utilisateurs de la bibliothèque partagée.</span>`,"Mettre à jour la bibliothèque",false)) return;
+  const n=toLibArt(ar,true); f.list[f.list.indexOf(f.it)]=n; save(); renderEditor();
+  if(state.prev==="lib")renderLibPanel(true);
+  toast(`Bibliothèque mise à jour : ${where} › ${n.titre}`);
 }
 function renderNodeEditor(nc){
   const n=nc.node, lot=nc.lot, isLot=nc.level==="lot";
@@ -1037,7 +1085,7 @@ function renderNodeEditor(nc){
   <div class="art-head"><span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
   <div class="field"><label for="fTxt">Description</label><textarea id="fTxt" data-k="texte" placeholder="${isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…"}">${esc(n.texte||"")}</textarea></div>
-  <div class="actions"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>
+  <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
   updateLive();
 }
@@ -1150,7 +1198,7 @@ function renderLibPanel(force){
       <p class="hint" id="plTarget">${libTargetText()}</p>
       <p class="hint">Glissez un élément sur l'arborescence à gauche, ou double-cliquez pour l'insérer au point d'insertion.</p></div>
     <div id="plList" class="pl-list"></div>
-    <div class="pl-foot"><button class="btn sm" data-act="libManage">Gérer la bibliothèque</button></div>`;
+    <div class="pl-foot"><button class="btn sm" data-act="libManage">Gérer la bibliothèque</button><button class="btn sm" data-act="libNewT">Nouveau titre</button><p class="lib-stat${libStat.ok?"":" bad"}" id="plStat">${esc(libStat.txt)}</p></div>`;
   renderLibPanelList();
 }
 function renderLibPanelList(){
@@ -1162,7 +1210,7 @@ function renderLibPanelList(){
     return `<div class="pl-row lv${Math.min(r.d,3)}" style="--ld:${r.d*14}px" draggable="true" data-plib="${it.id}" title="${tip}">
       ${hasKids?`<button class="tg" data-pltg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"▸":"▾"}</button>`:`<span class="tg"></span>`}
       <span class="pl-t">${esc(it.titre)}</span><span class="hint pl-i">${info}</span>
-      <button class="x pl-add" data-plins="${it.id}" aria-label="Insérer ${esc(it.titre)}" title="Insérer au point d'insertion">+</button></div>`;}).join("")
+      <button class="x pl-ed" data-pled="${it.id}" aria-label="Modifier ${esc(it.titre)}" title="Modifier dans la bibliothèque">✎</button><button class="x pl-del" data-pldel="${it.id}" aria-label="Supprimer ${esc(it.titre)}" title="Supprimer de la bibliothèque">×</button><button class="x pl-add" data-plins="${it.id}" aria-label="Insérer ${esc(it.titre)}" title="Insérer au point d'insertion">+</button></div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond.":"La bibliothèque est vide."}</p>`;
 }
 function renderTotal(){let t=0;leaves(ar=>t+=qty(ar)*ar.pu);$("#totEst").textContent=eur(t);}
@@ -1210,6 +1258,25 @@ function indent(){
 function outdent(){
   const f=locate(state.sel); if(!f||!f.owner.id) return; const o=locate(f.owner.id);
   f.list.splice(f.i,1); o.list.splice(o.i+1,0,f.art); refresh(); toast(`Article remonté d'un niveau, désormais ${f.art.code}`);
+}
+function chToArt(){
+  const nc=nodeCtx(state.sel); if(!nc||nc.level!=="chapitre") return; const lot=nc.lot, ch=nc.node, idx=lot.children.indexOf(ch);
+  if(idx<1){toast("Le premier chapitre d'un lot ne peut pas devenir sous-article : il n'a pas de chapitre précédent");return;}
+  const prev=lot.children[idx-1], code=ch.code;
+  const a={id:nid(),code:"",titre:ch.titre,type:"titre",texte:ch.texte||"",loc:"",u:"ens",pu:0,tva:null,qman:null,lignes:[],imgs:[],sub:ch.art||[]};
+  prev.art.push(a); lot.children.splice(idx,1); state.sel=a.id; refresh();
+  toast(`Le chapitre ${code} est devenu l'article ${a.code}, à la fin du chapitre ${prev.code}`);
+}
+async function artToCh(){
+  const f=locate(state.sel); if(!f) return; const ar=f.art;
+  const lost=[]; if(!ar.sub.length&&qty(ar)*ar.pu>0)lost.push("son chiffrage propre"); if((ar.imgs||[]).length)lost.push("ses images");
+  if(lost.length&&!await ask(`En devenant un chapitre, l'article <b>${ar.code}</b> ${esc(ar.titre)} perd ${lost.join(" et ")} (un chapitre n'a ni chiffrage ni image). Continuer ?`,"Passer en chapitre",false)) return;
+  const code=ar.code;
+  f.list.splice(f.i,1);
+  const ch={titre:ar.titre,texte:ar.texte||"",art:ar.sub.length?ar.sub:[blank()]};
+  f.lot.children.splice(f.lot.children.indexOf(f.ch)+1,0,ch);
+  ensureNodeIds(); state.sel=ch.nid; refresh();
+  toast(`L'article ${code} est devenu le chapitre ${ch.code}`);
 }
 function step(dir){
   const f=locate(state.sel); if(!f) return; const j=f.i+dir; if(j<0||j>=f.list.length) return;
@@ -1263,6 +1330,9 @@ $("#editor").addEventListener("click",e=>{
     else{lib().push({id:"l"+nid(),titre:ci.it.titre,texte:ci.it.texte||"",children:ci.it.children.map(toLibSub)});save();toast(`Titre « ${ci.it.titre} » enregistré dans la bibliothèque avec tout son contenu`);}
     return;}
   if(act==="delNode"){delNode(state.sel);return;}
+  if(act==="chToArt"){chToArt();return;}
+  if(act==="artToCh"){artToCh();return;}
+  if(act==="majBdd"){majBdd();return;}
   if(act==="delLotEd"){const nc=nodeCtx(state.sel);if(nc)delLot(state.data.indexOf(nc.lot));return;}
   if(act==="addChap"){const nc=nodeCtx(state.sel);if(nc)addChapter(nc.lot,null);return;}
   if(act==="addChapAfter"){const nc=nodeCtx(state.sel);if(nc)addChapter(nc.lot,nc.ch);return;}
@@ -1309,10 +1379,27 @@ $("#preview").addEventListener("click",e=>{
   const tg=e.target.closest("[data-pltg]"); if(tg){const k=tg.dataset.pltg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibPanelList();return;}
   const pi=e.target.closest("[data-plins]"); if(pi){libInsert(pi.dataset.plins);return;}
   if(e.target.closest('[data-act="libManage"]')){openLib();return;}
+  if(e.target.closest('[data-act="libNewT"]')){const n={id:"l"+nid(),titre:"Nouveau titre",texte:"",children:[]};lib().push(n);save();openLib();libSel=n.id;renderLib();$("#lbT")&&$("#lbT").select();return;}
+  const pe=e.target.closest("[data-pled]"); if(pe){openLib();libSel=pe.dataset.pled;renderLib();return;}
+  const pd=e.target.closest("[data-pldel]"); if(pd){libDelete(pd.dataset.pldel);return;}
   if(e.target.closest("[data-plib]")) return;
   const rn=e.target.closest("[data-nid]"); if(rn){if(rn.dataset.nid!==state.sel)selectNode(rn.dataset.nid);return;}
   const r=e.target.closest("[data-id]"); if(r&&r.dataset.id!==state.sel) select(r.dataset.id);
 });
+
+/* Largeur de la colonne de gauche */
+(function(){
+  const W=()=>{try{return AG?(UI.treeW||0):(+localStorage.getItem("agoa-treeW")||0);}catch(e){return 0;}};
+  const setW=w=>{document.documentElement.style.setProperty("--treeW",w?w+"px":"");};
+  const keep=w=>{try{if(AG){UI.treeW=w||0;LS.setItem(KEY,"");}else localStorage.setItem("agoa-treeW",w||0);}catch(e){}};
+  const w0=W(); if(w0) setW(w0);
+  const g=document.getElementById("treeGrip"); if(!g) return;
+  g.addEventListener("pointerdown",e=>{e.preventDefault();const pane=g.parentElement,x0=e.clientX,w=pane.getBoundingClientRect().width;let nw=w;g.classList.add("on");g.setPointerCapture(e.pointerId);
+    const mv=ev=>{nw=Math.max(220,Math.min(Math.round(w+ev.clientX-x0),Math.round(window.innerWidth*0.6)));setW(nw);};
+    const up=()=>{g.classList.remove("on");g.removeEventListener("pointermove",mv);g.removeEventListener("pointerup",up);keep(nw);};
+    g.addEventListener("pointermove",mv);g.addEventListener("pointerup",up);});
+  g.addEventListener("dblclick",()=>{setW(0);keep(0);});
+})();
 
 /* Arborescence : clic, clavier, glisser-déposer */
 const tree=$("#tree"); let dragId=null;
@@ -1771,6 +1858,66 @@ const EXTRA_LIB=[{"titre":"BDD - structure","texte":"","children":[{"titre":"Ré
 const libClone=n=>{const c={...n,id:"l"+nid()};if(n.imgs)c.imgs=n.imgs.map(i=>({...i,id:nid()}));["children","art","sub"].forEach(k=>{if(n[k])c[k]=n[k].map(libClone);});return c;};
 const baseTitre=()=>({id:"l"+nid(),base:true,titre:"Base commune à tout projet",texte:"",children:BASE_LIB.map(libClone)});
 const LIB_SEED=()=>[baseTitre(),...EXTRA_LIB.map(libClone)];
+/* ---------- Bibliothèque partagée : fichier JSON dans Dropbox (09 - BDD / IA / AGOA-CCTP) ---------- */
+let libBase=null, libMtime=0, libBusy=false, libTimer=null, libStat={ok:false,txt:AG?"Bibliothèque locale : synchronisation en attente…":""};
+const libStr=()=>JSON.stringify(store.lib||[]);
+function libMerge(base,mine,remote){
+  const js=JSON.stringify, idx=l=>new Map((l||[]).map(t=>[t.id,t])), B=idx(base), M=idx(mine), R=idx(remote), extra=[], out=[];
+  const ids=[...R.keys(),...[...M.keys()].filter(k=>!R.has(k))];
+  ids.forEach(id=>{
+    const b=B.get(id), m=M.get(id), r=R.get(id), sb=b&&js(b), sm=m&&js(m), sr=r&&js(r);
+    let pick;
+    if(sm===sb) pick=r; else if(sr===sb) pick=m; else if(sm===sr) pick=m;
+    else{ pick=r; if(m){const c=JSON.parse(sm);c.id="l"+nid();c.titre=(m.titre||"")+" (ma version)";extra.push(c);} }
+    if(pick) out.push(pick);
+  });
+  return out.concat(extra);
+}
+function refreshLibUI(){
+  const st=$("#libStat");if(st){st.textContent=libStat.txt;st.className="lib-stat"+(libStat.ok?"":" bad");}
+  const ps=$("#plStat");if(ps){ps.textContent=libStat.txt;ps.className="lib-stat"+(libStat.ok?"":" bad");}
+}
+function redrawLib(){
+  if($("#libDlg")&&$("#libDlg").open&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)&&$("#libDetail").contains(document.activeElement))) renderLib();
+  if(state&&state.prev==="lib"&&$("#plQ")) renderLibPanelList();
+}
+async function libSync(force){
+  if(!AG||libBusy||!store) return; libBusy=true;
+  try{
+    const st=AG.libState();
+    if(!st||!st.dir){libStat={ok:false,txt:"Bibliothèque locale : dossier Dropbox « 09 - BDD / IA / AGOA-CCTP » introuvable (Aide, Bibliothèque partagée)"};return;}
+    if(!force&&libBase!==null&&st.mtime===libMtime&&libStr()===JSON.stringify(libBase)) {libStat={ok:true,txt:libStat.txt||"Bibliothèque partagée à jour"};return;}
+    for(let n=0;n<4;n++){
+      const r=await AG.libRead(); let remote=null;
+      if(r){try{const p=JSON.parse(r.text);if(p&&Array.isArray(p.lib))remote=p.lib;}catch(e){}}
+      const mine=lib(); let merged;
+      if(remote===null) merged=mine; else if(libBase===null) merged=remote; else merged=libMerge(libBase,mine,remote);
+      if(JSON.stringify(merged)!==JSON.stringify(mine)){store.lib=merged;}
+      let mt=r?r.mtime:0;
+      if(remote===null||JSON.stringify(merged)!==JSON.stringify(remote)){
+        const w=await AG.libWrite(JSON.stringify({format:"agoa-cctp-bibliotheque",version:1,libVer:store.libVer,enregistre_le:new Date().toISOString(),lib:merged},null,1),mt);
+        if(w&&w.conflict){libBase=libBase===null?null:libBase;continue;}
+        mt=w.mtime;
+      }
+      libMtime=mt; libBase=JSON.parse(JSON.stringify(store.lib));
+      libStat={ok:true,txt:`Bibliothèque partagée : ${st.file} · synchronisée à ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`};
+      try{LS.setItem(KEY,"")}catch(e){}
+      break;
+    }
+  }catch(e){libStat={ok:false,txt:"Synchronisation de la bibliothèque impossible : "+(e&&e.message||e)};}
+  finally{libBusy=false;refreshLibUI();redrawLib();}
+}
+function libSchedule(){
+  if(!AG) return; clearTimeout(libTimer);
+  libTimer=setTimeout(()=>{if(libBase===null||libStr()!==JSON.stringify(libBase))libSync();},1500);
+}
+async function libFlush(){ if(!AG) return; clearTimeout(libTimer); if(libBase===null||libStr()!==JSON.stringify(libBase)){let k=0;while(libBusy&&k++<30)await new Promise(r=>setTimeout(r,100));await libSync();} }
+if(AG){
+  window.__libChoose=async()=>{const d=await AG.libChoose();if(d){libBase=null;await libSync(true);toast(libStat.txt);}};
+  setTimeout(()=>libSync(true),600);
+  setInterval(()=>{if(!document.hidden)libSync();},30000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)libSync();});
+}
 function lib(){
   if(!store.lib){store.lib=LIB_SEED();store.libVer=3;}
   if(store.libVer!==3){ // v2 : base de l'agence ; v3 : bibliothèques métier (structure, toitures, caves, communs, façades)
@@ -1786,8 +1933,8 @@ function lib(){
   return store.lib;
 }
 const libArtCount=list=>list.reduce((s,a)=>s+1+libArtCount(a.sub||[]),0);
-const fromLib=it=>({id:nid(),code:"",imgs:(it.imgs||[]).map(i=>({...i,id:nid()})),titre:it.titre,type:it.type,texte:it.texte||"",loc:"",u:it.u||"u",pu:Number(it.pu)||0,tva:null,qman:Number.isFinite(it.q)?it.q:null,lignes:[],sub:(it.sub||[]).map(fromLib)});
-const toLibArt=ar=>({id:"l"+nid(),imgs:(ar.imgs||[]).map(i=>({...i,id:nid()})),titre:ar.titre,type:ar.type,texte:ar.texte||"",u:ar.u,pu:ar.pu,q:metreOn(ar)?null:(ar.qman??null),sub:(ar.sub||[]).map(toLibArt)});
+const fromLib=it=>({id:nid(),libId:it.id,code:"",imgs:(it.imgs||[]).map(i=>({...i,id:nid()})),titre:it.titre,type:it.type,texte:it.texte||"",loc:"",u:it.u||"u",pu:Number(it.pu)||0,tva:null,qman:Number.isFinite(it.q)?it.q:null,lignes:[],sub:(it.sub||[]).map(fromLib)});
+const toLibArt=(ar,reuse)=>{const id=(reuse&&ar.libId)||"l"+nid(); ar.libId=id; return {id,imgs:(ar.imgs||[]).map(i=>({...i,id:nid()})),titre:ar.titre,type:ar.type,texte:ar.texte||"",u:ar.u,pu:ar.pu,q:metreOn(ar)?null:(ar.qman??null),sub:(ar.sub||[]).map(x=>toLibArt(x,reuse))};};
 const toLibSub=ch=>({id:"l"+nid(),titre:ch.titre,texte:ch.texte||"",art:(ch.art||[]).map(toLibArt)});
 function libFind(id){
   const inArts=(list,t,s,parent)=>{for(const a of list){if(a.id===id)return{kind:"article",it:a,t,s,parent,list};const r=inArts(a.sub||[],t,s,a);if(r)return r;}return null;};
@@ -1833,7 +1980,7 @@ function libTargetText(){
   const where=ci.node?(ci.nc.level==="lot"?`dans le lot ${ci.it.code}`:`dans le chapitre ${ci.it.code}`):`après l'article ${ci.it.code}`;
   return `Point d'insertion : ${where}`;
 }
-function renderLib(){$("#libTarget").textContent=libTargetText();renderLibList();renderLibDetail();}
+function renderLib(){$("#libTarget").textContent=libTargetText();renderLibList();renderLibDetail();const st=$("#libStat");if(st){st.textContent=libStat.txt;st.className="lib-stat"+(libStat.ok?"":" bad");}}
 function renderLibList(){
   $("#libLv").innerHTML=libLvHtml();
   const R=libRows(), q=$("#libQ").value.trim(); if(!R.some(r=>r.it.id===libSel)){const qq=norm(q),self=r=>[r.it.titre,r.it.texte].join(" ").toLowerCase().includes(qq);const fa=q&&(R.find(r=>r.k==="article"&&!isTitle(r.it)&&self(r))||R.find(r=>r.k==="article"&&self(r))||R.find(r=>r.k==="article"));libSel=fa?fa.it.id:R[0]?R[0].it.id:null;}
@@ -1917,6 +2064,16 @@ function libInsert(id){
   }
   $("#libTarget").textContent=libTargetText();
 }
+async function libDelete(id){
+  const f=libFind(id); if(!f) return;
+  const extra=f.kind==="titre"?` et tout son contenu (${f.it.children.length} sous-titres)`:f.kind==="sous-titre"?` et ses ${libArtCount(f.it.art)} articles`:"";
+  const d=$("#libDlg"), wasOpen=d.open; if(wasOpen) d.close();
+  const ok=await ask(`Supprimer « ${esc(f.it.titre)} »${extra} de la bibliothèque${AG?" partagée":""} ? Les éléments déjà insérés dans les affaires ne sont pas modifiés.`,"Supprimer",true);
+  if(wasOpen) d.showModal();
+  if(!ok) return;
+  f.list.splice(f.list.indexOf(f.it),1); if(libSel===id)libSel=null; save(); renderLib(); if(state&&state.prev==="lib")renderLibPanel(true);
+  toast(`« ${f.it.titre} » supprimé de la bibliothèque`);
+}
 function openLib(){$("#libQ").value="";libSel=null;renderLib();$("#libDlg").showModal();$("#libQ").focus();}
 $("#libBtn").onclick=openLib;
 $("#closeLib").onclick=()=>$("#libDlg").close();
@@ -1936,9 +2093,7 @@ $("#libDlg").addEventListener("click",async e=>{
     else{n={id:"l"+nid(),titre:add.dataset.libadd==="sub"?"Nouveau sous-article":"Nouvel article",u:"m²",pu:0,texte:"",sub:[]};(add.dataset.libadd==="sub"?(f.it.sub=f.it.sub||[]):f.it.art).push(n);}
     libClosed.delete(f.it.id);libSel=n.id;$("#libQ").value="";save();renderLib();$("#lbT").select();return;}
   const del=e.target.closest("[data-libdel]");
-  if(del){const f=libFind(del.dataset.libdel);if(!f)return;
-    const extra=f.kind==="titre"?` et tout son contenu (${f.it.children.length} sous-titres)`:f.kind==="sous-titre"?` et ses ${libArtCount(f.it.art)} articles`:"";
-    if(await ask(`Supprimer « ${esc(f.it.titre)} »${extra} de la bibliothèque ? Les éléments déjà insérés dans les affaires ne sont pas modifiés.`,"Supprimer",true)){f.list.splice(f.list.indexOf(f.it),1);libSel=null;save();renderLib();}return;}
+  if(del){libDelete(del.dataset.libdel);return;}
   if(e.target.id==="libNew"){const n={id:"l"+nid(),titre:"Nouveau titre",texte:"",children:[]};lib().push(n);libSel=n.id;$("#libQ").value="";save();renderLib();$("#lbT").select();return;}
   const r=e.target.closest("[data-lib]"); if(r){libSel=r.dataset.lib;renderLibList();renderLibDetail();}
 });
@@ -2382,14 +2537,28 @@ $("#newAff").onclick=()=>{
 $("#saveBtn").onclick=()=>saveAffaireFile(false);
 $("#openAff").onclick=async()=>{if(AG){const r=await AG.openFile();if(r)importAffaireText(r.text,r.name,r.file);}else $("#openAffFile").click();};
 $("#openAffFile").addEventListener("change",e=>{const f=e.target.files[0];if(f)openAffaireFile(f);e.target.value="";});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Delete"&&state&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
+    const t=e.target, typing=t&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable);
+    if(typing||document.querySelector("dialog[open]")||$("#v-redaction").hidden) return;
+    const f=locate(state.sel), nc=f?null:nodeCtx(state.sel);
+    if(f){e.preventDefault();delArt();}
+    else if(nc&&nc.level==="chapitre"){e.preventDefault();delNode(state.sel);}
+    else if(nc&&nc.level==="lot"){e.preventDefault();delLot(state.data.indexOf(nc.lot));}
+  }
+});
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"&&state){e.preventDefault();saveAffaireFile(false);}});
 $("#homeList").addEventListener("click",async e=>{
   const dup=e.target.closest("[data-dupaff]"); if(dup){const s=store.affaires.find(x=>x.id===dup.dataset.dupaff);const c=JSON.parse(JSON.stringify(s));
-    c.id="aff-"+nid();c.updated=Date.now();c.op.ref=(c.op.ref||"")+" (copie)";c.op.ragicId=null;store.affaires.push(c);
-    try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast("Affaire dupliquée");return;}
+    c.id="aff-"+nid();c.updated=Date.now();c.op.ref=(c.op.ref||"")+" (copie)";c.op.ragicId=null;delete c.filePath;delete c.fileName;c.fileSaved=0;store.affaires.push(c);
+    try{LS.setItem(KEY,JSON.stringify(store))}catch(_){}
+    if(AG){openAffaire(c.id);toast("Affaire dupliquée : choisissez l'emplacement de son nouveau fichier .cctp");saveAffaireFile(true);return;}
+    renderHome();toast("Affaire dupliquée");return;}
   const del=e.target.closest("[data-delaff]"); if(del){const s=store.affaires.find(x=>x.id===del.dataset.delaff);
-    if(await ask(`Supprimer définitivement l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} et tout son contenu ? Cette action ne peut pas être annulée.`,"Supprimer l'affaire",true)){
-      store.affaires=store.affaires.filter(x=>x!==s);try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast("Affaire supprimée");}
+    const nat=AG&&s.filePath;
+    if(await ask(nat?`Retirer l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} de la liste ? Son fichier .cctp n'est pas supprimé : vous pourrez le rouvrir.`
+        :`Supprimer définitivement l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} et tout son contenu ? Cette action ne peut pas être annulée.`,nat?"Retirer de la liste":"Supprimer l'affaire",!nat)){
+      store.affaires=store.affaires.filter(x=>x!==s);try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast(nat?"Affaire retirée de la liste":"Affaire supprimée");}
     return;}
   const r=e.target.closest("[data-open]"); if(r) openAffaire(r.dataset.open);
 });

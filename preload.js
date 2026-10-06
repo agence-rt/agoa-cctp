@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld("agoa", {
   savePDF: filename => ipcRenderer.invoke("save-pdf", filename),
   saveAs: (filename, text) => ipcRenderer.invoke("save-as", filename, text),
   writeFile: (file, text) => ipcRenderer.invoke("write-file", file, text),
+  readFiles: paths => ipcRenderer.sendSync("read-files", paths),
+  libState: () => ipcRenderer.sendSync("lib-state"),
+  libRead: () => ipcRenderer.invoke("lib-read"),
+  libWrite: (text, mtime) => ipcRenderer.invoke("lib-write", text, mtime),
+  libChoose: () => ipcRenderer.invoke("lib-choose"),
   openFile: () => ipcRenderer.invoke("open-dialog"),
   checkUpdates: () => ipcRenderer.invoke("check-updates"),
   onOpenFile: cb => ipcRenderer.on("open-file", (e, name, text, file) => cb(name, text, file))

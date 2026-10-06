@@ -1,1 +1,1 @@
-Déploiement n°1 — Première version : rédaction CCTP/BPU, fichier .cctp, consultation des entreprises, vérification des mises à jour au démarrage
+Déploiement n°2 — Suppr clavier, chapitre/sous-article, colonne redimensionnable, MAJ BDD, bibliothèque partagée Dropbox, fichier .cctp seule source

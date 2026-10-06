@@ -19,10 +19,10 @@ const dataPath = () => path.join(userDir(), "agoa-cctp-donnees.json");
 const configPath = () => path.join(userDir(), "agoa-cctp-config.json");
 
 function readJson(p, def) { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return def; } }
-function writeAtomic(p, text) {
+function writeAtomic(p, text, bak = true) {
   const tmp = p + ".tmp";
   fs.writeFileSync(tmp, text, "utf8");
-  if (fs.existsSync(p)) fs.copyFileSync(p, p + ".bak"); // copie de secours de la version précédente
+  if (bak && fs.existsSync(p)) fs.copyFileSync(p, p + ".bak"); // copie de secours de la version précédente
   fs.renameSync(tmp, p);
 }
 
@@ -109,7 +109,7 @@ async function ragic(tool, input) {
   throw new Error("[tool_error] Outil inconnu : " + tool);
 }
 
-/* ---------- mises à jour (Releases GitHub du dépôt privé agence-rt/agoa-cctp) ---------- */
+/* ---------- mises à jour (Releases GitHub du dépôt agence-rt/agoa-cctp) ---------- */
 // Le dépôt est privé : chaque poste a besoin d'un jeton GitHub en lecture seule (Contents : Read)
 // enregistré une fois via Aide, « Accès aux mises à jour ».
 const REPO = { owner: "agence-rt", repo: "agoa-cctp" };
@@ -141,9 +141,8 @@ async function proposeUpdate(info) {
   });
 }
 function applyFeed() {
-  const token = getSecret("githubToken");
-  if (!token) return false;
-  updater.setFeedURL({ provider: "github", owner: REPO.owner, repo: REPO.repo, private: true, token, releaseType: "release" });
+  const token = getSecret("githubToken"); // facultatif : seulement si le dépôt redevient privé
+  if (token) updater.setFeedURL({ provider: "github", owner: REPO.owner, repo: REPO.repo, private: true, token, releaseType: "release" });
   return true;
 }
 async function askUpdateToken() {
@@ -165,15 +164,7 @@ async function runCheck(manual) {
     return;
   }
   if (updateState === "downloading" || updateState === "ready") return;
-  if (!applyFeed()) {
-    if (manual || !readJson(configPath(), {}).tokenAsked) {
-      writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), tokenAsked: true }, null, 2));
-      const r = await dialog.showMessageBox(win, { type: "info", buttons: ["Saisir le jeton", "Plus tard"], defaultId: 0, cancelId: 1, noLink: true,
-        title: "Mises à jour", message: "Les mises à jour automatiques ne sont pas encore activées sur ce poste.",
-        detail: "Le dépôt des versions est privé : un jeton GitHub en lecture seule est nécessaire (une seule fois). Vous pouvez aussi le saisir plus tard dans Aide, Accès aux mises à jour." });
-      if (r.response !== 0 || !(await askUpdateToken()) || !applyFeed()) return;
-    } else return;
-  }
+  applyFeed();
   manualCheck = !!manual;
   updateState = "checking";
   try {
@@ -244,7 +235,7 @@ function createWindow() {
       { label: `AGOA CCTP v${INFO.version} — déploiement n°${INFO.deploiement}`, enabled: false },
       { type: "separator" },
       { label: "Rechercher des mises à jour…", click: () => runCheck(true) },
-      { label: "Accès aux mises à jour (jeton GitHub)…", click: async () => { if (await askUpdateToken()) runCheck(true); } },
+      { label: "Bibliothèque partagée : choisir le dossier…", click: () => js("window.__libChoose && window.__libChoose()").catch(() => {}) },
       { label: "Clé API Ragic…", click: () => askRagicKey() }
     ] }
   ]));
@@ -290,7 +281,73 @@ async function openDialog() {
 /* ---------- IPC ---------- */
 ipcMain.on("info", e => { e.returnValue = INFO; });
 ipcMain.on("load-data", e => { e.returnValue = readJson(dataPath(), {}); });
-ipcMain.on("save-data", (e, text) => { try { writeAtomic(dataPath(), text); } catch (err) { console.error(err); } });
+ipcMain.on("save-data", (e, text) => {
+  try {
+    const old = readJson(dataPath(), null);
+    if (old && Array.isArray(old.affaires) && old.v !== 2) { // ancien format : affaires copiées dans l'application, mises de côté une fois
+      const keep = path.join(userDir(), "agoa-cctp-donnees-v1.json");
+      if (!fs.existsSync(keep)) fs.copyFileSync(dataPath(), keep);
+    }
+    writeAtomic(dataPath(), text, false);
+  } catch (err) { console.error(err); }
+});
+ipcMain.on("read-files", (e, paths) => {
+  e.returnValue = (paths || []).map(p => {
+    try { if (!/\.(cctp|dce)$/i.test(p)) return null; return { path: p, text: fs.readFileSync(p, "utf8") }; } catch { return null; }
+  });
+});
+
+/* ---------- bibliothèque partagée (dossier Dropbox 09 - BDD / IA / AGOA-CCTP) ---------- */
+const LIB_FILE = "bibliotheque-cctp.json";
+function dropboxRoots() {
+  const roots = [];
+  for (const base of [process.env.LOCALAPPDATA, process.env.APPDATA]) {
+    if (!base) continue;
+    const info = readJson(path.join(base, "Dropbox", "info.json"), null);
+    if (info) for (const k of Object.keys(info)) if (info[k] && info[k].path) roots.push(info[k].path);
+  }
+  const home = process.env.USERPROFILE || app.getPath("home");
+  roots.push(path.join(home, "Dropbox"), home);
+  return [...new Set(roots)].filter(r => { try { return fs.statSync(r).isDirectory(); } catch { return false; } });
+}
+const subdirs = d => { try { return fs.readdirSync(d, { withFileTypes: true }).filter(x => x.isDirectory()).map(x => x.name); } catch { return []; } };
+function findLibDir() {
+  const cfg = readJson(configPath(), {});
+  if (cfg.libDir && fs.existsSync(cfg.libDir)) return cfg.libDir;
+  for (const root of dropboxRoots()) {
+    const parents = [root, ...subdirs(root).filter(n => /^agence|t&k|thollet/i.test(n)).map(n => path.join(root, n))];
+    for (const p of parents) {
+      for (const bdd of subdirs(p).filter(n => /^09\b.*bdd/i.test(n))) {
+        const d = path.join(p, bdd, "IA", "AGOA-CCTP");
+        if (fs.existsSync(d)) return d;
+      }
+    }
+  }
+  return null;
+}
+const libFile = () => { const d = findLibDir(); return d ? path.join(d, LIB_FILE) : null; };
+ipcMain.on("lib-state", e => {
+  const d = findLibDir(); let mtime = 0;
+  if (d) { try { mtime = fs.statSync(path.join(d, LIB_FILE)).mtimeMs; } catch {} }
+  e.returnValue = d ? { dir: d, file: LIB_FILE, mtime } : null;
+});
+ipcMain.handle("lib-read", () => {
+  const f = libFile(); if (!f) return null;
+  try { return { text: fs.readFileSync(f, "utf8"), mtime: fs.statSync(f).mtimeMs }; } catch { return null; }
+});
+ipcMain.handle("lib-write", (e, text, expectedMtime) => {
+  const f = libFile(); if (!f) throw new Error("Dossier de la bibliothèque introuvable");
+  let cur = 0; try { cur = fs.statSync(f).mtimeMs; } catch {}
+  if (cur && expectedMtime !== cur) return { conflict: true };   // un collègue vient de modifier le fichier
+  writeAtomic(f, text, false);
+  return { mtime: fs.statSync(f).mtimeMs };
+});
+ipcMain.handle("lib-choose", async () => {
+  const r = await dialog.showOpenDialog(win, { title: "Choisir le dossier de la bibliothèque partagée (Dropbox : 09 - BDD / IA / AGOA-CCTP)", properties: ["openDirectory"] });
+  if (r.canceled || !r.filePaths[0]) return null;
+  writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), libDir: r.filePaths[0] }, null, 2), false);
+  return r.filePaths[0];
+});
 ipcMain.on("get-config", e => { e.returnValue = readJson(configPath(), {}); });
 ipcMain.on("set-config", (e, patch) => { writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), ...patch }, null, 2)); e.returnValue = true; });
 ipcMain.handle("ragic", (e, tool, input) => ragic(tool, input));
@@ -305,12 +362,12 @@ ipcMain.handle("save-file", async (e, filename, bytes) => {
 ipcMain.handle("save-as", async (e, filename, text) => {
   const r = await dialog.showSaveDialog(win, { title: "Enregistrer l'affaire", defaultPath: path.join(app.getPath("documents"), filename), filters: [{ name: "Affaire AGOA CCTP", extensions: ["cctp"] }] });
   if (r.canceled || !r.filePath) return null;
-  writeAtomic(r.filePath, text);
+  writeAtomic(r.filePath, text, false);
   return r.filePath;
 });
 ipcMain.handle("write-file", async (e, file, text) => {
   if (!/\.(cctp|dce)$/i.test(file)) throw new Error("Seuls les fichiers .cctp peuvent être écrits");
-  writeAtomic(file, text);
+  writeAtomic(file, text, false);
   return true;
 });
 ipcMain.handle("save-pdf", async (e, filename) => {
