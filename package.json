@@ -1,0 +1,91 @@
+{
+  "name": "agoa-cctp",
+  "productName": "AGOA CCTP",
+  "version": "0.1.0",
+  "description": "AGOA CCTP — rédaction des CCTP et BPU, consultation des entreprises, comparatif et synthèse",
+  "author": "SELARL Rémi Thollet Architecte",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/agence-rt/agoa-cctp.git"
+  },
+  "private": true,
+  "main": "main.js",
+  "agoa": {
+    "deploiement": 1
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "deploy": "node scripts/deploy.js"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "fr.remithollet.agoacctp",
+    "productName": "AGOA CCTP",
+    "artifactName": "AGOA-CCTP-Setup-${version}.${ext}",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "preload-secret.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AGOA CCTP",
+      "runAfterFinish": true,
+      "installerLanguages": [
+        "fr_FR"
+      ],
+      "language": "1036",
+      "multiLanguageInstaller": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "fileAssociations": [
+      {
+        "ext": "cctp",
+        "name": "Affaire CCTP",
+        "description": "Affaire AGOA CCTP (CCTP, BPU, consultation)",
+        "icon": "cctp",
+        "role": "Editor"
+      },
+      {
+        "ext": "dce",
+        "name": "Affaire CCTP (ancien format)",
+        "description": "Affaire AGOA (ancien format .dce)",
+        "icon": "cctp",
+        "role": "Editor"
+      }
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "agence-rt",
+        "repo": "agoa-cctp",
+        "releaseType": "release"
+      }
+    ]
+  }
+}
