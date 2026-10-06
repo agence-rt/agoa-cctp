@@ -190,24 +190,30 @@ function setupUpdates() {
   if (!app.isPackaged) return;
   try {
     updater = require("electron-updater").autoUpdater;
-    updater.autoDownload = false;          // on demande d'abord à l'utilisateur
-    updater.autoInstallOnAppQuit = false;
-    updater.on("update-available", info => { proposeUpdate(info); });
+    updater.autoDownload = true;           // mise à jour automatique : téléchargement puis installation sans question
+    updater.autoInstallOnAppQuit = true;
+    updater.on("update-available", info => {
+      if (updateState === "downloading" || updateState === "ready") return;
+      updateState = "downloading";
+      win.setTitle(`AGOA CCTP — mise à jour ${info.version} en cours de téléchargement…`);
+    });
     updater.on("download-progress", p => {
       win.setProgressBar(p.percent / 100);
       win.setTitle(`AGOA CCTP — téléchargement de la mise à jour… ${Math.round(p.percent)} %`);
     });
     updater.on("update-downloaded", () => {
       updateState = "ready"; win.setProgressBar(-1);
-      js("window.__agoaSaveNow ? window.__agoaSaveNow() : null").catch(() => {})
+      js("window.__agoaSaveQuiet ? window.__agoaSaveQuiet() : null").catch(() => {})
         .then(() => js("typeof Store !== 'undefined' && Store.flush && Store.flush()")).catch(() => {}).finally(() => {
           allowClose = true;
           setTimeout(() => updater.quitAndInstall(true, true), 600); // installation silencieuse puis relance
         });
     });
-    updater.on("error", err => { console.warn("Mise à jour :", err && err.message); });
-    // Recherche au lancement, une fois la fenêtre affichée
-    win.webContents.once("did-finish-load", () => setTimeout(() => runCheck(false), 2500));
+    updater.on("error", err => { console.warn("Mise à jour :", err && err.message); updateState = "idle"; if (win) { win.setProgressBar(-1); win.setTitle(`AGOA CCTP — v${INFO.version}`); } });
+    // Recherche au lancement (dès que la fenêtre est affichée), puis toutes les 4 heures
+    const first = () => setTimeout(() => runCheck(false), 1500);
+    if (win.webContents.isLoading()) win.webContents.once("did-finish-load", first); else first();
+    setInterval(() => runCheck(false), 4 * 3600 * 1000);
   } catch (e) { console.warn(e); }
 }
 

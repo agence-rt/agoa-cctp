@@ -684,7 +684,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.2.0", deploiement: 2};
+const APP = {version: "0.3.0", deploiement: 3};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -796,6 +796,7 @@ if(AG){
     const s=state; if(!s) return null;
     const dirty=!s.fileSaved||s.updated>s.fileSaved;
     return {code:fileBase(s),fichier:s.filePath||null,dirty};};
+  window.__agoaSaveQuiet=async()=>{clearTimeout(autoT);const x=state;if(x&&x.filePath){await AG.writeFile(x.filePath,serializeAffaire(x));x.fileSaved=Date.now()+1;}};
   window.__agoaSaveNow=async()=>{clearTimeout(autoT);await saveAffaireFile(true);window.Store.flush();};
   window.__agoaSaveAsNow=async()=>{const s=state;if(!s)return true;const keep=s.filePath;s.filePath=null;await saveAffaireFile(false);if(!s.filePath){s.filePath=keep;return false;}window.Store.flush();return true;};
 }

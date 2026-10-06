@@ -1,1 +1,1 @@
-Déploiement n°2 — Suppr clavier, chapitre/sous-article, colonne redimensionnable, MAJ BDD, bibliothèque partagée Dropbox, fichier .cctp seule source
+Déploiement n°3 — Mise à jour automatique au lancement (sans question) et toutes les 4 h
