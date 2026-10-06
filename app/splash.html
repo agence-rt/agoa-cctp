@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>AGOA CCTP</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#222;user-select:none}
+.box{height:100%;box-sizing:border-box;border:1px solid #d9d9d6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+img{width:132px;height:132px;opacity:0;animation:in .7s ease .1s forwards}
+h1{margin:12px 0 0;font-size:26px;letter-spacing:.14em;font-weight:700;opacity:0;animation:in .7s ease .35s forwards}
+h1 b{color:#b3261e}
+p{margin:0;font-size:12.5px;color:#777;opacity:0;animation:in .7s ease .55s forwards}
+.bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:#eee;overflow:hidden}
+.bar i{display:block;height:100%;width:36%;background:#b3261e;animation:run 1.3s ease-in-out infinite}
+.v{position:absolute;right:12px;bottom:12px;font-size:11px;color:#aaa}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes run{0%{margin-left:-36%}100%{margin-left:100%}}
+</style></head><body>
+<div class="box"><img src="splash-logo.png" alt="AGOA"><h1>AGOA <b>CCTP</b></h1><p>Rédaction des CCTP et des BPU</p></div>
+<div class="v" id="v"></div><div class="bar"><i></i></div>
+<script>const v=new URLSearchParams(location.search).get("v");if(v)document.getElementById("v").textContent="v"+v;</script>
+</body></html>

@@ -1,1 +1,1 @@
-Déploiement n°3 — Mise à jour automatique au lancement (sans question) et toutes les 4 h
+Déploiement n°4 — Écran de démarrage AGOA (logo provisoire), champs numériques sans flèches

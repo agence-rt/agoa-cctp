@@ -217,12 +217,31 @@ function setupUpdates() {
   } catch (e) { console.warn(e); }
 }
 
+/* ---------- écran de démarrage (logo AGOA : app/splash-logo.png) ---------- */
+let splash = null, splashAt = 0;
+function showSplash() {
+  splashAt = Date.now();
+  splash = new BrowserWindow({ width: 520, height: 320, frame: false, resizable: false, movable: false, minimizable: false, maximizable: false,
+    alwaysOnTop: true, center: true, show: false, skipTaskbar: true, backgroundColor: "#ffffff", icon: path.join(__dirname, "build", "icon.ico"),
+    webPreferences: { contextIsolation: true, nodeIntegration: false } });
+  splash.once("ready-to-show", () => splash && splash.show());
+  splash.loadFile(path.join(__dirname, "app", "splash.html"), { query: { v: INFO.version } });
+  splash.on("closed", () => { splash = null; });
+}
+function endSplash() {
+  const wait = Math.max(0, 2200 - (Date.now() - splashAt));  // l'écran reste au moins 2,2 s
+  setTimeout(() => {
+    if (win && !win.isDestroyed()) { win.show(); }
+    if (splash && !splash.isDestroyed()) splash.close();
+  }, wait);
+}
+
 /* ---------- fenêtre ---------- */
 function createWindow() {
   win = new BrowserWindow({
     width: 1400, height: 900, minWidth: 900, minHeight: 600,
     title: `AGOA CCTP — v${INFO.version}`, icon: path.join(__dirname, "build", "icon.ico"),
-    autoHideMenuBar: false, backgroundColor: "#EEF0ED",
+    autoHideMenuBar: false, backgroundColor: "#EEF0ED", show: false,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false }
   });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto):/i.test(url)) shell.openExternal(url); return { action: "deny" }; });
@@ -233,6 +252,8 @@ function createWindow() {
     e.preventDefault();
     if (!closing) confirmClose();
   });
+  win.once("ready-to-show", endSplash);
+  setTimeout(() => { if (win && !win.isDestroyed() && !win.isVisible()) endSplash(); }, 20000); // sécurité : jamais bloqué sur l'écran de démarrage
   win.loadFile(path.join(__dirname, "app", "index.html"));
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "Fichier", submenu: [{ label: "Ouvrir un fichier .cctp…", accelerator: "CmdOrCtrl+O", click: () => openDialog() }, { type: "separator" }, { role: "quit", label: "Quitter" }] },
@@ -392,6 +413,6 @@ if (!app.requestSingleInstanceLock()) { app.quit(); }
 else {
   app.on("second-instance", (e, argv) => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } openAgoarv(agoarvFromArgs(argv)); });
   app.on("open-file", (e, file) => { e.preventDefault(); openAgoarv(file); });
-  app.whenReady().then(() => { createWindow(); openAgoarv(agoarvFromArgs(process.argv)); setupUpdates(); });
+  app.whenReady().then(() => { showSplash(); createWindow(); openAgoarv(agoarvFromArgs(process.argv)); setupUpdates(); });
   app.on("window-all-closed", () => app.quit());
 }

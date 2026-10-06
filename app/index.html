@@ -451,6 +451,8 @@ dialog h3{margin:0 0 12px;font-size:17px}
 .pl-row:hover .x.pl-ed,.pl-row:hover .x.pl-del{opacity:1}
 .lib-stat{font-size:12px;margin:0;color:var(--muted,#6a6a6a)}
 .lib-stat.bad{color:var(--ochre,#b36a00)}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
 </style>
 </head>
 <body>
@@ -684,7 +686,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.3.0", deploiement: 3};
+const APP = {version: "0.4.0", deploiement: 4};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
