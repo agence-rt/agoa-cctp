@@ -1,1 +1,1 @@
-Déploiement n°6 — Correction liaison Ragic : recherche opérations et entreprises fonctionnelle dans l'application Windows, messages d'erreur explicites
+Déploiement n°7 — Correction analyse des offres : affichage de toutes les lignes du BPU, y compris sous-chapitres imbriqués

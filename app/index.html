@@ -734,7 +734,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.6.0", deploiement: 6};
+const APP = {version: "0.7.0", deploiement: 7};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2168,7 +2168,8 @@ function anaLive(){
     const L={id:lot.nid,titre:lot.titre,charge:lot.charge||"Commune"}; lots.push(L);
     const push=r=>{r.lotId=lot.nid;rows.push(r);info.set(r.id,r);};
     const walk=(list,d)=>list.forEach(ar=>{push({id:ar.id,k:(ar.sub.length||isTitle(ar))?"par":"art",d,obj:ar,lot});walk(ar.sub,d+1);});
-    lot.children.forEach(ch=>{push({id:ch.nid,k:"ch",d:0,obj:ch,lot});walk(ch.art||[],1);});
+    const node=(n,d)=>{push({id:n.nid,k:"ch",d,obj:n,lot});walk(n.art||[],d+1);(n.children||[]).forEach(c=>node(c,d+1));};
+    lot.children.forEach(ch=>node(ch,0));
   });
   return {rows,info,lots};
 }

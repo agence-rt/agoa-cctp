@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°7** — v0.7.0 — 2026-10-07 — Correction analyse des offres : affichage de toutes les lignes du BPU, y compris sous-chapitres imbriqués
 - **n°6** — v0.6.0 — 2026-10-07 — Correction liaison Ragic : recherche opérations et entreprises fonctionnelle dans l'application Windows, messages d'erreur explicites
 - **n°5** — v0.5.0 — 2026-10-07 — Tableau comparatif global modifiable des offres : lots recomposables, postes écartés, écarts de prix signalés
 - **n°4** — v0.4.0 — 2026-10-06 — Écran de démarrage AGOA (logo provisoire), champs numériques sans flèches
