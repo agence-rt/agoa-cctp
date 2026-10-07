@@ -47,6 +47,19 @@ jobs:
         if: steps.v.outputs.skip == 'false'
         run: npm ci
 
+      - name: Secret Google (identification)
+        if: steps.v.outputs.skip == 'false'
+        shell: bash
+        env:
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          node -e '
+            const fs = require("fs"); const p = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const g = (p.agoa && p.agoa.google) || {};
+            if (g.clientId && !process.env.GOOGLE_CLIENT_SECRET) { console.log("::error::Secret GOOGLE_CLIENT_SECRET absent (Settings > Secrets and variables > Actions)"); process.exit(1); }
+            if (g.clientId) { g.clientSecret = process.env.GOOGLE_CLIENT_SECRET; fs.writeFileSync("package.json", JSON.stringify(p, null, 2)); }
+          '
+
       - name: Fabrication et publication
         if: steps.v.outputs.skip == 'false'
         shell: bash

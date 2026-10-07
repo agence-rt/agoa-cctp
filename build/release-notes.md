@@ -1,1 +1,1 @@
-Déploiement n°7 — Correction analyse des offres : affichage de toutes les lignes du BPU, y compris sous-chapitres imbriqués
+Déploiement n°8 — Écran de démarrage : recherche et installation des mises à jour avant l'ouverture ; connexion Google (agence@remithollet.fr) comme AGOA PV

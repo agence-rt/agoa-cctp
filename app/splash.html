@@ -10,10 +10,15 @@ p{margin:0;font-size:12.5px;color:#777;opacity:0;animation:in .7s ease .55s forw
 .bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:#eee;overflow:hidden}
 .bar i{display:block;height:100%;width:36%;background:#b3261e;animation:run 1.3s ease-in-out infinite}
 .v{position:absolute;right:12px;bottom:12px;font-size:11px;color:#aaa}
+.st{position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:12px;color:#777;min-height:16px}
+.bar i.det{animation:none;margin-left:0;transition:width .3s}
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes run{0%{margin-left:-36%}100%{margin-left:100%}}
 </style></head><body>
 <div class="box"><img src="splash-logo.png" alt="AGOA"><h1>AGOA <b>CCTP</b></h1><p>Rédaction des CCTP et des BPU</p></div>
-<div class="v" id="v"></div><div class="bar"><i></i></div>
-<script>const v=new URLSearchParams(location.search).get("v");if(v)document.getElementById("v").textContent="v"+v;</script>
+<div class="v" id="v"></div><div class="st" id="st"></div><div class="bar"><i></i></div>
+<script>
+window.setStatus=(t,p)=>{document.getElementById("st").textContent=t||"";const b=document.querySelector(".bar i");
+ if(p==null){b.className="";b.style.width="";}else{b.className="det";b.style.width=Math.max(2,Math.min(100,p))+"%";}};
+const v=new URLSearchParams(location.search).get("v");if(v)document.getElementById("v").textContent="v"+v;</script>
 </body></html>
