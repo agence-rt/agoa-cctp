@@ -105,8 +105,8 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .tree summary:hover .node-x,.tree .sub:hover .node-x,.node-x:focus-visible{opacity:1}
 .tree .sub{margin-top:4px}
 .tree details>summary::-webkit-details-marker{display:none}
-.tree details>summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);margin-top:6px;flex:none;transition:transform .15s}
-.tree details[open]>summary::before{transform:rotate(45deg)}
+.tree details>summary::before{content:"";width:10px;height:10px;border-right:2.5px solid var(--ink,#333);border-bottom:2.5px solid var(--ink,#333);transform:rotate(-45deg);margin-top:3px;flex:none;transition:transform .15s}
+.tree details[open]>summary::before{transform:rotate(45deg);margin-top:-2px}
 .tree .sub{padding:6px 14px 2px 30px;font-size:12.5px;color:var(--muted)}
 .tree .art{display:flex;gap:7px;align-items:center;padding:4px 10px 4px calc(12px + var(--b,0) * 14px + var(--n,0) * 24px);font-size:13px;border-left:2px solid transparent;cursor:pointer;user-select:none;position:relative}
 .tree .art.nested::before{content:"";position:absolute;left:calc(var(--b,0) * 14px + var(--n,0) * 24px - 4px);top:0;height:55%;width:9px;border-left:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);opacity:.55}
@@ -496,6 +496,10 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 #cmpTable.nomoe .mo{display:none}
 .ent-sub.offer-ok{color:#2e7d32;font-weight:600}
 select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:600}
+.txt-tools{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+.txt-tools .hint{font-size:11.5px}
+.nimgs{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 10px;align-items:flex-start}
+.nimgs .cimg .rz{left:auto;right:-5px}
 </style>
 </head>
 <body>
@@ -741,7 +745,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.9.0", deploiement: 9};
+const APP = {version: "0.10.0", deploiement: 10};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -991,7 +995,7 @@ function readImage(file,maxPx=1100){
   });
 }
 async function addImages(files){
-  const ci=curItem(); if(!ci||ci.node) return;
+  const ci=curItem(); if(!ci) return;
   const ar=ci.it; ar.imgs=ar.imgs||[]; let n=0;
   for(const f of files){
     try{const r=await readImage(f); ar.imgs.push({id:nid(),src:r.src,w:IMG_MAX,name:(f.name||"image").replace(/\.[^.]+$/,"")}); n++;}
@@ -1000,9 +1004,9 @@ async function addImages(files){
   if(n){save();renderEditor();renderPreview();toast(n>1?`${n} images ajoutées`:"Image ajoutée");}
 }
 const imgsHtml=ar=>(ar.imgs&&ar.imgs.length)?`<div class="cimgs">${ar.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-aid="${ar.id}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Illustration")}"><span class="cw">${cm1(i.w)}</span><span class="rz" title="Glisser pour redimensionner (7 cm max)"></span></div>`).join("")}</div>`:"";
-function imgsField(ar){
+function imgsField(ar,after){
   const L=ar.imgs||[];
-  return `<div class="field imgs"><span class="flabel">Images <span class="hint">· affichées à droite du texte dans le CCTP, 7 cm maximum</span></span>
+  return `<div class="field imgs"><span class="flabel">${after?"Photos":"Images"} <span class="hint">· ${after?"affichées après la description dans le CCTP":"affichées à droite du texte dans le CCTP"}, 7 cm maximum</span></span>
     ${L.length?`<div class="img-list">${L.map(i=>`<div class="img-it" data-imgid="${i.id}"><span class="th" style="width:${Math.round(clampW(i.w)*14)}px"><img src="${i.src}" alt=""></span>
       <div class="img-ctl"><span class="nm">${esc(i.name||"Image")}</span>
         <div class="rw"><label for="iw${i.id}">Largeur</label><input type="range" id="iw${i.id}" data-imgw="${i.id}" min="${IMG_MIN}" max="${IMG_MAX}" step="0.5" value="${clampW(i.w)}"><output>${cm1(i.w)}</output></div>
@@ -1115,9 +1119,9 @@ function renderEditor(){
     <button class="btn sm" data-act="addSub">Ajouter un sous-article</button>
     <button class="btn sm danger" data-act="del">Supprimer</button>
   </div>
-  <div class="field"><label for="fTxt">Description de l'ouvrage</label><textarea id="fTxt" data-k="texte" placeholder="Décrire la prestation : matériaux, mise en œuvre, sujétions…">${esc(ar.texte)}</textarea></div>
+  <div class="field"><label for="fTxt">Description de l'ouvrage</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « – » au début des lignes sélectionnées">– Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="Décrire la prestation : matériaux, mise en œuvre, sujétions…">${esc(ar.texte)}</textarea></div>
   ${imgsField(ar)}
-  <div class="field"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}" placeholder="Ex. façade Ouest, à partir du R+1"></div>
+  <div class="field"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}"></div>
   ${isTitle(ar)?""
    :`<h4 class="sec">Chiffrage</h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
   <div class="actions">
@@ -1142,7 +1146,8 @@ function renderNodeEditor(nc){
   $("#editor").innerHTML=`
   <div class="art-head"><span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
-  <div class="field"><label for="fTxt">Description</label><textarea id="fTxt" data-k="texte" placeholder="${isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…"}">${esc(n.texte||"")}</textarea></div>
+  <div class="field"><label for="fTxt">Description</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « – » au début des lignes sélectionnées">– Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="${isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…"}">${esc(n.texte||"")}</textarea></div>
+  ${isLot?"":imgsField(n,true)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
   updateLive();
@@ -1238,7 +1243,8 @@ function renderPreview(){
       <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}</td><td class="n">${eur2(nodeTotal(root))}</td></tr></table>`;
   }else{
     const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}</p>${imgsHtml(ar)}${ar.texte?`<p>${esc(ar.texte)}</p>`:(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
-    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}</p>${n.texte?`<p>${esc(n.texte)}</p>`:""}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
+    const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"><span class="cw">${cm1(i.w)}</span><span class="rz" title="Glisser pour redimensionner (7 cm max)"></span></div>`).join("")}</div>`:"";
+    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}</p>${n.texte?`<p>${esc(n.texte)}</p>`:""}${nimgs(n)}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
     body=`<div class="sheet">${nblk(root)}</div>`;
   }
   el.innerHTML=`<div class="prev-h"><b>Aperçu ${root.code} ${esc(root.titre)}</b>
@@ -1341,13 +1347,33 @@ function step(dir){
   [f.list[f.i],f.list[j]]=[f.list[j],f.list[f.i]]; refresh(); toast(`Article renuméroté ${f.art.code}`);
 }
 
+const BUL="– ";
+function bulletToggle(ta){
+  const v=ta.value; let a=ta.selectionStart,b=ta.selectionEnd;
+  const s0=v.lastIndexOf("\n",a-1)+1; let e0=v.indexOf("\n",b); if(e0<0)e0=v.length;
+  const lines=v.slice(s0,e0).split("\n"), all=lines.every(l=>!l.trim()||l.startsWith(BUL));
+  const out=lines.map(l=>all?(l.startsWith(BUL)?l.slice(BUL.length):l):(l.startsWith(BUL)||!l.trim()&&lines.length>1?l:BUL+l)).join("\n");
+  ta.value=v.slice(0,s0)+out+v.slice(e0); ta.selectionStart=s0; ta.selectionEnd=s0+out.length;
+  ta.dispatchEvent(new Event("input",{bubbles:true})); ta.focus();
+}
+$("#editor").addEventListener("click",e=>{const b=e.target.closest("[data-bullet]");if(b){e.preventDefault();const ta=$("#fTxt");if(ta)bulletToggle(ta);}});
+$("#editor").addEventListener("keydown",e=>{
+  const ta=e.target; if(ta.id!=="fTxt"||e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey||e.isComposing) return;
+  const v=ta.value,pos=ta.selectionStart; if(pos!==ta.selectionEnd) return;
+  const s0=v.lastIndexOf("\n",pos-1)+1, line=v.slice(s0,pos);
+  if(!line.startsWith(BUL)) return;
+  e.preventDefault();
+  if(line.trim()===BUL.trim()){ta.value=v.slice(0,s0)+v.slice(pos);ta.selectionStart=ta.selectionEnd=s0;}
+  else{ta.value=v.slice(0,pos)+"\n"+BUL+v.slice(ta.selectionEnd);ta.selectionStart=ta.selectionEnd=pos+1+BUL.length;}
+  ta.dispatchEvent(new Event("input",{bubbles:true}));
+});
 $("#editor").addEventListener("change",e=>{if(e.target.id==="imgFile"&&e.target.files&&e.target.files.length){addImages([...e.target.files]);e.target.value="";}});
 $("#editor").addEventListener("click",e=>{
   if(e.target.closest("[data-imgadd]")){const f=$("#imgFile");if(f)f.click();return;}
-  const d=e.target.closest("[data-imgdel]"); if(d){const ci=curItem();if(!ci||ci.node)return;ci.it.imgs=(ci.it.imgs||[]).filter(i=>i.id!==d.dataset.imgdel);save();renderEditor();renderPreview();toast("Image retirée");}
+  const d=e.target.closest("[data-imgdel]"); if(d){const ci=curItem();if(!ci)return;ci.it.imgs=(ci.it.imgs||[]).filter(i=>i.id!==d.dataset.imgdel);save();renderEditor();renderPreview();toast("Image retirée");}
 });
 $("#editor").addEventListener("input",e=>{
-  const iw=e.target.dataset&&e.target.dataset.imgw; if(iw){const ci=curItem();if(!ci||ci.node)return;const im=(ci.it.imgs||[]).find(i=>i.id===iw);if(!im)return;
+  const iw=e.target.dataset&&e.target.dataset.imgw; if(iw){const ci=curItem();if(!ci)return;const im=(ci.it.imgs||[]).find(i=>i.id===iw);if(!im)return;
     im.w=clampW(e.target.value);save();const it=e.target.closest(".img-it");it.querySelector("output").textContent=cm1(im.w);it.querySelector(".th").style.width=Math.round(im.w*14)+"px";
     const pv=document.querySelector(`#preview .cimg[data-imgid="${iw}"]`);if(pv){pv.style.width=im.w+"cm";pv.querySelector(".cw").textContent=cm1(im.w);}return;}
 });
@@ -1421,8 +1447,8 @@ $("#editor").addEventListener("click",e=>{
 $("#preview").addEventListener("input",e=>{if(e.target.id==="plQ")renderLibPanelList();});
 $("#preview").addEventListener("pointerdown",e=>{
   const h=e.target.closest(".rz"); if(!h) return; e.preventDefault(); e.stopPropagation();
-  const box=h.closest(".cimg"), f=locate(box.dataset.aid); if(!f) return;
-  const im=(f.art.imgs||[]).find(i=>i.id===box.dataset.imgid); if(!im) return;
+  const box=h.closest(".cimg"), tgt=box.dataset.nid?(nodeCtx(box.dataset.nid)||{}).node:(locate(box.dataset.aid)||{}).art; if(!tgt) return;
+  const im=(tgt.imgs||[]).find(i=>i.id===box.dataset.imgid); if(!im) return;
   const x0=e.clientX, w0=clampW(im.w); box.classList.add("rzing");
   const mv=ev=>{im.w=clampW(w0+(x0-ev.clientX)/PX_CM);box.style.width=im.w+"cm";box.querySelector(".cw").textContent=cm1(im.w);};
   const up=()=>{document.removeEventListener("pointermove",mv);document.removeEventListener("pointerup",up);box.classList.remove("rzing");save();
@@ -1682,6 +1708,15 @@ function buildCctpPdf(J){
     if(lvl===2){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,y+0.4,R,y+0.4);}
     y+=lvl===2?2.5:1.5;
     if(n.texte) para(n.texte,"normal",9.5,INK);
+    if((n.imgs||[]).length){
+      let x=L,rowH=0; y+=1;
+      n.imgs.forEach(i=>{const d=dims(i.src);if(!d)return;const w=clampW(i.w)*10,h=w*d.r;
+        if(x+w>R+0.1){y+=rowH+3;x=L;rowH=0;}
+        if(y+h>B){np();x=L;rowH=0;}
+        try{doc.addImage(i.src,d.type,x,y,w,h,undefined,"FAST");}catch(e){console.error(e);}
+        x+=w+3;rowH=Math.max(rowH,h);});
+      y+=rowH+3;
+    }
     if(n.art) arts(n.art);
     (n.children||[]).forEach(c=>node(c,3));
   }
@@ -2230,9 +2265,10 @@ function anaModel(){
       }
     });
     // sous-totaux de blocs et totaux du lot
-    const tot=emptyT(); let n=0;
+    const tot=emptyT(); tot.rt={}; let n=0;
     rows.forEach((w,i)=>{
-      if(w.leaf&&!w.ex){tot.est+=w.est;tot.estT+=w.estT;n++;E.forEach((e,j)=>{if(w.a[j]!=null){tot.e[e.id].ht+=w.a[j];tot.e[e.id].ttc+=w.a[j]*(1+tvaOf(w.o,null)/100);}});}
+      if(w.leaf&&!w.ex){const tx=tvaOf(w.o,null), R=tot.rt[tx]||(tot.rt[tx]={est:0,e:Object.fromEntries(E.map(e=>[e.id,0]))});R.est+=w.est;E.forEach((e,j)=>{if(w.a[j]!=null)R.e[e.id]+=w.a[j];});
+        tot.est+=w.est;tot.estT+=w.estT;n++;E.forEach((e,j)=>{if(w.a[j]!=null){tot.e[e.id].ht+=w.a[j];tot.e[e.id].ttc+=w.a[j]*(1+tvaOf(w.o,null)/100);}});}
       if(!w.leaf){const t=emptyT();for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++){const x=rows[j];if(!x.leaf||x.ex)continue;t.est+=x.est;E.forEach((e,q)=>{if(x.a[q]!=null)t.e[e.id].ht+=x.a[q];});}w.sub=t;}
     });
     M.lots.push({l,li,rows,tot,n});
@@ -2240,8 +2276,9 @@ function anaModel(){
   return M;
 }
 function anaSums(M,pred){
-  const r={est:0,estT:0}; M.E.forEach(e=>{r[e.id]=0;r[e.id+"T"]=0;});
-  M.lots.filter(x=>pred(x.l)).forEach(x=>{r.est+=x.tot.est;r.estT+=x.tot.estT;M.E.forEach(e=>{r[e.id]+=x.tot.e[e.id].ht;r[e.id+"T"]+=x.tot.e[e.id].ttc;});});
+  const r={est:0,estT:0,rt:{}}; M.E.forEach(e=>{r[e.id]=0;r[e.id+"T"]=0;});
+  M.lots.filter(x=>pred(x.l)).forEach(x=>{Object.entries(x.tot.rt||{}).forEach(([tx,R])=>{const q=r.rt[tx]||(r.rt[tx]={est:0,e:Object.fromEntries(M.E.map(e=>[e.id,0]))});q.est+=R.est;M.E.forEach(e=>{q.e[e.id]+=R.e[e.id];});});
+    r.est+=x.tot.est;r.estT+=x.tot.estT;M.E.forEach(e=>{r[e.id]+=x.tot.e[e.id].ht;r[e.id+"T"]+=x.tot.e[e.id].ttc;});});
   return r;
 }
 function anaBlockEnd(rows,i){let e=i+1;while(e<rows.length&&rows[e].d>rows[i].d)e++;return e;}
@@ -2259,12 +2296,14 @@ function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
   if(!offers().length){bar.innerHTML="";leg.innerHTML="";tbl.innerHTML=`<tbody><tr><td class="hint" style="padding:18px;background:transparent;white-space:normal">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr></tbody>`;return;}
-  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id));
+  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id)); const col=A.colors!==false;
   const sc=document.querySelector("#v-analyse .scroll"), st=sc?[sc.scrollTop,sc.scrollLeft]:[0,0];
   bar.innerHTML=`<div class="seg" role="group" aria-label="Affichage"><button data-anamode="detail" aria-pressed="${det}">Détail du BPU</button><button data-anamode="lot" aria-pressed="${!det}">Par lot et chapitre</button></div>
     <span class="sep"></span>
     <label title="Un prix unitaire est signalé quand il s'écarte d'au moins ce pourcentage de la référence">Écart signalé à partir de <input type="number" id="anaSeuil" min="1" max="500" step="1" value="${A.seuil}"> %</label>
     <label>par rapport à <select id="anaRef"><option value="med" ${A.ref!=="moe"?"selected":""}>la médiane des offres</option><option value="moe" ${A.ref==="moe"?"selected":""}>l'estimation de la MOE</option></select></label>
+    <button class="btn sm primary" id="anaValid" title="Applique le seuil et la référence choisis et affiche les couleurs d'écart">Valider l'affichage</button>
+    <label><input type="checkbox" id="anaCol" ${col?"checked":""}> Couleurs d'écart</label>
     <label><input type="checkbox" id="anaOnly" ${A.only?"checked":""}> Seulement les lignes avec écart (${M.nflag})</label>
     <span class="sep"></span>
     <details class="ana-cols"><summary>Colonnes affichées${A.hide.length||A.hideMoe?` (${Ev.length+(A.hideMoe?0:1)}/${E.length+1})`:""}</summary><div>
@@ -2275,7 +2314,7 @@ function renderAnalyse(){
     <button class="btn sm" id="anaNewLot">Nouveau lot</button><button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
   const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
     <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
-  const ec=(v,est)=>est?`<span class="dev">${(v/est-1)>=0?"+":""}${fmt((v/est-1)*100,1)} %</span>`:"";
+  const ec=()=>"";
   let body="";
   if(det){
     M.lots.forEach(({l,li,rows,tot})=>{
@@ -2296,9 +2335,9 @@ function renderAnalyse(){
         if(w.leaf){
           body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
-            const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
-            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${!w.ex&&w.best!=null&&p===w.best?" best":""}`;
-            body+=`<td class="n e1 ${c}">${m?"–":eur2(p)}${fl?`<span class="dev">${d>0?"+":""}${fmt(d,0)} %</span>`:""}</td><td class="n ${m?"miss":""}">${m?"–":eur2(w.a[j])}</td>`;});
+            const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=col&&!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
+            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`;
+            body+=`<td class="n e1 ${c}">${m?"–":eur2(p)}</td><td class="n ${m?"miss":""}">${m?"–":eur2(w.a[j])}</td>`;});
         }else{
           const t=w.sub;
           body+=`<td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(t.e[e.id].ht)}</td>`).join("")}`;
@@ -2316,11 +2355,14 @@ function renderAnalyse(){
   }
   const T=anaSums(M,()=>true), C=anaSums(M,l=>l.charge==="Commune"), V=anaSums(M,l=>l.charge!=="Commune");
   const frow=(lab,o,key,cls="tot")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(o[key==="T"?"estT":"est"])}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(o[e.id+(key==="T"?"T":"")])}${key==="T"?"":ec(o[e.id],o.est)}</td>`).join("")}</tr>`;
-  const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${frow("Total TTC",T,"T","")}
+  const rates=Object.keys(T.rt).map(Number).sort((a,b)=>b-a);
+  const trow=(lab,get,cls="")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(get(e))}</td>`).join("")}</tr>`;
+  const tvaRows=rates.map(tx=>{const R=T.rt[tx];return (rates.length>1?trow(`Base HT soumise à ${pct(tx)}`,e=>e?R.e[e.id]:R.est):"")+trow(`TVA à ${pct(tx)}`,e=>(e?R.e[e.id]:R.est)*tx/100);}).join("");
+  const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${tvaRows}${frow("Total TTC",T,"T","tot")}
     <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
     <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
   tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${body}</tbody>`+foot;
-  leg.innerHTML=det?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span><span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
+  leg.innerHTML=det?`${col?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span>`:""}<span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
     :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
   const sc2=document.querySelector("#v-analyse .scroll"); if(sc2){sc2.scrollTop=st[0];sc2.scrollLeft=st[1];}
 }
@@ -2342,6 +2384,7 @@ function renderAnalyse(){
   V.addEventListener("click",async e=>{
     const t=e.target, A=state.ana; if(!A) return;
     const md=t.closest("[data-anamode]"); if(md){A.mode=md.dataset.anamode;redo();return;}
+    if(t.id==="anaValid"){A.seuil=Math.max(1,parseFloat($("#anaSeuil").value)||25);A.ref=$("#anaRef").value;A.colors=true;redo();toast(`Écarts à partir de ${A.seuil} % affichés`);return;}
     if(t.id==="anaNewLot"){const r=await openDlg({title:"Nouveau lot",msg:"Lot vide de l'analyse : déplacez-y ensuite des lignes ou des chapitres.",txt:{label:"Nom du lot",value:""},ch:true,ok:"Créer"});if(r){newLot(r.txt,r.ch);redo();toast("Lot créé");}return;}
     if(t.id==="anaReset"){if(await ask("Revenir à la structure du CCTP ? Les postes écartés, l'ordre et les lots recomposés de l'analyse seront perdus (les offres des entreprises sont conservées).","Réinitialiser",true)){delete state.ana;redo();toast("Structure d'analyse réinitialisée");}return;}
     let b;
@@ -2363,10 +2406,10 @@ function renderAnalyse(){
     if(t.dataset.lotch!==undefined){A.lots[+t.dataset.lotch].charge=t.value;redo();return;}
     if(t.dataset.acol){A.hide=A.hide||[];const k=t.dataset.acol;if(k==="moe")A.hideMoe=!t.checked;else{A.hide=A.hide.filter(x=>x!==k);if(!t.checked)A.hide.push(k);}
       const d=document.querySelector(".ana-cols"),op=d&&d.open;save();renderAnalyse();const d2=document.querySelector(".ana-cols");if(d2&&op)d2.open=true;return;}
-    if(t.id==="anaSeuil"){A.seuil=Math.max(1,parseFloat(t.value)||25);redo();return;}
-    if(t.id==="anaRef"){A.ref=t.value;redo();return;}
+    if(t.id==="anaCol"){A.colors=t.checked;redo();return;}
     if(t.id==="anaOnly"){A.only=t.checked;redo();return;}
   });
+  V.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="anaSeuil"){e.preventDefault();$("#anaValid").click();}});
   V.addEventListener("dragstart",e=>{const g=e.target.closest("[data-agrip]");if(!g){return;}drag=idx(g.dataset.agrip);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ana");g.closest("tr").classList.add("dragx");});
   V.addEventListener("dragend",()=>{drag=null;V.querySelectorAll(".dragx,.dropb,.dropa").forEach(x=>x.classList.remove("dragx","dropb","dropa"));});
   V.addEventListener("dragover",e=>{if(!drag)return;const tr=e.target.closest("tr[data-arow]");if(!tr)return;e.preventDefault();V.querySelectorAll(".dropb,.dropa").forEach(x=>x.classList.remove("dropb","dropa"));

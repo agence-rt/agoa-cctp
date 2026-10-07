@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°10** — v0.10.0 — 2026-10-07 — Analyse : écarts en couleur sans pourcentage + bouton Valider, TVA dans les totaux. Rédaction : triangles agrandis, puces, photos sous les sous-titres de niveau 2, localisation sans exemple
 - **n°9** — v0.9.0 — 2026-10-07 — Analyse : colonnes MOE et entreprises masquables, prix en €. Consultation : offre reçue en vert. Écran AGOA maintenu pendant l'installation d'une mise à jour
 - **n°8** — v0.8.0 — 2026-10-07 — Écran de démarrage : recherche et installation des mises à jour avant l'ouverture ; connexion Google (agence@remithollet.fr) comme AGOA PV
 - **n°7** — v0.7.0 — 2026-10-07 — Correction analyse des offres : affichage de toutes les lignes du BPU, y compris sous-chapitres imbriqués

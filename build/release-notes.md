@@ -1,1 +1,1 @@
-Déploiement n°9 — Analyse : colonnes MOE et entreprises masquables, prix en €. Consultation : offre reçue en vert. Écran AGOA maintenu pendant l'installation d'une mise à jour
+Déploiement n°10 — Analyse : écarts en couleur sans pourcentage + bouton Valider, TVA dans les totaux. Rédaction : triangles agrandis, puces, photos sous les sous-titres de niveau 2, localisation sans exemple
