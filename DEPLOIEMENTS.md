@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°9** — v0.9.0 — 2026-10-07 — Analyse : colonnes MOE et entreprises masquables, prix en €. Consultation : offre reçue en vert. Écran AGOA maintenu pendant l'installation d'une mise à jour
 - **n°8** — v0.8.0 — 2026-10-07 — Écran de démarrage : recherche et installation des mises à jour avant l'ouverture ; connexion Google (agence@remithollet.fr) comme AGOA PV
 - **n°7** — v0.7.0 — 2026-10-07 — Correction analyse des offres : affichage de toutes les lignes du BPU, y compris sous-chapitres imbriqués
 - **n°6** — v0.6.0 — 2026-10-07 — Correction liaison Ragic : recherche opérations et entreprises fonctionnelle dans l'application Windows, messages d'erreur explicites

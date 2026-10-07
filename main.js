@@ -212,8 +212,15 @@ function initUpdater() {
     });
     updater.on("update-downloaded", () => {
       updateState = "ready";
-      const install = () => { allowClose = true; setTimeout(() => updater.quitAndInstall(true, true), 900); }; // installation silencieuse puis relance
-      if (phase === "splash") { splashStatus(`Installation de la version ${pendingVersion}… AGOA CCTP va redémarrer`, 100); install(); return; }
+      const msg = `Installation de la version ${pendingVersion}… AGOA CCTP va redémarrer`;
+      // L'écran AGOA reste affiché jusqu'à la fermeture de l'application pour l'installation (silencieuse), puis relance.
+      const install = () => {
+        allowClose = true;
+        if (win && !win.isDestroyed()) win.hide();
+        if (!splash) { showSplash(); splashLoaded.then(() => splashStatus(msg, 100)); }
+        setTimeout(() => updater.quitAndInstall(true, true), 2500);
+      };
+      if (phase === "splash") { splashStatus(msg, 100); install(); return; }
       if (win) win.setProgressBar(-1);
       js("window.__agoaSaveQuiet ? window.__agoaSaveQuiet() : null").catch(() => {})
         .then(() => js("typeof Store !== 'undefined' && Store.flush && Store.flush()")).catch(() => {}).finally(install);

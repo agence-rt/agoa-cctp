@@ -1,1 +1,1 @@
-Déploiement n°8 — Écran de démarrage : recherche et installation des mises à jour avant l'ouverture ; connexion Google (agence@remithollet.fr) comme AGOA PV
+Déploiement n°9 — Analyse : colonnes MOE et entreprises masquables, prix en €. Consultation : offre reçue en vert. Écran AGOA maintenu pendant l'installation d'une mise à jour

@@ -489,6 +489,13 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 #cmpTable tr.dropa td{box-shadow:inset 0 -3px 0 var(--accent)}
 #cmpTable tr.dragx{opacity:.4}
 #cmpTable select.lotch{font-size:11.5px;padding:1px 2px}
+.ana-cols{position:relative;font-size:13px}
+.ana-cols summary{cursor:pointer;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);list-style:none;user-select:none}
+.ana-cols[open] summary{border-color:var(--accent)}
+.ana-cols>div{position:absolute;z-index:20;top:34px;left:0;min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,.14);display:flex;flex-direction:column;gap:6px}
+#cmpTable.nomoe .mo{display:none}
+.ent-sub.offer-ok{color:#2e7d32;font-weight:600}
+select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:600}
 </style>
 </head>
 <body>
@@ -734,7 +741,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.8.0", deploiement: 8};
+const APP = {version: "0.9.0", deploiement: 9};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1855,7 +1862,7 @@ function renderConsult(){
   {const e0=E[0]||{nom:"Entreprise"};$("#dbxEx1").textContent=dbxFile(e0,"BPU")+".xlsx";$("#dbxEx2").textContent=dbxFile(e0,"DEVIS")+".pdf";}
   $("#entTable").innerHTML=E.length?`<tr><th>Entreprise</th><th>État</th><th></th></tr>`+E.map((e,i)=>`<tr>
     <td><b>${esc(e.nom)}</b>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><span class="dbx-lk"><input type="url" class="dbx-link" data-entlink="${i}" value="${esc(e.depot||"")}" placeholder="Lien de dépôt Dropbox (https://www.dropbox.com/request/…)" aria-label="Lien de dépôt de ${esc(e.nom)}" autocomplete="off"><button class="btn sm" data-entcopy="${i}" ${depotUrl(e)?"":"disabled"}>Copier</button></span><span class="ent-act"><button class="lnk" data-entportal="${i}">Page de saisie</button><button class="lnk" data-entexp="${i}">Exporter le BPU</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
-    <td><select data-entst="${i}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${hasOffer(e)?`<span class="hint ent-sub">${esc(offerInfo(e))}</span>`:""}</td>
+    <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${hasOffer(e)?`<span class="hint ent-sub offer-ok">✓ ${esc(offerInfo(e))}</span>`:""}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
   let h=`<tr><th>N°</th><th>Désignation</th><th class="n">Qté</th><th>U</th><th class="n">TVA</th><th class="n">Qté ent.</th><th class="n">PU HT</th><th class="n">Montant HT</th></tr>`;
@@ -1872,7 +1879,7 @@ function renderConsult(){
 
 $("#qtyWarn").addEventListener("click",e=>{if(e.target.id==="qwGo")openQtyCheck();});
 $("#entAddBtn").onclick=()=>{const p=$("#entAdd");p.hidden=!p.hidden;if(!p.hidden)$("#entQ").focus();};
-$("#entTable").addEventListener("input",e=>{const s=e.target.closest("[data-entst]");if(s){ents()[+s.dataset.entst].statut=s.value;save();}});
+$("#entTable").addEventListener("input",e=>{const s=e.target.closest("[data-entst]");if(s){const en=ents()[+s.dataset.entst];en.statut=s.value;save();s.classList.toggle("st-ok",hasOffer(en)||en.statut==="Offre reçue");}});
 $("#entTable").addEventListener("click",async e=>{const b=e.target.closest("[data-delent]");if(!b)return;const en=ents()[+b.dataset.delent];
   if(await ask(`Retirer <b>${esc(en.nom)}</b> de la liste des entreprises consultées ?${hasOffer(en)?"<br><span class=\"hint\">Son offre ne sera plus prise en compte dans l'analyse.</span>":""}`,"Retirer",true)){
     state.ents=ents().filter(x=>x!==en);if(state.retenue===en.id)state.retenue=null;save();renderConsult();toast(`${en.nom} retirée de la consultation`);}});
@@ -2252,7 +2259,7 @@ function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
   if(!offers().length){bar.innerHTML="";leg.innerHTML="";tbl.innerHTML=`<tbody><tr><td class="hint" style="padding:18px;background:transparent;white-space:normal">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr></tbody>`;return;}
-  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot";
+  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id));
   const sc=document.querySelector("#v-analyse .scroll"), st=sc?[sc.scrollTop,sc.scrollLeft]:[0,0];
   bar.innerHTML=`<div class="seg" role="group" aria-label="Affichage"><button data-anamode="detail" aria-pressed="${det}">Détail du BPU</button><button data-anamode="lot" aria-pressed="${!det}">Par lot et chapitre</button></div>
     <span class="sep"></span>
@@ -2260,9 +2267,14 @@ function renderAnalyse(){
     <label>par rapport à <select id="anaRef"><option value="med" ${A.ref!=="moe"?"selected":""}>la médiane des offres</option><option value="moe" ${A.ref==="moe"?"selected":""}>l'estimation de la MOE</option></select></label>
     <label><input type="checkbox" id="anaOnly" ${A.only?"checked":""}> Seulement les lignes avec écart (${M.nflag})</label>
     <span class="sep"></span>
+    <details class="ana-cols"><summary>Colonnes affichées${A.hide.length||A.hideMoe?` (${Ev.length+(A.hideMoe?0:1)}/${E.length+1})`:""}</summary><div>
+      <label><input type="checkbox" data-acol="moe" ${A.hideMoe?"":"checked"}> Estimation MOE</label>
+      ${E.map(e=>`<label><input type="checkbox" data-acol="${esc(e.id)}" ${A.hide.includes(e.id)?"":"checked"}> ${esc(e.nom)}${state.retenue===e.id?" (retenue)":""}</label>`).join("")}
+    </div></details>
+    <span class="sep"></span>
     <button class="btn sm" id="anaNewLot">Nouveau lot</button><button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
-  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent" colspan="2">Estimation MOE</th>${E.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
-    <tr><th class="n">PU HT</th><th class="n">Montant HT</th>${E.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
+  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
+    <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
   const ec=(v,est)=>est?`<span class="dev">${(v/est-1)>=0?"+":""}${fmt((v/est-1)*100,1)} %</span>`:"";
   let body="";
   if(det){
@@ -2270,7 +2282,7 @@ function renderAnalyse(){
       body+=`<tr class="lot"><td class="c1"><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
         <td class="c2"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span> <select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select>
           ${l.rows.length?"":`<button class="x" data-lotdel="${li}" title="Supprimer le lot vide" aria-label="Supprimer le lot vide">×</button>`}</td>
-        <td></td><td></td><td class="n e1"></td><td class="n">${fmt(tot.est,2)}</td>${E.map(e=>`<td class="n e1"></td><td class="n">${fmt(tot.e[e.id].ht,2)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
+        <td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
       let hide=null;
       rows.forEach((w,i)=>{
         if(A.only){ // lignes avec écart, et leurs titres
@@ -2282,32 +2294,32 @@ function renderAnalyse(){
         const mv=`<span class="ana-ctl"><button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button><button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
         body+=`<tr class="${cls}" data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}</td>`;
         if(w.leaf){
-          body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1">${fmt(w.o.pu,2)}</td><td class="n">${fmt(w.est,2)}</td>`;
-          E.forEach((e,j)=>{
+          body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
+          E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
             const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
             const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${!w.ex&&w.best!=null&&p===w.best?" best":""}`;
-            body+=`<td class="n e1 ${c}">${m?"–":fmt(p,2)}${fl?`<span class="dev">${d>0?"+":""}${fmt(d,0)} %</span>`:""}</td><td class="n ${m?"miss":""}">${m?"–":fmt(w.a[j],2)}</td>`;});
+            body+=`<td class="n e1 ${c}">${m?"–":eur2(p)}${fl?`<span class="dev">${d>0?"+":""}${fmt(d,0)} %</span>`:""}</td><td class="n ${m?"miss":""}">${m?"–":eur2(w.a[j])}</td>`;});
         }else{
           const t=w.sub;
-          body+=`<td></td><td></td><td class="n e1"></td><td class="n">${fmt(t.est,2)}</td>${E.map(e=>`<td class="n e1"></td><td class="n">${fmt(t.e[e.id].ht,2)}</td>`).join("")}`;
+          body+=`<td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(t.e[e.id].ht)}</td>`).join("")}`;
         }
         body+=`</tr>`;
       });
     });
   }else{
     M.lots.forEach(({l,li,rows,tot})=>{
-      const cell=(v,est)=>`<td class="n e1"></td><td class="n">${fmt(v,2)}${ec(v,est)}</td>`;
-      body+=`<tr class="lot"><td class="c1">Lot ${pad(li+1)}</td><td class="c2">${esc(l.titre)} <span class="hint">(${esc((l.charge||"Commune").toLowerCase())})</span></td><td></td><td></td><td class="n e1"></td><td class="n">${fmt(tot.est,2)}</td>${E.map(e=>cell(tot.e[e.id].ht,tot.est)).join("")}</tr>`;
+      const cell=(v,est)=>`<td class="n e1"></td><td class="n">${eur2(v)}${ec(v,est)}</td>`;
+      body+=`<tr class="lot"><td class="c1">Lot ${pad(li+1)}</td><td class="c2">${esc(l.titre)} <span class="hint">(${esc((l.charge||"Commune").toLowerCase())})</span></td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>cell(tot.e[e.id].ht,tot.est)).join("")}</tr>`;
       rows.forEach(w=>{if(w.k!=="ch"||w.ex)return;const t=w.sub;
-        body+=`<tr class="ch"><td class="c1">${esc(w.o.code||"")}</td><td class="c2">${esc(w.o.titre)}</td><td></td><td></td><td class="n e1"></td><td class="n">${fmt(t.est,2)}</td>${E.map(e=>cell(t.e[e.id].ht,t.est)).join("")}</tr>`;});
+        body+=`<tr class="ch"><td class="c1">${esc(w.o.code||"")}</td><td class="c2">${esc(w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>cell(t.e[e.id].ht,t.est)).join("")}</tr>`;});
     });
   }
   const T=anaSums(M,()=>true), C=anaSums(M,l=>l.charge==="Commune"), V=anaSums(M,l=>l.charge!=="Commune");
-  const frow=(lab,o,key,cls="tot")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1"></td><td class="n">${fmt(o[key==="T"?"estT":"est"],2)}</td>${E.map(e=>`<td class="n e1"></td><td class="n">${fmt(o[e.id+(key==="T"?"T":"")],2)}${key==="T"?"":ec(o[e.id],o.est)}</td>`).join("")}</tr>`;
+  const frow=(lab,o,key,cls="tot")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(o[key==="T"?"estT":"est"])}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(o[e.id+(key==="T"?"T":"")])}${key==="T"?"":ec(o[e.id],o.est)}</td>`).join("")}</tr>`;
   const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${frow("Total TTC",T,"T","")}
-    <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1"></td><td></td>${E.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
-    <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1"></td><td></td>${E.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
-  tbl.innerHTML=th+`<tbody>${body}</tbody>`+foot;
+    <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
+    <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
+  tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${body}</tbody>`+foot;
   leg.innerHTML=det?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span><span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
     :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
   const sc2=document.querySelector("#v-analyse .scroll"); if(sc2){sc2.scrollTop=st[0];sc2.scrollLeft=st[1];}
@@ -2349,6 +2361,8 @@ function renderAnalyse(){
     const t=e.target, A=state.ana; if(!A) return;
     if(t.dataset.ainc){const [li,ri]=idx(t.dataset.ainc),r=A.lots[li].rows[ri];if(t.checked)delete r.x;else r.x=true;redo();return;}
     if(t.dataset.lotch!==undefined){A.lots[+t.dataset.lotch].charge=t.value;redo();return;}
+    if(t.dataset.acol){A.hide=A.hide||[];const k=t.dataset.acol;if(k==="moe")A.hideMoe=!t.checked;else{A.hide=A.hide.filter(x=>x!==k);if(!t.checked)A.hide.push(k);}
+      const d=document.querySelector(".ana-cols"),op=d&&d.open;save();renderAnalyse();const d2=document.querySelector(".ana-cols");if(d2&&op)d2.open=true;return;}
     if(t.id==="anaSeuil"){A.seuil=Math.max(1,parseFloat(t.value)||25);redo();return;}
     if(t.id==="anaRef"){A.ref=t.value;redo();return;}
     if(t.id==="anaOnly"){A.only=t.checked;redo();return;}
