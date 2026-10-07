@@ -734,7 +734,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.5.0", deploiement: 5};
+const APP = {version: "0.6.0", deploiement: 6};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1780,7 +1780,7 @@ $("#optBody").addEventListener("keydown",e=>{if(e.target.id==="rgQ"&&e.key==="En
 
 /* Liaison Ragic (connecteur claude.ai) */
 let mcpP=null, rgRows=[];
-const getMcp=()=>mcpP||(mcpP=(window.claude&&window.claude.use)?window.claude.use("mcp"):Promise.resolve(null));
+const getMcp=()=>AG?Promise.resolve({native:true}):mcpP||(mcpP=(window.claude&&window.claude.use)?window.claude.use("mcp"):Promise.resolve(null));
 function rgMsg(html,err){$("#rgOut").innerHTML=`<p class="rg-msg${err?" err":""}">${html}</p>`;}
 function rgErr(e){
   const c=e&&e.code, m={
@@ -1794,6 +1794,9 @@ function rgErr(e){
     server_unavailable:"Ragic ne répond pas pour le moment. Relancez la recherche dans quelques secondes.",
     not_granted:"La liaison Ragic n'est pas disponible dans cette vue.",
     capability_disabled:"La liaison Ragic n'est pas disponible dans cette vue."};
+  if(AG){const n={not_granted:"Clé API Ragic manquante : menu Aide, « Clé API Ragic… », puis collez votre clé (Ragic, Personal Settings, API Key).",
+      auth:"Ragic a refusé la clé API. Vérifiez-la dans Aide, « Clé API Ragic… ».",
+      network:"Impossible de joindre Ragic (réseau ou serveur). Détail : "+esc(e&&e.message||"")};if(n[c])return n[c];}
   return m[c]||`La requête Ragic a échoué (${esc(c||"erreur inconnue")}).`;
 }
 async function rgCall(tool,input){

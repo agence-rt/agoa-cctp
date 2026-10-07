@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°6** — v0.6.0 — 2026-10-07 — Correction liaison Ragic : recherche opérations et entreprises fonctionnelle dans l'application Windows, messages d'erreur explicites
 - **n°5** — v0.5.0 — 2026-10-07 — Tableau comparatif global modifiable des offres : lots recomposables, postes écartés, écarts de prix signalés
 - **n°4** — v0.4.0 — 2026-10-06 — Écran de démarrage AGOA (logo provisoire), champs numériques sans flèches
 - **n°3** — v0.3.0 — 2026-10-06 — Mise à jour automatique au lancement (sans question) et toutes les 4 h
