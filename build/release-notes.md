@@ -1,1 +1,1 @@
-Déploiement n°4 — Écran de démarrage AGOA (logo provisoire), champs numériques sans flèches
+Déploiement n°5 — Tableau comparatif global modifiable des offres : lots recomposables, postes écartés, écarts de prix signalés

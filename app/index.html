@@ -453,6 +453,42 @@ dialog h3{margin:0 0 12px;font-size:17px}
 .lib-stat.bad{color:var(--ochre,#b36a00)}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+.ana-bar{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;padding:10px 18px}
+.ana-bar label{font-size:13px;display:flex;gap:6px;align-items:center}
+.ana-bar input[type=number]{width:64px;text-align:right}
+.ana-bar .sep{width:1px;height:22px;background:var(--line)}
+#v-analyse .scroll{max-height:calc(100vh - 300px);margin:0 18px;border:1px solid var(--line);border-radius:6px}
+#cmpTable{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
+#cmpTable th,#cmpTable td{padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+#cmpTable thead th{position:sticky;top:0;z-index:4;background:var(--paper);font-size:12px}
+#cmpTable thead tr:nth-child(2) th{top:31px}
+#cmpTable th.ent{border-left:1px solid var(--line);text-align:center}
+#cmpTable td.e1{border-left:1px solid var(--line)}
+#cmpTable td.c1,#cmpTable th.c1{position:sticky;left:0;z-index:3;min-width:104px}
+#cmpTable td.c2,#cmpTable th.c2{position:sticky;left:104px;z-index:3;min-width:290px;max-width:360px;white-space:normal}
+#cmpTable thead th.c1,#cmpTable thead th.c2{z-index:6}
+#cmpTable tr.lot td{background:var(--accent-soft);font-weight:700}
+#cmpTable tr.ch td{background:var(--paper);font-weight:650}
+#cmpTable tr.par td{font-weight:600}
+#cmpTable tr.xc td{color:var(--muted);text-decoration:line-through}
+#cmpTable tr.xc td.c1{text-decoration:none}
+#cmpTable td.n{text-align:right;font-variant-numeric:tabular-nums}
+#cmpTable td.up{background:var(--ochre-soft);color:var(--ochre);font-weight:650}
+#cmpTable td.dn{background:#E6EEF8;color:#1d4f8c;font-weight:650}
+#cmpTable td.miss{color:var(--ochre)}
+#cmpTable td.best{box-shadow:inset 3px 0 0 #2e8b6e}
+#cmpTable .dev{display:block;font-size:10.5px;font-weight:600}
+#cmpTable tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+#cmpTable tr.hov:hover td{background:var(--accent-soft)}
+.ana-ctl{display:inline-flex;gap:2px;margin-right:4px;vertical-align:middle}
+.ana-ctl button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:0 3px;font-size:12px;line-height:1.4;border-radius:3px;opacity:.35}
+tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
+.ana-ctl button:hover{background:var(--line);color:var(--ink,#222)}
+.ana-grip{cursor:grab;color:var(--muted);margin-right:4px;user-select:none}
+#cmpTable tr.dropb td{box-shadow:inset 0 3px 0 var(--accent)}
+#cmpTable tr.dropa td{box-shadow:inset 0 -3px 0 var(--accent)}
+#cmpTable tr.dragx{opacity:.4}
+#cmpTable select.lotch{font-size:11.5px;padding:1px 2px}
 </style>
 </head>
 <body>
@@ -534,11 +570,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   <section class="view analyse" id="v-analyse" hidden>
     <div class="pane">
       <div class="pane-h">
-        <div><h2>Tableau comparatif des offres</h2><p>Montants HT par chapitre, écart par rapport au chiffrage de la maîtrise d'œuvre</p></div>
+        <div><h2>Tableau comparatif des offres</h2><p>Toutes les lignes du BPU, prix unitaires et montants HT de chaque entreprise. Le tableau se modifie sans toucher au CCTP : postes écartés, ordre, lots recomposés.</p></div>
         <button class="btn" id="impBtn">Importer un BPU complété</button>
       </div>
+      <div class="ana-bar" id="anaBar"></div>
       <div class="scroll"><table id="cmpTable"></table></div>
-      <div class="legend"><span><i></i>Offre la moins-disante du chapitre</span><span>Écarts supérieurs à +15 % signalés en ocre</span></div>
+      <div class="legend" id="anaLegend"></div>
     </div>
   </section>
 
@@ -552,6 +589,17 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <h3>Confirmer</h3>
     <p id="dlgMsg"></p>
     <div class="dlg-act"><button class="btn" value="cancel">Annuler</button><button value="ok" id="dlgOk" class="btn primary">OK</button></div>
+  </form>
+</dialog>
+
+<dialog id="anaDlg" aria-labelledby="anaDlgT">
+  <form method="dialog">
+    <h3 id="anaDlgT">Lot</h3>
+    <p id="anaDlgMsg" class="hint"></p>
+    <div class="field" id="anaFLot"><label for="anaLot">Déplacer vers le lot</label><select id="anaLot"></select></div>
+    <div class="field" id="anaFTxt"><label for="anaTxt" id="anaTxtL">Nom du lot</label><input type="text" id="anaTxt" autocomplete="off"></div>
+    <div class="field" id="anaFCh"><label for="anaCh">Charge</label><select id="anaCh"><option>Commune</option><option>Privative</option></select></div>
+    <div class="dlg-act"><button class="btn" value="cancel">Annuler</button><button value="ok" class="btn primary" id="anaOk">OK</button></div>
   </form>
 </dialog>
 
@@ -686,7 +734,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.4.0", deploiement: 4};
+const APP = {version: "0.5.0", deploiement: 5};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2109,25 +2157,216 @@ $("#libDetail").addEventListener("input",e=>{
 $("#libDetail").addEventListener("focusout",e=>{if(e.target.dataset.lk==="pu"){const f=libFind(libSel);if(f)e.target.value=money(f.it.pu);}});
 
 /* ---------- Analyse ---------- */
-function renderAnalyse(){
-  const ents=offers(), lines=[];
-  if(!ents.length){$("#cmpTable").innerHTML=`<tr><td class="hint" style="padding:18px">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr>`;return;}
+/* Structure d'analyse : calque indépendant du CCTP. Les offres sont rattachées aux articles par leur identifiant :
+   elles suivent donc les lignes écartées, réordonnées ou déplacées dans un autre lot. */
+function anaLive(){
+  const rows=[], info=new Map(), lots=[];
   state.data.forEach(lot=>{
-    if(lot.children.length>1) lot.children.forEach(ch=>lines.push({label:`${ch.code} ${ch.titre}`,f:(ar,l,c)=>c===ch}));
-    else lines.push({label:`Lot ${lot.code} ${lot.titre} (${lot.charge.toLowerCase()})`,f:(ar,l)=>l===lot});
+    const L={id:lot.nid,titre:lot.titre,charge:lot.charge||"Commune"}; lots.push(L);
+    const push=r=>{r.lotId=lot.nid;rows.push(r);info.set(r.id,r);};
+    const walk=(list,d)=>list.forEach(ar=>{push({id:ar.id,k:(ar.sub.length||isTitle(ar))?"par":"art",d,obj:ar,lot});walk(ar.sub,d+1);});
+    lot.children.forEach(ch=>{push({id:ch.nid,k:"ch",d:0,obj:ch,lot});walk(ch.art||[],1);});
   });
-  const cell=(v,est,best)=>{const ec=est?(v/est-1)*100:0;return `<td class="n ${best?"best":""}"><span class="val">${eur(v)}</span><span class="ec ${ec>15?"up":""}">${ec>=0?"+":""}${fmt(ec,1)} %</span></td>`;};
-  const row=(label,s,cls="")=>{const min=Math.min(...ents.map(e=>s[e.id]));return `<tr class="${cls}"><td>${esc(label)}</td><td class="n">${eur(s.est)}</td>${ents.map(e=>cell(s[e.id],s.est,s[e.id]===min)).join("")}</tr>`;};
-  $("#cmpTable").innerHTML=`<tr><th>Chapitre</th><th class="n">Chiffrage MOE</th>${ents.map(e=>{const m=missingFor(e);return `<th class="n">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>`+
-    lines.map(l=>row(l.label,sums(l.f))).join("")+row("Total HT",sums(()=>true),"st");
+  return {rows,info,lots};
 }
+function anaSync(){
+  const live=anaLive();
+  if(!state.ana){
+    state.ana={seuil:25,ref:"med",only:false,mode:"detail",lots:live.lots.map(L=>({id:L.id,titre:L.titre,charge:L.charge,rows:[]}))};
+    live.rows.forEach(r=>state.ana.lots.find(l=>l.id===r.lotId).rows.push({id:r.id,d:r.d}));
+    return live;
+  }
+  const A=state.ana, present=new Set();
+  A.lots.forEach(l=>{l.rows=l.rows.filter(r=>live.info.has(r.id));l.rows.forEach(r=>present.add(r.id));});
+  let prev=null;
+  live.rows.forEach(r=>{
+    if(!present.has(r.id)){
+      let lot=null,idx=0;
+      if(prev){lot=A.lots.find(l=>l.rows.some(x=>x.id===prev));if(lot)idx=lot.rows.findIndex(x=>x.id===prev)+1;}
+      if(!lot){lot=A.lots.find(l=>l.id===r.lotId);
+        if(!lot){const L=live.lots.find(x=>x.id===r.lotId);lot={id:r.lotId,titre:L.titre,charge:L.charge,rows:[]};A.lots.push(lot);}
+        idx=lot.rows.length;}
+      lot.rows.splice(idx,0,{id:r.id,d:r.d}); present.add(r.id);
+    }
+    prev=r.id;
+  });
+  return live;
+}
+const medianOf=a=>{const v=a.slice().sort((x,y)=>x-y),n=v.length;return n?(n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2):null;};
+function anaModel(){
+  const live=anaSync(), A=state.ana, E=offers();
+  const M={A,E,lots:[],flags:Object.fromEntries(E.map(e=>[e.id,0])),miss:Object.fromEntries(E.map(e=>[e.id,0])),nflag:0};
+  const emptyT=()=>({est:0,estT:0,e:Object.fromEntries(E.map(e=>[e.id,{ht:0,ttc:0}]))});
+  A.lots.forEach((l,li)=>{
+    const rows=l.rows.map((r,ri)=>{const o=live.info.get(r.id);return {li,ri,d:r.d,x:!!r.x,ex:false,k:o.k,o:o.obj,leaf:o.k==="art",q:0,est:0,estT:0,p:[],a:[],miss:[],dev:[],flagged:false,sub:null};});
+    let exD=null;
+    rows.forEach(w=>{
+      if(exD!==null&&w.d<=exD) exD=null;
+      if(w.x&&exD===null) exD=w.d;
+      w.ex=exD!==null;
+      if(!w.leaf) return;
+      const ar=w.o, k=1+tvaOf(ar,null)/100; w.q=qty(ar); w.est=w.q*ar.pu; w.estT=w.est*k;
+      E.forEach(e=>{const m=!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0, p=m?null:puEnt(ar,e);
+        w.miss.push(m); w.p.push(p); w.a.push(p==null?null:w.q*p);});
+      if(!w.ex&&w.q>0){
+        const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]);
+        const ref=A.ref==="moe"?(ar.pu>0?ar.pu:null):(vals.length>=2?medianOf(vals):null);
+        w.dev=w.p.map((p,i)=>(ref&&p!=null&&p>0&&!w.miss[i])?(p/ref-1)*100:null);
+        w.dev.forEach((d,i)=>{if(d!=null&&Math.abs(d)>=A.seuil){w.flagged=true;M.flags[E[i].id]++;}});
+        if(w.flagged)M.nflag++;
+        w.miss.forEach((m,i)=>{if(m)M.miss[E[i].id]++;});
+        w.best=vals.length>=2?Math.min(...vals):null;
+      }
+    });
+    // sous-totaux de blocs et totaux du lot
+    const tot=emptyT(); let n=0;
+    rows.forEach((w,i)=>{
+      if(w.leaf&&!w.ex){tot.est+=w.est;tot.estT+=w.estT;n++;E.forEach((e,j)=>{if(w.a[j]!=null){tot.e[e.id].ht+=w.a[j];tot.e[e.id].ttc+=w.a[j]*(1+tvaOf(w.o,null)/100);}});}
+      if(!w.leaf){const t=emptyT();for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++){const x=rows[j];if(!x.leaf||x.ex)continue;t.est+=x.est;E.forEach((e,q)=>{if(x.a[q]!=null)t.e[e.id].ht+=x.a[q];});}w.sub=t;}
+    });
+    M.lots.push({l,li,rows,tot,n});
+  });
+  return M;
+}
+function anaSums(M,pred){
+  const r={est:0,estT:0}; M.E.forEach(e=>{r[e.id]=0;r[e.id+"T"]=0;});
+  M.lots.filter(x=>pred(x.l)).forEach(x=>{r.est+=x.tot.est;r.estT+=x.tot.estT;M.E.forEach(e=>{r[e.id]+=x.tot.e[e.id].ht;r[e.id+"T"]+=x.tot.e[e.id].ttc;});});
+  return r;
+}
+function anaBlockEnd(rows,i){let e=i+1;while(e<rows.length&&rows[e].d>rows[i].d)e++;return e;}
+function anaMove(li,ri,dli,dri){
+  const A=state.ana,S=A.lots[li],D=A.lots[dli],root=S.rows[ri],e=anaBlockEnd(S.rows,ri);
+  if(S===D&&dri>ri&&dri<e) return false;
+  const blk=S.rows.splice(ri,e-ri);
+  if(S===D&&dri>=e) dri-=blk.length;
+  dri=Math.max(0,Math.min(dri,D.rows.length));
+  const tgt=dri<D.rows.length?D.rows[dri].d:(blk[0]&&root.d===0?0:root.d), delta=tgt-root.d;
+  blk.forEach(r=>{r.d=Math.max(0,r.d+delta);});
+  D.rows.splice(dri,0,...blk); return true;
+}
+function renderAnalyse(){
+  if(!state) return;
+  const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
+  if(!offers().length){bar.innerHTML="";leg.innerHTML="";tbl.innerHTML=`<tbody><tr><td class="hint" style="padding:18px;background:transparent;white-space:normal">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr></tbody>`;return;}
+  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot";
+  const sc=document.querySelector("#v-analyse .scroll"), st=sc?[sc.scrollTop,sc.scrollLeft]:[0,0];
+  bar.innerHTML=`<div class="seg" role="group" aria-label="Affichage"><button data-anamode="detail" aria-pressed="${det}">Détail du BPU</button><button data-anamode="lot" aria-pressed="${!det}">Par lot et chapitre</button></div>
+    <span class="sep"></span>
+    <label title="Un prix unitaire est signalé quand il s'écarte d'au moins ce pourcentage de la référence">Écart signalé à partir de <input type="number" id="anaSeuil" min="1" max="500" step="1" value="${A.seuil}"> %</label>
+    <label>par rapport à <select id="anaRef"><option value="med" ${A.ref!=="moe"?"selected":""}>la médiane des offres</option><option value="moe" ${A.ref==="moe"?"selected":""}>l'estimation de la MOE</option></select></label>
+    <label><input type="checkbox" id="anaOnly" ${A.only?"checked":""}> Seulement les lignes avec écart (${M.nflag})</label>
+    <span class="sep"></span>
+    <button class="btn sm" id="anaNewLot">Nouveau lot</button><button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
+  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent" colspan="2">Estimation MOE</th>${E.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
+    <tr><th class="n">PU HT</th><th class="n">Montant HT</th>${E.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
+  const ec=(v,est)=>est?`<span class="dev">${(v/est-1)>=0?"+":""}${fmt((v/est-1)*100,1)} %</span>`:"";
+  let body="";
+  if(det){
+    M.lots.forEach(({l,li,rows,tot})=>{
+      body+=`<tr class="lot"><td class="c1"><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
+        <td class="c2"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span> <select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select>
+          ${l.rows.length?"":`<button class="x" data-lotdel="${li}" title="Supprimer le lot vide" aria-label="Supprimer le lot vide">×</button>`}</td>
+        <td></td><td></td><td class="n e1"></td><td class="n">${fmt(tot.est,2)}</td>${E.map(e=>`<td class="n e1"></td><td class="n">${fmt(tot.e[e.id].ht,2)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
+      let hide=null;
+      rows.forEach((w,i)=>{
+        if(A.only){ // lignes avec écart, et leurs titres
+          if(w.leaf&&!w.flagged) return;
+          if(!w.leaf){let any=false;for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++)if(rows[j].leaf&&rows[j].flagged){any=true;break;}if(!any)return;}
+        }
+        const cls=`${w.k==="ch"?"ch":w.k==="par"?"par":"art"}${w.ex?" xc":""} hov`, ind=`padding-left:${w.d*14}px`;
+        const ctl=`<span class="ana-grip" draggable="true" data-agrip="${li}:${w.ri}" title="Glisser pour déplacer cette ligne${w.leaf?"":" et son contenu"}">⋮⋮</span><input type="checkbox" class="ana-inc" data-ainc="${li}:${w.ri}" ${w.x?"":"checked"} title="${w.x?"Réintégrer ce poste":"Écarter ce poste de l'analyse"}"> `;
+        const mv=`<span class="ana-ctl"><button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button><button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
+        body+=`<tr class="${cls}" data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}</td>`;
+        if(w.leaf){
+          body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1">${fmt(w.o.pu,2)}</td><td class="n">${fmt(w.est,2)}</td>`;
+          E.forEach((e,j)=>{
+            const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
+            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${!w.ex&&w.best!=null&&p===w.best?" best":""}`;
+            body+=`<td class="n e1 ${c}">${m?"–":fmt(p,2)}${fl?`<span class="dev">${d>0?"+":""}${fmt(d,0)} %</span>`:""}</td><td class="n ${m?"miss":""}">${m?"–":fmt(w.a[j],2)}</td>`;});
+        }else{
+          const t=w.sub;
+          body+=`<td></td><td></td><td class="n e1"></td><td class="n">${fmt(t.est,2)}</td>${E.map(e=>`<td class="n e1"></td><td class="n">${fmt(t.e[e.id].ht,2)}</td>`).join("")}`;
+        }
+        body+=`</tr>`;
+      });
+    });
+  }else{
+    M.lots.forEach(({l,li,rows,tot})=>{
+      const cell=(v,est)=>`<td class="n e1"></td><td class="n">${fmt(v,2)}${ec(v,est)}</td>`;
+      body+=`<tr class="lot"><td class="c1">Lot ${pad(li+1)}</td><td class="c2">${esc(l.titre)} <span class="hint">(${esc((l.charge||"Commune").toLowerCase())})</span></td><td></td><td></td><td class="n e1"></td><td class="n">${fmt(tot.est,2)}</td>${E.map(e=>cell(tot.e[e.id].ht,tot.est)).join("")}</tr>`;
+      rows.forEach(w=>{if(w.k!=="ch"||w.ex)return;const t=w.sub;
+        body+=`<tr class="ch"><td class="c1">${esc(w.o.code||"")}</td><td class="c2">${esc(w.o.titre)}</td><td></td><td></td><td class="n e1"></td><td class="n">${fmt(t.est,2)}</td>${E.map(e=>cell(t.e[e.id].ht,t.est)).join("")}</tr>`;});
+    });
+  }
+  const T=anaSums(M,()=>true), C=anaSums(M,l=>l.charge==="Commune"), V=anaSums(M,l=>l.charge!=="Commune");
+  const frow=(lab,o,key,cls="tot")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1"></td><td class="n">${fmt(o[key==="T"?"estT":"est"],2)}</td>${E.map(e=>`<td class="n e1"></td><td class="n">${fmt(o[e.id+(key==="T"?"T":"")],2)}${key==="T"?"":ec(o[e.id],o.est)}</td>`).join("")}</tr>`;
+  const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${frow("Total TTC",T,"T","")}
+    <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1"></td><td></td>${E.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
+    <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1"></td><td></td>${E.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
+  tbl.innerHTML=th+`<tbody>${body}</tbody>`+foot;
+  leg.innerHTML=det?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span><span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
+    :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
+  const sc2=document.querySelector("#v-analyse .scroll"); if(sc2){sc2.scrollTop=st[0];sc2.scrollLeft=st[1];}
+}
+(function anaEvents(){
+  const V=document.getElementById("v-analyse"); let drag=null;
+  const idx=v=>v.split(":").map(Number);
+  const redo=()=>{save();renderAnalyse();};
+  const dlg=$("#anaDlg");
+  function openDlg(o){ // {title,msg,lot:bool,txt:null|{label,value},ch:bool,ok}
+    $("#anaDlgT").textContent=o.title; $("#anaDlgMsg").textContent=o.msg||"";
+    $("#anaFLot").hidden=!o.lot; $("#anaFTxt").hidden=!o.txt; $("#anaFCh").hidden=!o.ch;
+    if(o.lot){$("#anaLot").innerHTML=state.ana.lots.map((l,i)=>`<option value="${i}">Lot ${pad(i+1)} ${esc(l.titre)}</option>`).join("")+`<option value="new">Nouveau lot…</option>`;
+      const upd=()=>{const nw=$("#anaLot").value==="new";$("#anaFTxt").hidden=!nw;$("#anaFCh").hidden=!nw;};$("#anaLot").onchange=upd;upd();}
+    if(o.txt){$("#anaTxtL").textContent=o.txt.label;$("#anaTxt").value=o.txt.value||"";}
+    $("#anaOk").textContent=o.ok||"OK"; dlg.returnValue="";
+    return new Promise(res=>{dlg.onclose=()=>res(dlg.returnValue==="ok"?{lot:$("#anaLot").value,txt:$("#anaTxt").value.trim(),ch:$("#anaCh").value}:null);dlg.showModal();setTimeout(()=>{const t=$("#anaTxt");if(!t.parentElement.hidden)t.focus();},30);});
+  }
+  const newLot=(titre,charge)=>{const l={id:"al"+nid(),titre:titre||"Nouveau lot",charge,rows:[]};state.ana.lots.push(l);return l;};
+  V.addEventListener("click",async e=>{
+    const t=e.target, A=state.ana; if(!A) return;
+    const md=t.closest("[data-anamode]"); if(md){A.mode=md.dataset.anamode;redo();return;}
+    if(t.id==="anaNewLot"){const r=await openDlg({title:"Nouveau lot",msg:"Lot vide de l'analyse : déplacez-y ensuite des lignes ou des chapitres.",txt:{label:"Nom du lot",value:""},ch:true,ok:"Créer"});if(r){newLot(r.txt,r.ch);redo();toast("Lot créé");}return;}
+    if(t.id==="anaReset"){if(await ask("Revenir à la structure du CCTP ? Les postes écartés, l'ordre et les lots recomposés de l'analyse seront perdus (les offres des entreprises sont conservées).","Réinitialiser",true)){delete state.ana;redo();toast("Structure d'analyse réinitialisée");}return;}
+    let b;
+    if(b=t.closest("[data-aup]")){const [li,ri]=idx(b.dataset.aup),R=A.lots[li].rows,d=R[ri].d;let i=ri-1;while(i>=0&&R[i].d>d)i--;if(i>=0&&R[i].d===d){anaMove(li,ri,li,i);redo();}else toast("Déjà en première position");return;}
+    if(b=t.closest("[data-adn]")){const [li,ri]=idx(b.dataset.adn),R=A.lots[li].rows,d=R[ri].d,e=anaBlockEnd(R,ri);if(e<R.length&&R[e].d===d){anaMove(li,ri,li,anaBlockEnd(R,e));redo();}else toast("Déjà en dernière position");return;}
+    if(b=t.closest("[data-amv]")){const [li,ri]=idx(b.dataset.amv),o=A.lots[li].rows[ri],info=anaLive().info.get(o.id);
+      const r=await openDlg({title:"Déplacer vers un autre lot",msg:`« ${info?info.obj.titre:""} »${o.d===0||info&&info.k!=="art"?" et son contenu":""} sera placé à la fin du lot choisi. Les offres des entreprises suivent la ligne.`,lot:true,txt:{label:"Nom du nouveau lot",value:""},ch:true,ok:"Déplacer"});
+      if(!r) return; let dl;
+      if(r.lot==="new"){const nl=newLot(r.txt||"Nouveau lot",r.ch);dl=A.lots.indexOf(nl);}else dl=+r.lot;
+      anaMove(li,ri,dl,A.lots[dl].rows.length);redo();toast(`Déplacé dans le lot ${pad(dl+1)} ${A.lots[dl].titre}`);return;}
+    if(b=t.closest("[data-lotup]")){const i=+b.dataset.lotup;if(i>0){[A.lots[i-1],A.lots[i]]=[A.lots[i],A.lots[i-1]];redo();}return;}
+    if(b=t.closest("[data-lotdn]")){const i=+b.dataset.lotdn;if(i<A.lots.length-1){[A.lots[i+1],A.lots[i]]=[A.lots[i],A.lots[i+1]];redo();}return;}
+    if(b=t.closest("[data-lotdel]")){const i=+b.dataset.lotdel;if(!A.lots[i].rows.length){A.lots.splice(i,1);redo();}return;}
+    if(b=t.closest("[data-lotren]")){const i=+b.dataset.lotren,r=await openDlg({title:"Renommer le lot",txt:{label:"Nom du lot",value:A.lots[i].titre},ok:"Renommer"});if(r&&r.txt){A.lots[i].titre=r.txt;redo();}return;}
+  });
+  V.addEventListener("change",e=>{
+    const t=e.target, A=state.ana; if(!A) return;
+    if(t.dataset.ainc){const [li,ri]=idx(t.dataset.ainc),r=A.lots[li].rows[ri];if(t.checked)delete r.x;else r.x=true;redo();return;}
+    if(t.dataset.lotch!==undefined){A.lots[+t.dataset.lotch].charge=t.value;redo();return;}
+    if(t.id==="anaSeuil"){A.seuil=Math.max(1,parseFloat(t.value)||25);redo();return;}
+    if(t.id==="anaRef"){A.ref=t.value;redo();return;}
+    if(t.id==="anaOnly"){A.only=t.checked;redo();return;}
+  });
+  V.addEventListener("dragstart",e=>{const g=e.target.closest("[data-agrip]");if(!g){return;}drag=idx(g.dataset.agrip);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ana");g.closest("tr").classList.add("dragx");});
+  V.addEventListener("dragend",()=>{drag=null;V.querySelectorAll(".dragx,.dropb,.dropa").forEach(x=>x.classList.remove("dragx","dropb","dropa"));});
+  V.addEventListener("dragover",e=>{if(!drag)return;const tr=e.target.closest("tr[data-arow]");if(!tr)return;e.preventDefault();V.querySelectorAll(".dropb,.dropa").forEach(x=>x.classList.remove("dropb","dropa"));
+    const r=tr.getBoundingClientRect();tr.classList.add(e.clientY<r.top+r.height/2?"dropb":"dropa");});
+  V.addEventListener("drop",e=>{if(!drag)return;const tr=e.target.closest("tr[data-arow]");if(!tr)return;e.preventDefault();
+    const [dl,di]=idx(tr.dataset.arow),r=tr.getBoundingClientRect(),before=e.clientY<r.top+r.height/2,A=state.ana;
+    const at=before?di:anaBlockEnd(A.lots[dl].rows,di);
+    const [sl,si]=drag; drag=null;
+    if(anaMove(sl,si,dl,at)){redo();} else toast("Une ligne ne peut pas être déposée dans son propre contenu");});
+})();
 
 /* ---------- Synthèse ---------- */
 function renderSynth(){
   const ents=offers(), o=state.op;
   if(!ents.length){$("#synth").innerHTML=`<h2>${esc(o.objet||"Synthèse")}</h2><p class="sub">Aucune offre reçue pour le moment. La synthèse sera disponible dès qu'une offre aura été enregistrée.</p>`;return;}
-  const comLot=state.data.filter(l=>l.charge==="Commune"), privLot=state.data.filter(l=>l.charge!=="Commune");
-  const com=sums((ar,l)=>comLot.includes(l)), prv=sums((ar,l)=>privLot.includes(l));
+  const M=anaModel();
+  const com=anaSums(M,l=>l.charge==="Commune"), prv=anaSums(M,l=>l.charge!=="Commune");
+  const privLot=M.lots.filter(x=>x.l.charge!=="Commune"&&x.n>0).map(x=>x.l);
   const ret=ents.find(e=>e.id===state.retenue)||ents[0];
   const max=Math.max(1,com.estT,...ents.map(e=>com[e.id+"T"]))*1.05;
   const bar=(lab,v,cls)=>`<div class="bar ${cls}"><span>${lab}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><span class="val num">${eur(v)}</span></div>`;
