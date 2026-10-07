@@ -1,1 +1,1 @@
-Déploiement n°10 — Analyse : écarts en couleur sans pourcentage + bouton Valider, TVA dans les totaux. Rédaction : triangles agrandis, puces, photos sous les sous-titres de niveau 2, localisation sans exemple
+Déploiement n°11 — Triangles : niveau 2 rétabli, niveau 3 agrandi ; puces en point noir ; fiche article : localisation sous la description, images en dessous

@@ -105,8 +105,8 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .tree summary:hover .node-x,.tree .sub:hover .node-x,.node-x:focus-visible{opacity:1}
 .tree .sub{margin-top:4px}
 .tree details>summary::-webkit-details-marker{display:none}
-.tree details>summary::before{content:"";width:10px;height:10px;border-right:2.5px solid var(--ink,#333);border-bottom:2.5px solid var(--ink,#333);transform:rotate(-45deg);margin-top:3px;flex:none;transition:transform .15s}
-.tree details[open]>summary::before{transform:rotate(45deg);margin-top:-2px}
+.tree details>summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);margin-top:6px;flex:none;transition:transform .15s}
+.tree details[open]>summary::before{transform:rotate(45deg)}
 .tree .sub{padding:6px 14px 2px 30px;font-size:12.5px;color:var(--muted)}
 .tree .art{display:flex;gap:7px;align-items:center;padding:4px 10px 4px calc(12px + var(--b,0) * 14px + var(--n,0) * 24px);font-size:13px;border-left:2px solid transparent;cursor:pointer;user-select:none;position:relative}
 .tree .art.nested::before{content:"";position:absolute;left:calc(var(--b,0) * 14px + var(--n,0) * 24px - 4px);top:0;height:55%;width:9px;border-left:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);opacity:.55}
@@ -136,7 +136,7 @@ tr[data-nid]{cursor:pointer}
 .lv-chk{display:flex;align-items:center;gap:4px;cursor:pointer;font-variant-numeric:tabular-nums}
 .lv-chk input{accent-color:var(--accent);width:15px;height:15px}
 .btn.warn{border-color:var(--ochre);color:var(--ochre);background:var(--ochre-soft)}
-.atg{width:14px;flex:none;border:0;background:none;color:var(--muted);font-size:11px;padding:0;cursor:pointer}
+.atg{width:17px;flex:none;border:0;background:none;color:var(--ink,#333);font-size:15px;line-height:1;padding:0;cursor:pointer}
 .art.noq{background:#FFD9A8}.art.noq:hover{background:#FFCB8A}.art.noq.cur{background:#FFC27A}
 :root[data-theme="dark"] .art.noq{background:#4A3414}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .art.noq{background:#4A3414}}
@@ -745,7 +745,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.10.0", deploiement: 10};
+const APP = {version: "0.11.0", deploiement: 11};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1119,9 +1119,9 @@ function renderEditor(){
     <button class="btn sm" data-act="addSub">Ajouter un sous-article</button>
     <button class="btn sm danger" data-act="del">Supprimer</button>
   </div>
-  <div class="field"><label for="fTxt">Description de l'ouvrage</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « – » au début des lignes sélectionnées">– Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="Décrire la prestation : matériaux, mise en œuvre, sujétions…">${esc(ar.texte)}</textarea></div>
-  ${imgsField(ar)}
+  <div class="field"><label for="fTxt">Description de l'ouvrage</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « • » au début des lignes sélectionnées">• Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="Décrire la prestation : matériaux, mise en œuvre, sujétions…">${esc(ar.texte)}</textarea></div>
   <div class="field"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}"></div>
+  ${imgsField(ar)}
   ${isTitle(ar)?""
    :`<h4 class="sec">Chiffrage</h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
   <div class="actions">
@@ -1146,7 +1146,7 @@ function renderNodeEditor(nc){
   $("#editor").innerHTML=`
   <div class="art-head"><span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
-  <div class="field"><label for="fTxt">Description</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « – » au début des lignes sélectionnées">– Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="${isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…"}">${esc(n.texte||"")}</textarea></div>
+  <div class="field"><label for="fTxt">Description</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « • » au début des lignes sélectionnées">• Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="${isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…"}">${esc(n.texte||"")}</textarea></div>
   ${isLot?"":imgsField(n,true)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
@@ -1347,12 +1347,12 @@ function step(dir){
   [f.list[f.i],f.list[j]]=[f.list[j],f.list[f.i]]; refresh(); toast(`Article renuméroté ${f.art.code}`);
 }
 
-const BUL="– ";
+const BUL="• ", BULS=["• ","– "], bulOf=l=>BULS.find(b=>l.startsWith(b));
 function bulletToggle(ta){
   const v=ta.value; let a=ta.selectionStart,b=ta.selectionEnd;
   const s0=v.lastIndexOf("\n",a-1)+1; let e0=v.indexOf("\n",b); if(e0<0)e0=v.length;
-  const lines=v.slice(s0,e0).split("\n"), all=lines.every(l=>!l.trim()||l.startsWith(BUL));
-  const out=lines.map(l=>all?(l.startsWith(BUL)?l.slice(BUL.length):l):(l.startsWith(BUL)||!l.trim()&&lines.length>1?l:BUL+l)).join("\n");
+  const lines=v.slice(s0,e0).split("\n"), all=lines.every(l=>!l.trim()||bulOf(l));
+  const out=lines.map(l=>all?(bulOf(l)?l.slice(2):l):(bulOf(l)||!l.trim()&&lines.length>1?l:BUL+l)).join("\n");
   ta.value=v.slice(0,s0)+out+v.slice(e0); ta.selectionStart=s0; ta.selectionEnd=s0+out.length;
   ta.dispatchEvent(new Event("input",{bubbles:true})); ta.focus();
 }
@@ -1361,10 +1361,10 @@ $("#editor").addEventListener("keydown",e=>{
   const ta=e.target; if(ta.id!=="fTxt"||e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey||e.isComposing) return;
   const v=ta.value,pos=ta.selectionStart; if(pos!==ta.selectionEnd) return;
   const s0=v.lastIndexOf("\n",pos-1)+1, line=v.slice(s0,pos);
-  if(!line.startsWith(BUL)) return;
+  const mk=bulOf(line); if(!mk) return;
   e.preventDefault();
-  if(line.trim()===BUL.trim()){ta.value=v.slice(0,s0)+v.slice(pos);ta.selectionStart=ta.selectionEnd=s0;}
-  else{ta.value=v.slice(0,pos)+"\n"+BUL+v.slice(ta.selectionEnd);ta.selectionStart=ta.selectionEnd=pos+1+BUL.length;}
+  if(line.trim()===mk.trim()){ta.value=v.slice(0,s0)+v.slice(pos);ta.selectionStart=ta.selectionEnd=s0;}
+  else{ta.value=v.slice(0,pos)+"\n"+mk+v.slice(ta.selectionEnd);ta.selectionStart=ta.selectionEnd=pos+1+mk.length;}
   ta.dispatchEvent(new Event("input",{bubbles:true}));
 });
 $("#editor").addEventListener("change",e=>{if(e.target.id==="imgFile"&&e.target.files&&e.target.files.length){addImages([...e.target.files]);e.target.value="";}});
