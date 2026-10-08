@@ -1,1 +1,1 @@
-Déploiement n°17 — v0.17.0 : blocs d'options/variantes espacés, chacun avec total HT + TVA + TTC (aperçu BPU, Excel, portail, analyse)
+Déploiement n°18 — v0.18.0 : bibliothèque repliée par défaut, colonne de droite redimensionnable, cadres colorés (bleu marché de base avec TVA/TTC, couleur par option/variante) sans fonds, choix d'option par cases, localisation sans fond bleu

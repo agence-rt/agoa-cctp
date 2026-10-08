@@ -73,7 +73,7 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .view[hidden]{display:none}
 
 /* ---------- Rédaction ---------- */
-.redac{display:grid;grid-template-columns:var(--treeW,320px) minmax(470px,1.1fr) minmax(0,.8fr);gap:16px;align-items:start}
+.redac{display:grid;grid-template-columns:var(--treeW,320px) minmax(470px,1.1fr) var(--prevW,minmax(0,.8fr));gap:16px;align-items:start}
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:6px}
 .tree{max-height:calc(100vh - 120px);overflow:auto;position:sticky;top:12px;display:flex;flex-direction:column}
 .tree-body{padding:8px 0;flex:1}
@@ -156,11 +156,17 @@ tr[data-nid]{cursor:pointer}
 .ovb.base{background:transparent;border:1px solid currentColor;padding:0 5px}
 .ovt{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap;flex:none;padding:0 6px;border-radius:9px;line-height:16px}.ovt.in{font-weight:700}
 .tot-ov{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+tr.ob>td:first-child{border-left:2px solid var(--oc)!important}
+tr.ob>td:last-child{border-right:2px solid var(--oc)!important}
+tr.obt>td{border-top:2px solid var(--oc)!important}
+tr.obb>td{border-bottom:2px solid var(--oc)!important}
+tr.occ>td{color:var(--oc)}
 tr.ovh td{font-weight:700;letter-spacing:.02em;padding-top:8px;padding-bottom:8px}
 tr.ovs td{font-style:italic;font-size:12px}
 tr.ovgap td{height:22px;background:transparent!important;border:0!important;padding:0!important}
 tr.ovtot2 td{font-weight:600;border-top:0}
 tr.ovtot td{font-weight:700}
+.ovbox .ov-in{display:flex;flex-wrap:wrap;gap:4px 16px;margin:4px 0}
 .ovbox .ov-bases{display:flex;flex-direction:column;gap:4px;margin:4px 0}
 .ov-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .ov-row{display:grid;grid-template-columns:auto 1fr 110px 28px;gap:8px;align-items:center;margin-bottom:10px}
@@ -247,6 +253,7 @@ input:disabled{opacity:1;color:var(--muted);background:repeating-linear-gradient
 .btn.quiet{border-color:transparent;color:var(--muted)}
 
 /* aperçu */
+.preview.rz{user-select:none}
 .preview{position:sticky;top:12px;max-height:calc(100vh - 120px);overflow:auto;font-family:Arial,Helvetica,sans-serif}
 .preview *{font-family:Arial,Helvetica,sans-serif!important;font-variation-settings:normal!important}
 .preview td,.preview th{font-size:12.5px}
@@ -296,6 +303,7 @@ mark{background:#fff176;color:inherit;padding:0}
 .img-ctl .rw{display:flex;gap:8px;align-items:center;font-size:12.5px}
 .img-ctl input[type=range]{flex:1;min-width:80px;accent-color:var(--accent)}
 .img-ctl output{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+#fLoc{background:var(--field-bg)}
 .sheet .loc{text-align:right;color:var(--accent);font-style:italic}
 .sheet .empty{color:var(--muted);font-style:italic}
 
@@ -847,7 +855,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.17.0", deploiement: 17};
+const APP = {version: "0.18.0", deploiement: 18};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -931,6 +939,10 @@ function ovBlocksOf(roots){const L=ovLeavesOf(roots);return ovl().map(o=>({o,inn
 const hasBaseArt=a=>a.sub.length?a.sub.some(hasBaseArt):!ovOf(a).in;
 const nodeHasBase=n=>{const A=n.art||[],C=n.children||[];return(!A.length&&!C.length)||A.some(hasBaseArt)||C.some(nodeHasBase);};
 const ovWhat=o=>o.kind==="variante"?"la variante":"l'option";
+const BLUEC="#1d4f8c";
+function ovFrameRows(html,col,mode="all"){const rows=String(html).match(/<tr[\s\S]*?<\/tr>/g)||[];
+  return rows.map((r,i)=>{const cl=" ob"+((mode==="all"||mode==="top")&&i===0?" obt":"")+((mode==="all"||mode==="bot")&&i===rows.length-1?" obb":"");
+    return r.replace(/^<tr( class="([^"]*)")?/,(m,a,c)=>`<tr style="--oc:${col}" class="${c||""}${cl}"`);}).join("");}
 const sgn=v=>(v>0.004?"+":"")+eur2(v);
 const ovKindLab=o=>o.kind==="variante"?"Variante":"Option";
 const btotal=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+btotal(x),0):isTitle(ar)?0:(ovOf(ar).in?0:qty(ar)*ar.pu);
@@ -1314,15 +1326,14 @@ function renderNodeEditor(nc){
 function ovBox(it){
   const L=ovl(), c=ovOf(it), inh=c.in&&it.ovIn!==c.in?ovById(c.in):null;
   const hd=`<h4 class="sec">Option / variante</h4>`;
-  if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie pour cette affaire. Une option ou une variante regroupe des ouvrages chiffrés à part du marché de base.</p>
-    <div class="ov-act"><button class="btn sm" data-ovnew="option">Créer une option</button><button class="btn sm" data-ovnew="variante">Créer une variante</button></div></div>`;
+  if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie. Utilisez le bouton « Options / variantes » en haut de l'écran pour en créer.</p></div>`;
   return `<div class="ovbox">${hd}
-    <div class="field"><label for="ovIn">Cet ouvrage fait partie de</label><select id="ovIn"${it.ovIn&&ovById(it.ovIn)?` style="background:${ovC(ovById(it.ovIn)).bg};color:${ovC(ovById(it.ovIn)).fg};font-weight:650"`:""}><option value="">Marché de base</option>${L.map(o=>`<option value="${o.id}" style="background:${ovC(o).bg};color:${ovC(o).fg}" ${it.ovIn===o.id?"selected":""}>${esc(ovLab(o))}</option>`).join("")}</select>
-      ${inh?`<div class="hint">Hérité du niveau supérieur : ${esc(ovLab(inh))}. Son montant n'est pas compté dans le marché de base.</div>`:it.ovIn?`<div class="hint">Son montant n'est pas compté dans le marché de base ; il est chiffré à part dans ${esc(ovShort(ovById(it.ovIn)))}.</div>`:""}</div>
+    <div class="field"><span class="flabel">Cet ouvrage fait partie de</span>
+      <div class="ov-in"><label class="chk sm"><input type="checkbox" data-ovin="" ${it.ovIn&&ovById(it.ovIn)?"":"checked"}> Marché de base</label>${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovin="${o.id}" ${it.ovIn===o.id?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
+      ${inh?`<div class="hint">Hérité du niveau supérieur : ${esc(ovLab(inh))}. Son montant n'est pas compté dans le marché de base.</div>`:""}</div>
     <div class="field"><span class="flabel">Base à décompter</span>
       <div class="ov-bases">${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovb="${o.id}" ${(it.ovBase||[]).includes(o.id)?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
-      <div class="hint">À cocher lorsque cet ouvrage est remplacé par l'option ou la variante : son montant est alors déduit du total de celle-ci.</div></div>
-    <div class="ov-act"><button class="btn sm" data-ovnew="option">Créer une option</button><button class="btn sm" data-ovnew="variante">Créer une variante</button><button class="btn sm quiet" id="ovManage">Gérer les options et variantes…</button></div></div>`;
+      <div class="hint">À cocher lorsque cet ouvrage est remplacé par l'option ou la variante : son montant est alors déduit du total de celle-ci.</div></div></div>`;
 }
 function chiffrage(ar,lot){
   const lr=rate(lot.tva);
@@ -1394,14 +1405,14 @@ function bpuRows(list,mode,lot,d=0,force=false){
 
 function ovBlocksHtml(root,lot){
   return ovBlocksOf([root]).map(b=>{const o=b.o,c=ovC(o),sum=a=>a.reduce((t,x)=>t+qty(x)*x.pu,0),sI=sum(b.inn),sB=sum(b.bas);
-    const vat=[...b.inn.map(a=>qty(a)*a.pu*tvaOf(a)/100),...b.bas.map(a=>-qty(a)*a.pu*tvaOf(a)/100)].reduce((x,y)=>x+y,0), pv=b.bas.length?"plus-value / moins-value ":"";
-    let h=`<tr class="ovgap"><td colspan="7"></td></tr><tr class="ovh" style="background:${c.bg};color:${c.fg}"><td colspan="7">${esc(ovLab(o).toUpperCase())}</td></tr>`;
-    if(b.bas.length)h+=`<tr class="ovs"><td colspan="7" style="color:${c.fg}">Ouvrages du marché de base à déduire</td></tr>${bpuRows(b.bas,"moe",lot,0,true)}<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n">−${eur2(sB)}</td></tr>`;
-    h+=`<tr class="ovs"><td colspan="7" style="color:${c.fg}">Ouvrages de ${ovWhat(o)}</td></tr>${bpuRows(b.inn,"moe",lot,0,true)}<tr class="st"><td colspan="6">Somme de ${ovWhat(o)}</td><td class="n">${eur2(sI)}</td></tr>`;
-    h+=`<tr class="st ovtot" style="background:${c.bg};color:${c.fg}"><td colspan="6">TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}HT</td><td class="n">${sgn(sI-sB)}</td></tr>`
-      +`<tr class="ovtot2" style="background:${c.bg};color:${c.fg}"><td colspan="6">TVA ${esc(ovShort(o).toUpperCase())}</td><td class="n">${sgn(vat)}</td></tr>`
-      +`<tr class="st ovtot" style="background:${c.bg};color:${c.fg}"><td colspan="6">TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}TTC</td><td class="n">${sgn(sI-sB+vat)}</td></tr>`;
-    return h;}).join("");}
+    const vat=[...b.inn.map(a=>qty(a)*a.pu*tvaOf(a)/100),...b.bas.map(a=>-qty(a)*a.pu*tvaOf(a)/100)].reduce((x,y)=>x+y,0), pv=b.bas.length?"plus-value / moins-value ":"", N=esc(ovShort(o).toUpperCase());
+    let h=`<tr class="ovh occ"><td colspan="7">${esc(ovLab(o).toUpperCase())}</td></tr>`;
+    if(b.bas.length)h+=`<tr class="ovs occ"><td colspan="7">Ouvrages du marché de base à déduire</td></tr>${bpuRows(b.bas,"moe",lot,0,true)}<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n">−${eur2(sB)}</td></tr>`;
+    h+=`<tr class="ovs occ"><td colspan="7">Ouvrages de ${ovWhat(o)}</td></tr>${bpuRows(b.inn,"moe",lot,0,true)}<tr class="st"><td colspan="6">Somme de ${ovWhat(o)}</td><td class="n">${eur2(sI)}</td></tr>`;
+    h+=`<tr class="st ovtot occ"><td colspan="6">TOTAL ${N} · ${pv}HT</td><td class="n">${sgn(sI-sB)}</td></tr>`
+      +`<tr class="ovtot2 occ"><td colspan="6">TVA ${N}</td><td class="n">${sgn(vat)}</td></tr>`
+      +`<tr class="st ovtot occ"><td colspan="6">TOTAL ${N} · ${pv}TTC</td><td class="n">${sgn(sI-sB+vat)}</td></tr>`;
+    return `<tr class="ovgap"><td colspan="7"></td></tr>`+ovFrameRows(h,c.fg);}).join("");}
 function nodeRow(n,lot,mode,cls="chap"){
   const ent=mode==="ent", span=ent?7:6, cur=!ent&&n.nid===state.sel?" cur":"", idA=ent?"":`data-nid="${n.nid}"`;
   if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n)}</td></tr>`;
@@ -1421,9 +1432,11 @@ function renderPreview(){
     const nodeRows=(n,top)=>(!top&&!nodeHasBase(n))?"":(top?"":nodeRow(n,lot,"moe"))
       +(n.art?bpuRows(n.art,"moe",lot):"")+(n.children||[]).map(c=>nodeRows(c,false)).join("");
     body=`<table class="prev-bpu"><tr><th>N°</th><th>Désignation</th><th class="n">Qté</th><th>U</th><th class="n">TVA</th><th class="n">PU HT</th><th class="n">Montant HT</th></tr>
-      ${nodeRow(root,lot,"moe")}
-      ${nodeRows(root,true)}
-      <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}${ovl().length?" (hors options et variantes)":""}</td><td class="n">${eur2(nodeTotal(root))}</td></tr>${ovBlocksHtml(root,lot)}</table>`;
+      ${(()=>{const bl=ovLeavesOf([root]).filter(a=>!ovOf(a).in),ht=nodeTotal(root),tv=bl.reduce((t,a)=>t+qty(a)*a.pu*tvaOf(a,lot)/100,0);
+        return ovFrameRows(nodeRow(root,lot,"moe")+nodeRows(root,true)
+        +`<tr class="st occ"><td colspan="6">Sous-total HT de ${esc(root.titre)}${ovl().length?" (hors options et variantes)":""}</td><td class="n">${eur2(ht)}</td></tr>`
+        +`<tr class="occ"><td colspan="6">TVA</td><td class="n">${eur2(tv)}</td></tr>`
+        +`<tr class="st occ"><td colspan="6">Total TTC${ovl().length?" (marché de base)":""}</td><td class="n">${eur2(ht+tv)}</td></tr>`,BLUEC);})()}${ovBlocksHtml(root,lot)}</table>`;
   }else{
     const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}${ovBadge(ar)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
     const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"></div>`).join("")}</div>`:"";
@@ -1654,7 +1667,7 @@ const rteField=(label,t,ph)=>`<div class="field dcard"><div class="dcard-h"><svg
 })();
 $("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)return;
   const all=cb=>{cb(ci.it);const w=x=>{(x.sub||[]).concat(x.art||[],x.children||[]).forEach(y=>{cb(y);w(y);});};w(ci.it);};
-  if(t.id==="ovIn"){all(x=>{if(t.value)x.ovIn=t.value;else delete x.ovIn;});ovRefresh();}
+  if(t.dataset&&t.dataset.ovin!==undefined){const v=t.checked?t.dataset.ovin:"";all(x=>{if(v)x.ovIn=v;else delete x.ovIn;});ovRefresh();}
   else if(t.dataset&&t.dataset.ovb){const id=t.dataset.ovb;all(x=>{const a=new Set(x.ovBase||[]);t.checked?a.add(id):a.delete(id);if(a.size)x.ovBase=[...a];else delete x.ovBase;});ovRefresh();}});
 function ovRefresh(){save();renderTree();renderEditor();renderPreview();renderTotal();}
 $("#editor").addEventListener("click",e=>{const an=e.target.closest("[data-imgann]");if(an){annOpen(an.dataset.imgann);return;}const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
@@ -1843,6 +1856,22 @@ $("#preview").addEventListener("click",e=>{
     const up=()=>{g.classList.remove("on");g.removeEventListener("pointermove",mv);g.removeEventListener("pointerup",up);keep(nw);};
     g.addEventListener("pointermove",mv);g.addEventListener("pointerup",up);});
   g.addEventListener("dblclick",()=>{setW(0);keep(0);});
+})();
+
+/* Largeur de la colonne de droite (bord gauche de l'aperçu) */
+(function(){
+  const pv=document.getElementById("preview"); if(!pv) return;
+  const W=()=>{try{return AG?(UI.prevW||0):(+localStorage.getItem("agoa-prevW")||0);}catch(e){return 0;}};
+  const setW=w=>{document.documentElement.style.setProperty("--prevW",w?w+"px":"");};
+  const keep=w=>{try{if(AG){UI.prevW=w||0;LS.setItem(KEY,"");}else localStorage.setItem("agoa-prevW",w||0);}catch(e){}};
+  const w0=W(); if(w0) setW(w0);
+  const edge=e=>window.innerWidth>1150&&e.clientX-pv.getBoundingClientRect().left<8;
+  pv.addEventListener("pointermove",e=>{if(!pv.classList.contains("rz"))pv.style.cursor=edge(e)?"col-resize":"";});
+  pv.addEventListener("pointerdown",e=>{if(!edge(e))return;e.preventDefault();const x0=e.clientX,w=pv.getBoundingClientRect().width;let nw=w;pv.classList.add("rz");pv.setPointerCapture(e.pointerId);
+    const mv=ev=>{nw=Math.max(280,Math.min(Math.round(w+x0-ev.clientX),Math.round(window.innerWidth*0.6)));setW(nw);};
+    const up=()=>{pv.classList.remove("rz");pv.removeEventListener("pointermove",mv);pv.removeEventListener("pointerup",up);keep(nw);};
+    pv.addEventListener("pointermove",mv);pv.addEventListener("pointerup",up);});
+  pv.addEventListener("dblclick",e=>{if(edge(e)){setW(0);keep(0);}});
 })();
 
 /* Arborescence : clic, clavier, glisser-déposer */
@@ -2451,7 +2480,7 @@ function libFind(id){
   for(const t of lib()){if(t.id===id)return{kind:"titre",it:t,list:lib()};for(const s of t.children){if(s.id===id)return{kind:"sous-titre",it:s,t,list:t.children};const r=inArts(s.art,t,s,null);if(r)return r;}}return null;}
 const norm=x=>String(x||"").toLowerCase().trim();
 function libTitreFor(name){let t=lib().find(x=>norm(x.titre)===norm(name));if(!t){t={id:"l"+nid(),titre:name||"Sans titre",texte:"",children:[]};lib().push(t);}return t;}
-let libSel=null; const libClosed=new Set();
+let libSel=null; const libClosed=new Set(); let libSeeded=false;
 function libLevelIds(){
   const L={1:[],2:[],3:[],4:[]};
   const v=(list,lv)=>list.forEach(a=>{if((a.sub||[]).length){L[Math.min(lv,4)].push(a.id);v(a.sub,lv+1);}});
@@ -2477,6 +2506,7 @@ function libGuides(R,i){
   if(d>0)h+=`<i class="gd ${hasNext(d)?"t":"l"}"></i>`;
   return h?`<span class="gds">${h}</span>`:"";}
 function libRows(qv){
+  if(!libSeeded&&lib().length){libSeeded=true;const L=libLevelIds();Object.keys(L).forEach(j=>L[j].forEach(id=>libClosed.add(id)));}
   const q=norm(qv===undefined?$("#libQ").value:qv), rows=[], hit=x=>[x.titre,plainTxt(x.texte)].join(" ").toLowerCase().includes(q);
   const deep=a=>hit(a)||(a.sub||[]).some(deep);
   const arts=(list,d,all)=>list.forEach(a=>{if(!all&&!deep(a))return;rows.push({k:"article",it:a,d});
@@ -2711,16 +2741,16 @@ function ovFoot(M,Ev,E){
   const art=(w,neg)=>`<tr class="art hov ded${neg?" dd":""}"><td class="c1">${esc(w.o.code||"")}</td><td class="c2" style="padding-left:14px">${esc(w.o.titre)}</td><td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td>${cells(w,neg)}</tr>`;
   const sum=(lab,get,cls,st)=>`<tr class="${cls||"st"}" ${st||""}><td class="c1"></td><td class="c2" colspan="3">${lab}</td><td class="n e1 mo"></td><td class="n mo">${get(null)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${get(e)}</td>`).join("")}</tr>`;
   const span=1+3+2+Ev.length*2;
-  return L.map(o=>{const O=M.ov[o.id],c=ovC(o),bas=all.filter(w=>ovOf(w.o).base.includes(o.id)),inn=all.filter(w=>ovOf(w.o).in===o.id),st=`style="background:${c.bg};color:${c.fg}"`;
+  return L.map(o=>{const O=M.ov[o.id],c=ovC(o),bas=all.filter(w=>ovOf(w.o).base.includes(o.id)),inn=all.filter(w=>ovOf(w.o).in===o.id),st="";
     const x=e=>e?O.e[e.id]:O.est, v=(e,k)=>x(e)[k];
-    let h=`<tr class="ovgap"><td colspan="${span}"></td></tr><tr class="ovh" ${st}><td class="c1"></td><td class="c2" colspan="${span-1}"><b>${esc(ovLab(o).toUpperCase())}</b></td></tr>`;
-    if(bas.length)h+=`<tr class="ovs"><td class="c1"></td><td class="c2" colspan="${span-1}" style="color:${c.fg}">Ouvrages du marché de base à déduire</td></tr>${bas.map(w=>art(w,true)).join("")}${sum("Sous-total de la déduction",e=>"−"+eur2(v(e,"base")))}`;
-    h+=`<tr class="ovs"><td class="c1"></td><td class="c2" colspan="${span-1}" style="color:${c.fg}">Ouvrages de ${ovWhat(o)}</td></tr>${inn.map(w=>art(w,false)).join("")}${sum(`Somme de ${ovWhat(o)}`,e=>eur2(v(e,"in")))}`;
+    let h=`<tr class="ovh occ"><td class="c1"></td><td class="c2" colspan="${span-1}"><b>${esc(ovLab(o).toUpperCase())}</b></td></tr>`;
+    if(bas.length)h+=`<tr class="ovs occ"><td class="c1"></td><td class="c2" colspan="${span-1}">Ouvrages du marché de base à déduire</td></tr>${bas.map(w=>art(w,true)).join("")}${sum("Sous-total de la déduction",e=>"−"+eur2(v(e,"base")))}`;
+    h+=`<tr class="ovs occ"><td class="c1"></td><td class="c2" colspan="${span-1}">Ouvrages de ${ovWhat(o)}</td></tr>${inn.map(w=>art(w,false)).join("")}${sum(`Somme de ${ovWhat(o)}`,e=>eur2(v(e,"in")))}`;
     const pv=bas.length?"plus-value / moins-value ":"";
-    h+=sum(`TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}HT`,e=>sgn(v(e,"in")-v(e,"base")),"st ovtot",st);
-    h+=sum(`TVA ${esc(ovShort(o).toUpperCase())}`,e=>sgn((v(e,"inT")-v(e,"baseT"))-(v(e,"in")-v(e,"base"))),"ovtot2",st);
-    h+=sum(`TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}TTC`,e=>sgn(v(e,"inT")-v(e,"baseT")),"st ovtot",st);
-    return h;}).join("");
+    h+=sum(`TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}HT`,e=>sgn(v(e,"in")-v(e,"base")),"st ovtot occ",st);
+    h+=sum(`TVA ${esc(ovShort(o).toUpperCase())}`,e=>sgn((v(e,"inT")-v(e,"baseT"))-(v(e,"in")-v(e,"base"))),"ovtot2 occ",st);
+    h+=sum(`TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}TTC`,e=>sgn(v(e,"inT")-v(e,"baseT")),"st ovtot occ",st);
+    return `<tr class="ovgap"><td colspan="${span}"></td></tr>`+ovFrameRows(h,c.fg);}).join("");
 }
 function anaSums(M,pred){
   const r={est:0,estT:0,rt:{}}; M.E.forEach(e=>{r[e.id]=0;r[e.id+"T"]=0;});
@@ -2806,10 +2836,10 @@ function renderAnalyse(){
   const rates=Object.keys(T.rt).map(Number).sort((a,b)=>b-a);
   const trow=(lab,get,cls="")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(get(e))}</td>`).join("")}</tr>`;
   const tvaRows=rates.map(tx=>{const R=T.rt[tx];return (rates.length>1?trow(`Base HT soumise à ${pct(tx)}`,e=>e?R.e[e.id]:R.est):"")+trow(`TVA à ${pct(tx)}`,e=>(e?R.e[e.id]:R.est)*tx/100);}).join("");
-  const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${tvaRows}${frow("Total TTC",T,"T","tot")}${ovFoot(M,Ev,E)}
+  const foot=`<tfoot>${ovFrameRows(frow("Total HT",T,"")+(V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):"")+tvaRows+frow("Total TTC",T,"T","tot"),BLUEC,"bot")}${ovFoot(M,Ev,E)}
     <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
     <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
-  tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${body}</tbody>`+foot;
+  tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${ovFrameRows(body,BLUEC,"top")}</tbody>`+foot;
   leg.innerHTML=det?`${col?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span>`:""}<span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
     :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
   const sc2=document.querySelector("#v-analyse .scroll"); if(sc2){sc2.scrollTop=st[0];sc2.scrollLeft=st[1];}
@@ -2920,6 +2950,7 @@ function bpuFlat(){
     rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
     const node=(n,d)=>{if(!nodeHasBase(n))return;rows.push({k:"node",code:n.code,titre:n.titre,d,texte:plainTxt(n.texte)});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
     lot.children.forEach(ch=>node(ch,0));
+    rows.push({k:"btot",ids:ovLeavesOf([lot]).filter(a=>!ovOf(a).in).map(a=>a.id)});
     ovBlocksOf([lot]).forEach(b=>{const o=b.o;
       rows.push({k:"ovh",o,lot});
       if(b.bas.length){rows.push({k:"ovs",o,txt:"Ouvrages du marché de base à déduire"});b.bas.forEach(a=>rows.push({k:"ded",o,ar:a,id:a.id,code:a.code,titre:a.titre,u:a.u,q:qty(a),tva:tvaOf(a),d:0}));rows.push({k:"dsub",o,ids:b.bas.map(a=>a.id)});}
@@ -3059,7 +3090,7 @@ async function buildBpuStyled(E,en){
         set(11,x.ovIn||"B",F(8,{color:{argb:MUTED}}),{}); set(12,x.ovB.length?","+x.ovB.join(",")+",":null,F(8,{color:{argb:MUTED}}),{});
         x.metre.forEach((t,k)=>{const rr=x.row+1+k;const a=ws.getCell(rr,1);a.value=k?null:"Métré";a.font=F(9,{italic:true,color:{argb:MUTED}});const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{italic:true,color:{argb:MUTED}});c.alignment={indent:x.d+1};ws.getRow(rr).height=14;});
       }
-      else if(x.k==="ovh"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1),cc=ovC(x.o);c.value=ovLab(x.o).toUpperCase();c.font=F(12,{bold:true,color:{argb:ARGB(cc.fg)}});c.alignment={vertical:"middle"};for(let k=1;k<=10;k++)ws.getCell(x.row,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:ARGB(cc.bg)}};R.height=26;}
+      else if(x.k==="ovh"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1),cc=ovC(x.o);c.value=ovLab(x.o).toUpperCase();c.font=F(12,{bold:true,color:{argb:ARGB(cc.fg)}});c.alignment={vertical:"middle"};R.height=26;}
       else if(x.k==="ovs"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1);c.value=x.txt;c.font=F(10,{bold:true,italic:true,color:{argb:ARGB(ovC(x.o).fg)}});c.alignment={vertical:"middle"};R.height=20;}
       else if(x.k==="ded"){const set=(col,v,font,al,nf)=>{const c=ws.getCell(x.row,col);c.value=v;c.font=font;c.alignment={vertical:"middle",...al};if(nf)c.numFmt=nf;return c;};
         const lines=Math.max(1,Math.ceil(x.titre.length/58));R.height=Math.max(19,13.5*lines+5);
@@ -3069,12 +3100,12 @@ async function buildBpuStyled(E,en){
       else if(x.k==="dsub"){const rows=items.slice(x.from,x.to).map(y=>y.row),v=BV[x.o.id].vB;lineAt(x.row,"Sous-total de la déduction (HT)",`-SUM(${runs(rows)||"0"})`,-v,false,null,ARGB(ovC(x.o).fg));}
       else if(x.k==="osum"){const rows=items.slice(x.from,x.to).map(y=>y.row);lineAt(x.row,`Somme de ${ovWhat(x.o)} (HT)`,`SUM(${runs(rows)||"0"})`,BV[x.o.id].vI,false,null,ARGB(ovC(x.o).fg));}
       else if(x.k==="otot"){const ds=ovItems.find(y=>y.k==="dsub"&&y.o===x.o),os=ovItems.find(y=>y.k==="osum"&&y.o===x.o),cc=ovC(x.o);
-        lineAt(x.row,`TOTAL ${ovLab(x.o).toUpperCase()} - ${x.hasDed?"PLUS-VALUE / MOINS-VALUE HT":"HT"}`,`I${os.row}${ds?"+I"+ds.row:""}`,BV[x.o.id].net,true,ARGB(cc.bg),ARGB(cc.fg));}
+        lineAt(x.row,`TOTAL ${ovLab(x.o).toUpperCase()} - ${x.hasDed?"PLUS-VALUE / MOINS-VALUE HT":"HT"}`,`I${os.row}${ds?"+I"+ds.row:""}`,BV[x.o.id].net,true,null,ARGB(cc.fg));}
       else if(x.k==="ottc"){const ot=ovItems.find(y=>y.k==="otot"&&y.o===x.o),cc=ovC(x.o),v=BV[x.o.id],tv=ovItems.find(y=>y.k==="otva"&&y.o===x.o);
-        lineAt(x.row,`${ovLab(x.o).toUpperCase()} - ${ot.hasDed?"PLUS-VALUE / MOINS-VALUE TTC":"TTC"}`,`I${ot.row}+I${tv.row}`,v.ttc,true,ARGB(cc.bg),ARGB(cc.fg));}
+        lineAt(x.row,`${ovLab(x.o).toUpperCase()} - ${ot.hasDed?"PLUS-VALUE / MOINS-VALUE TTC":"TTC"}`,`I${ot.row}+I${tv.row}`,v.ttc,true,null,ARGB(cc.fg));}
       else if(x.k==="otva"){const cc=ovC(x.o),v=BV[x.o.id],id=x.o.id,rg=k=>`$${k}$9:$${k}$${lastRow}`;
         const fT=v.rts.length?v.rts.map(t=>`ROUND((SUMIFS(${rg("I")},${rg("G")},${t},${rg("K")},"${id}")-SUMIFS(${rg("I")},${rg("G")},${t},${rg("L")},"*,${id},*"))*${t}/100,2)`).join("+"):"0";
-        lineAt(x.row,`TVA ${ovLab(x.o).toUpperCase()}`,fT,Math.round((v.ttc-v.net)*100)/100,false,ARGB(cc.bg),ARGB(cc.fg));}
+        lineAt(x.row,`TVA ${ovLab(x.o).toUpperCase()}`,fT,Math.round((v.ttc-v.net)*100)/100,false,null,ARGB(cc.fg));}
       else if(x.k==="sub"){
         const L=sumOf(x), rows=L.map(y=>y.row), tot=Math.round(L.reduce((a,y)=>a+y.m,0)*100)/100;
         ws.mergeCells(x.row,1,x.row,8); const a=ws.getCell(x.row,1);a.value="Sous-Total HT de "+x.titre.toUpperCase();a.font=F(10,{italic:true});a.alignment={vertical:"middle",horizontal:"left",wrapText:true,indent:x.lvl==="par"?1:0};
@@ -3093,6 +3124,9 @@ async function buildBpuStyled(E,en){
     const tvaRows=[]; let tvaTot=0;
     rates.forEach(t=>{const v=Math.round(leaves2.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)*t)/100;tvaTot+=v;tvaRows.push(line(`MONTANT TVA - ${pct(t)}`,`ROUND(SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$K$9:$K$${lastRow},"B")*${t}/100,2)`,v,false,false));});
     const rTTC=line(`MONTANT TTC - ${lot.code} - ${lot.titre.toUpperCase()}`,`I${rHT}${tvaRows.map(x=>"+I"+x).join("")}`,Math.round((ht+tvaTot)*100)/100,true,true);
+    const frame=(r1,r2,argb)=>{const sd={style:"medium",color:{argb}};for(let r=r1;r<=r2;r++)for(let k=1;k<=10;k++){const c=ws.getCell(r,k);try{delete c._mergeStyle;}catch(e){}const b={...(c.border||{})};if(k===1)b.left=sd;if(k===10)b.right=sd;if(r===r1)b.top=sd;if(r===r2)b.bottom=sd;c.border=b;}};
+    frame(9,rTTC,"FF1D4F8C");
+    ovItems.filter(y=>y.k==="ovh").forEach(h=>{const t=ovItems.find(y=>y.k==="ottc"&&y.o===h.o);frame(h.row,t.row,ARGB(ovC(h.o).fg));});
     const ovRec=ovItems.filter(y=>y.k==="otot").map(x=>({id:x.o.id,rN:x.row,rT:ovItems.find(y=>y.k==="ottc"&&y.o===x.o).row,net:BV[x.o.id].net,ttc:BV[x.o.id].ttc}));
     rr=Math.max(rr,lastRow+1);
     // zone d'observations de l'entreprise
@@ -3136,7 +3170,7 @@ function buildBpuBasic(X,en){
   A();
   const hdr=A("N°","Ref.","Désignation","U","Qté","TVA (%)","Prix unitaire HT","Montant HT","Annotations entreprise","Groupe","Bases");
   const first=hdr+1, fr=[], baseN={}, mm=r=>pus[r.id]!=null?r.q*pus[r.id]:0;
-  const flat=bpuFlat(), BK=["ovh","ovs","ded","dsub","osum","otot"], isBlk=r=>BK.includes(r.k)||r.opt;
+  const flat=bpuFlat().filter(r=>r.k!=="btot"), BK=["ovh","ovs","ded","dsub","osum","otot"], isBlk=r=>BK.includes(r.k)||r.opt;
   const body=r=>{String(r.texte||"").split("\n").map(t=>t.trim()).filter(Boolean).forEach(t=>A(null,null,t));};
   const artRow=r=>{const c=ovOf(r.ar),n=A(r.code,r.id,r.titre.toUpperCase(),r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:mm(r),tva:r.tva});baseN[r.id]=n;return n;};
   flat.filter(r=>!isBlk(r)).forEach(r=>{if(r.k==="art")artRow(r);else A(r.code,null,r.titre.toUpperCase());body(r);});
@@ -3259,24 +3293,29 @@ function portalSums(){
   document.querySelectorAll("#ptBody [data-pdm]").forEach(c=>{c.textContent=PD.pus[c.dataset.pdm]==null?"":eur2(M(c.dataset.pdm));});
   document.querySelectorAll("#ptBody [data-psum]").forEach(c=>{const k=c.dataset.psum,ids=(c.dataset.pids||"").split(",").filter(Boolean),bs=(c.dataset.pbas||"").split(",").filter(Boolean);
     const V=a=>a.reduce((x,id)=>x+M(id)*(T[id]||0)/100,0);
-    c.textContent=k==="d"?"−"+eur2(sm(ids)):k==="s"?eur2(sm(ids)):k==="t"?sgn(sm(ids)-sm(bs)):k==="v"?sgn(V(ids)-V(bs)):sgn(sm(ids)-sm(bs)+V(ids)-V(bs));});}
+    c.textContent=k==="bt"?eur2(sm(ids)):k==="bv"?eur2(V(ids)):k==="bc"?eur2(sm(ids)+V(ids)):k==="d"?"−"+eur2(sm(ids)):k==="s"?eur2(sm(ids)):k==="t"?sgn(sm(ids)-sm(bs)):k==="v"?sgn(V(ids)-V(bs)):sgn(sm(ids)-sm(bs)+V(ids)-V(bs));});}
 function renderPortal(){
   const en=ents().find(e=>e.id===PD.id), o=state.op||{};
   let h="";
+  let bs=0,os=0;
   bpuFlat().forEach(r=>{
     const desc=r.texte?`<span class="pt-desc">${esc(r.texte)}</span>`:"", pad=`style="padding-left:${6+Math.min(r.d,4)*12}px"`;
-    if(r.k==="lot") h+=`<tr class="lot"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}</td></tr>`;
+    if(r.k==="lot"){bs=h.length;h+=`<tr class="lot"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}</td></tr>`;}
+    else if(r.k==="btot"){const at=`data-pids="${r.ids.join(",")}"`;
+      h=h.slice(0,bs)+ovFrameRows(h.slice(bs)+`<tr class="st occ"><td colspan="6">Total HT${ovl().length?" (marché de base)":""}</td><td class="n" data-psum="bt" ${at}></td><td></td></tr><tr class="occ"><td colspan="6">TVA</td><td class="n" data-psum="bv" ${at}></td><td></td></tr><tr class="st occ"><td colspan="6">Total TTC${ovl().length?" (marché de base)":""}</td><td class="n" data-psum="bc" ${at}></td><td></td></tr>`,BLUEC);}
+    else if(r.k==="lotX") h+=`<tr class="lot"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}</td></tr>`;
     else if(r.k==="node") h+=`<tr class="node"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}${desc}</td></tr>`;
     else if(r.k==="par") h+=`<tr class="par"><td class="code">${r.code}</td><td colspan="7" ${pad}>${esc(r.titre.toUpperCase())}${desc}</td></tr>`;
-    else if(r.k==="ovh"){const c=ovC(r.o);h+=`<tr class="ovgap"><td colspan="8"></td></tr><tr class="ovh" style="background:${c.bg};color:${c.fg}"><td colspan="8">${esc(ovLab(r.o).toUpperCase())}</td></tr>`;}
-    else if(r.k==="ovs") h+=`<tr class="ovs"><td colspan="8" style="color:${ovC(r.o).fg}">${esc(r.txt)}</td></tr>`;
+    else if(r.k==="ovh"){h+=`<tr class="ovgap"><td colspan="8"></td></tr>`;os=h.length;h+=`<tr class="ovh occ"><td colspan="8">${esc(ovLab(r.o).toUpperCase())}</td></tr>`;}
+    else if(r.k==="ovs") h+=`<tr class="ovs occ"><td colspan="8">${esc(r.txt)}</td></tr>`;
     else if(r.k==="ded") h+=`<tr class="ded"><td class="code">${r.code}</td><td>${esc(r.titre.toUpperCase())}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td><td></td><td class="n" data-pdm="${r.id}"></td><td></td></tr>`;
     else if(r.k==="dsub") h+=`<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n" data-psum="d" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
     else if(r.k==="osum") h+=`<tr class="st"><td colspan="6">Somme de ${ovWhat(r.o)}</td><td class="n" data-psum="s" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
-    else if(r.k==="otot"){const c=ovC(r.o),pv=r.hasDed?"plus-value / moins-value ":"",at=`data-pids="${r.inIds.join(",")}" data-pbas="${r.basIds.join(",")}"`,sy=`style="background:${c.bg};color:${c.fg}"`;
-      h+=`<tr class="st ovtot" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}HT</td><td class="n" data-psum="t" ${at}></td><td></td></tr>`
-        +`<tr class="ovtot2" ${sy}><td colspan="6">TVA ${esc(ovShort(r.o).toUpperCase())}</td><td class="n" data-psum="v" ${at}></td><td></td></tr>`
-        +`<tr class="st ovtot" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;}
+    else if(r.k==="otot"){const c=ovC(r.o),pv=r.hasDed?"plus-value / moins-value ":"",at=`data-pids="${r.inIds.join(",")}" data-pbas="${r.basIds.join(",")}"`,sy="";
+      h+=`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}HT</td><td class="n" data-psum="t" ${at}></td><td></td></tr>`
+        +`<tr class="ovtot2 occ" ${sy}><td colspan="6">TVA ${esc(ovShort(r.o).toUpperCase())}</td><td class="n" data-psum="v" ${at}></td><td></td></tr>`
+        +`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;
+      h=h.slice(0,os)+ovFrameRows(h.slice(os),c.fg);}
     else{const p=PD.pus[r.id], miss=p==null&&r.q>0;
       h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre.toUpperCase())}${desc}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
         <td><input type="text" inputmode="decimal" class="pu" data-ppu="${r.id}" value="${p==null?"":money(p)}" placeholder="0,00 €" autocomplete="off" aria-label="Prix unitaire HT de ${esc(r.titre)}"></td>

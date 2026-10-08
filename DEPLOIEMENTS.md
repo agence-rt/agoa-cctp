@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°18** — v0.18.0 — 2026-10-08 — v0.18.0 : bibliothèque repliée par défaut, colonne de droite redimensionnable, cadres colorés (bleu marché de base avec TVA/TTC, couleur par option/variante) sans fonds, choix d'option par cases, localisation sans fond bleu
 - **n°17** — v0.17.0 — 2026-10-08 — v0.17.0 : blocs d'options/variantes espacés, chacun avec total HT + TVA + TTC (aperçu BPU, Excel, portail, analyse)
 - **n°16** — v0.16.0 — 2026-10-08 — v0.16.0 : images 7 cm + annotation (flèche/carré), confirmation MAJ BDD, options/variantes en couleur dans le CCTP, BPU : blocs d'options indépendants sous le marché de base
 - **n°15** — v0.15.0 — 2026-10-08 — Colonne gauche : +/− sur lots et chapitres, couleurs d'options, héritage option/variante dans les deux sens, déroulé de la bibliothèque
