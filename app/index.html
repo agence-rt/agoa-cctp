@@ -235,7 +235,11 @@ td.blank{background:repeating-linear-gradient(-45deg,transparent 0 6px,var(--lin
 .sheet .blk{padding:8px 10px;margin:0 -10px 10px;border-left:2px solid transparent;cursor:pointer}
 .sheet .blk.cur{border-left-color:var(--accent);background:var(--accent-soft)}
 .sheet .h{font-weight:600;color:var(--accent);text-transform:uppercase;font-size:13.5px;margin:0 0 6px}
-.sheet .blk p{margin:0 0 6px;white-space:pre-wrap}
+.sheet .blk p{margin:0 0 6px}
+.sheet .blk p:not(.h),.sheet .blk li{text-align:justify}
+.sheet .rt ul,.sheet .rt ol{margin:0 0 6px;padding-left:22px}
+.sheet .rt p:last-child,.sheet .rt ul:last-child{margin-bottom:6px}
+mark{background:#fff176;color:inherit;padding:0}
 .sheet .blk{display:flow-root}
 .op-photo{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.op-photo img{max-width:240px;max-height:170px;border:1px solid var(--line);border-radius:4px;object-fit:contain;background:var(--surface)}
 .cimgs{float:right;clear:right;margin:0 0 6px 14px;display:flex;flex-direction:column;gap:6px;align-items:flex-end;max-width:7cm}
@@ -496,6 +500,18 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 #cmpTable.nomoe .mo{display:none}
 .ent-sub.offer-ok{color:#2e7d32;font-weight:600}
 select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:600}
+.rte-bar{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:5px 6px;border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;background:var(--paper)}
+.rte-bar button{min-width:28px;height:28px;border:1px solid transparent;background:transparent;border-radius:4px;cursor:pointer;font:inherit;font-size:13px;color:var(--ink,#222);padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
+.rte-bar button:hover{background:var(--line)}
+.rte-bar button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.rte-bar .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+.rte-bar select{height:28px;font-size:12.5px;width:auto;min-width:86px;padding:0 4px}
+.rte-bar .hl{background:#fff176;padding:0 3px;border-radius:2px}
+.rte{position:relative;min-height:150px;max-height:55vh;overflow:auto;padding:10px 12px;border:1px solid var(--line);border-radius:0 0 6px 6px;background:var(--surface);font-size:14px;line-height:1.55;text-align:justify;outline:none;overflow-wrap:anywhere}
+.rte:focus{border-color:var(--accent)}
+.rte p{margin:0 0 6px}.rte ul,.rte ol{margin:0 0 6px;padding-left:22px}
+.rte mark{background:#fff176;color:inherit}
+.rte.empty::before{content:attr(data-ph);position:absolute;left:12px;top:10px;right:12px;color:var(--muted);pointer-events:none}
 .txt-tools{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
 .txt-tools .hint{font-size:11.5px}
 .nimgs{display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 10px;align-items:flex-start}
@@ -745,7 +761,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.11.0", deploiement: 11};
+const APP = {version: "0.12.0", deploiement: 12};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1119,7 +1135,7 @@ function renderEditor(){
     <button class="btn sm" data-act="addSub">Ajouter un sous-article</button>
     <button class="btn sm danger" data-act="del">Supprimer</button>
   </div>
-  <div class="field"><label for="fTxt">Description de l'ouvrage</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « • » au début des lignes sélectionnées">• Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="Décrire la prestation : matériaux, mise en œuvre, sujétions…">${esc(ar.texte)}</textarea></div>
+  ${rteField("Description de l'ouvrage",ar.texte,"Décrire la prestation : matériaux, mise en œuvre, sujétions…")}
   <div class="field"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}"></div>
   ${imgsField(ar)}
   ${isTitle(ar)?""
@@ -1146,7 +1162,7 @@ function renderNodeEditor(nc){
   $("#editor").innerHTML=`
   <div class="art-head"><span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
-  <div class="field"><label for="fTxt">Description</label><div class="txt-tools"><button type="button" class="btn sm" data-bullet title="Ajoute ou retire une puce « • » au début des lignes sélectionnées">• Puces</button><span class="hint">Entrée dans une liste crée la puce suivante ; Entrée sur une puce vide termine la liste.</span></div><textarea id="fTxt" data-k="texte" placeholder="${isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…"}">${esc(n.texte||"")}</textarea></div>
+  ${rteField("Description",n.texte,isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…")}
   ${isLot?"":imgsField(n,true)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
@@ -1242,9 +1258,9 @@ function renderPreview(){
       ${nodeRows(root,true)}
       <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}</td><td class="n">${eur2(nodeTotal(root))}</td></tr></table>`;
   }else{
-    const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}</p>${imgsHtml(ar)}${ar.texte?`<p>${esc(ar.texte)}</p>`:(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
+    const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
     const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"><span class="cw">${cm1(i.w)}</span><span class="rz" title="Glisser pour redimensionner (7 cm max)"></span></div>`).join("")}</div>`:"";
-    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}</p>${n.texte?`<p>${esc(n.texte)}</p>`:""}${nimgs(n)}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
+    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
     body=`<div class="sheet">${nblk(root)}</div>`;
   }
   el.innerHTML=`<div class="prev-h"><b>Aperçu ${root.code} ${esc(root.titre)}</b>
@@ -1270,7 +1286,7 @@ function renderLibPanelList(){
   const q=$("#plQ").value.trim(), R=libRows(q);
   $("#plList").innerHTML=R.length?R.map(r=>{const it=r.it, closed=libClosed.has(it.id)&&!q, hasKids=r.k!=="article"||(it.sub||[]).length;
     const info=r.k==="titre"?"titre":r.k==="sous-titre"?`${libArtCount(it.art)} art.`:isTitle(it)?`${libArtCount(it.sub||[])} sous-art.`:`${esc(it.u)}${it.q!=null?` · ${fmt(it.q,it.q%1?2:0)}`:""}`;
-    const tip=esc(String(it.texte||"").slice(0,280));
+    const tip=esc(plainTxt(it.texte).slice(0,280));
     return `<div class="pl-row lv${Math.min(r.d,3)}" style="--ld:${r.d*14}px" draggable="true" data-plib="${it.id}" title="${tip}">
       ${hasKids?`<button class="tg" data-pltg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"▸":"▾"}</button>`:`<span class="tg"></span>`}
       <span class="pl-t">${esc(it.titre)}</span><span class="hint pl-i">${info}</span>
@@ -1347,26 +1363,126 @@ function step(dir){
   [f.list[f.i],f.list[j]]=[f.list[j],f.list[f.i]]; refresh(); toast(`Article renuméroté ${f.art.code}`);
 }
 
-const BUL="• ", BULS=["• ","– "], bulOf=l=>BULS.find(b=>l.startsWith(b));
-function bulletToggle(ta){
-  const v=ta.value; let a=ta.selectionStart,b=ta.selectionEnd;
-  const s0=v.lastIndexOf("\n",a-1)+1; let e0=v.indexOf("\n",b); if(e0<0)e0=v.length;
-  const lines=v.slice(s0,e0).split("\n"), all=lines.every(l=>!l.trim()||bulOf(l));
-  const out=lines.map(l=>all?(bulOf(l)?l.slice(2):l):(bulOf(l)||!l.trim()&&lines.length>1?l:BUL+l)).join("\n");
-  ta.value=v.slice(0,s0)+out+v.slice(e0); ta.selectionStart=s0; ta.selectionEnd=s0+out.length;
-  ta.dispatchEvent(new Event("input",{bubbles:true})); ta.focus();
+/* ---------- texte enrichi (gras, italique, souligné, surligné, taille, alignement, listes) ----------
+   Stocké dans le même champ « texte », préfixé de <!--rt--> : copier, dupliquer, bibliothèque… fonctionnent sans changement.
+   Un texte sans ce préfixe reste un texte simple (les lignes « • » ou « – » deviennent des puces). */
+const RT="<!--rt-->", RT_BASE=9.5, RT_SIZES=[8,9,9.5,11,12,14,16,18,22];
+const isRich=t=>typeof t==="string"&&t.startsWith(RT);
+function rtParse(src){
+  const html=isRich(src)?src.slice(RT.length):String(src||"");
+  const body=new DOMParser().parseFromString("<body>"+html+"</body>","text/html").body;
+  const blocks=[]; let cur=null;
+  const start=o=>{cur={li:!!(o&&o.li),ord:!!(o&&o.ord),align:(o&&o.align)||"",runs:[]};blocks.push(cur);return cur;};
+  const al=el=>{const a=el.style&&el.style.textAlign;return /^(left|center|right|justify)$/.test(a)?a:"";};
+  const sty=(el,st)=>{const s2={...st},t=el.tagName,cs=el.style||{};
+    if(t==="B"||t==="STRONG"||/^(bold|[6-9]00)$/.test(cs.fontWeight))s2.b=true;
+    if(t==="I"||t==="EM"||cs.fontStyle==="italic")s2.i=true;
+    if(t==="U"||/underline/.test((cs.textDecoration||"")+(cs.textDecorationLine||"")))s2.u=true;
+    const bg=cs.backgroundColor; if(t==="MARK"||(bg&&bg!=="transparent"&&!/rgba\(0,\s*0,\s*0,\s*0\)/.test(bg)))s2.hl=true;
+    const m=/^([\d.]+)(pt|px|em)$/.exec(cs.fontSize||""); if(m){const v=parseFloat(m[1]);s2.sz=Math.round((m[2]==="em"?v*RT_BASE:m[2]==="px"?v*0.75:v)*2)/2;}
+    return s2;};
+  const inline=(n,st)=>{
+    if(n.nodeType===3){const t=n.nodeValue.replace(/\s+/g," "); if(t)(cur||start()).runs.push({t,...st}); return;}
+    if(n.nodeType!==1) return;
+    const tag=n.tagName;
+    if(tag==="BR"){(cur||start()).runs.push({br:true});return;}
+    if(tag==="UL"||tag==="OL"){[...n.children].forEach(li=>{if(li.tagName!=="LI")return;start({li:true,ord:tag==="OL",align:al(li)});const s2=sty(li,st);[...li.childNodes].forEach(c=>inline(c,s2));});cur=null;return;}
+    if(/^(P|DIV|H[1-6]|BLOCKQUOTE|LI)$/.test(tag)){start({align:al(n)});const s2=sty(n,st);[...n.childNodes].forEach(c=>inline(c,s2));cur=null;return;}
+    const s2=sty(n,st);[...n.childNodes].forEach(c=>inline(c,s2));
+  };
+  [...body.childNodes].forEach(c=>inline(c,{}));
+  blocks.forEach(b=>{ // saut de ligne final inutile, espaces de bord
+    if(b.runs.some(r=>!r.br)){while(b.runs.length&&b.runs[b.runs.length-1].br)b.runs.pop();
+      const f=b.runs[0]; if(f&&f.t)f.t=f.t.replace(/^\s+/,""); const l=b.runs[b.runs.length-1]; if(l&&l.t)l.t=l.t.replace(/\s+$/,"");
+      b.runs=b.runs.filter(r=>r.br||r.t!=="");}
+  });
+  const has=b=>b.runs.some(r=>!r.br);
+  while(blocks.length&&!has(blocks[0]))blocks.shift();
+  while(blocks.length&&!has(blocks[blocks.length-1]))blocks.pop();
+  return blocks;
 }
-$("#editor").addEventListener("click",e=>{const b=e.target.closest("[data-bullet]");if(b){e.preventDefault();const ta=$("#fTxt");if(ta)bulletToggle(ta);}});
-$("#editor").addEventListener("keydown",e=>{
-  const ta=e.target; if(ta.id!=="fTxt"||e.key!=="Enter"||e.shiftKey||e.ctrlKey||e.altKey||e.isComposing) return;
-  const v=ta.value,pos=ta.selectionStart; if(pos!==ta.selectionEnd) return;
-  const s0=v.lastIndexOf("\n",pos-1)+1, line=v.slice(s0,pos);
-  const mk=bulOf(line); if(!mk) return;
-  e.preventDefault();
-  if(line.trim()===mk.trim()){ta.value=v.slice(0,s0)+v.slice(pos);ta.selectionStart=ta.selectionEnd=s0;}
-  else{ta.value=v.slice(0,pos)+"\n"+mk+v.slice(ta.selectionEnd);ta.selectionStart=ta.selectionEnd=pos+1+mk.length;}
-  ta.dispatchEvent(new Event("input",{bubbles:true}));
-});
+function rtSerialize(blocks,em){
+  const szv=v=>em?(Math.round(v/RT_BASE*100)/100)+"em":v+"pt";
+  const same=(a,b)=>!a.br&&!b.br&&!!a.b===!!b.b&&!!a.i===!!b.i&&!!a.u===!!b.u&&!!a.hl===!!b.hl&&a.sz===b.sz;
+  const run=r=>{if(r.br)return"<br>";let h=esc(r.t);if(r.sz&&r.sz!==RT_BASE)h=`<span style="font-size:${szv(r.sz)}">${h}</span>`;if(r.hl)h=`<mark>${h}</mark>`;if(r.u)h=`<u>${h}</u>`;if(r.i)h=`<i>${h}</i>`;if(r.b)h=`<b>${h}</b>`;return h;};
+  let out="",lt=null; const close=()=>{if(lt){out+=`</${lt}>`;lt=null;}};
+  blocks.forEach(b=>{
+    const m=[]; b.runs.forEach(r=>{const l=m[m.length-1];if(l&&same(l,r))l.t+=r.t;else m.push({...r});});
+    const inner=m.map(run).join(""), st=b.align&&b.align!=="justify"?` style="text-align:${b.align}"`:"";
+    if(b.li){const tg=b.ord?"ol":"ul";if(lt!==tg){close();out+=`<${tg}>`;lt=tg;}out+=`<li${st}>${inner||"<br>"}</li>`;}
+    else{close();out+=`<p${st}>${inner||"<br>"}</p>`;}
+  });
+  close(); return out;
+}
+const rtText=blocks=>{let n=0,prev=false,po=false;return blocks.map(b=>{const t=b.runs.map(r=>r.br?"\n":r.t).join("");
+  if(b.li){n=(prev&&b.ord&&po)?n+1:1;prev=true;po=b.ord;return(b.ord?n+". ":"• ")+t;} prev=false;return t;}).join("\n");};
+const rtToText=src=>rtText(rtParse(src));
+const plainTxt=t=>isRich(t)?rtToText(t):(t||"");
+function textToRt(t){
+  const lines=String(t||"").split("\n"); let out="",inL=false;
+  lines.forEach(l=>{const m=/^\s*[•–-]\s+(.*)$/.exec(l);
+    if(m){if(!inL){out+="<ul>";inL=true;}out+=`<li>${esc(m[1])}</li>`;}
+    else{if(inL){out+="</ul>";inL=false;}out+=l.trim()?`<p>${esc(l)}</p>`:"<p><br></p>";}});
+  if(inL)out+="</ul>"; return out;
+}
+const rtSrc=t=>isRich(t)?t:textToRt(t);
+const cleanRt=html=>{const bl=rtParse(html); return bl.length?RT+rtSerialize(bl,false):"";};
+const rtView=t=>`<div class="rt">${rtSerialize(rtParse(rtSrc(t)),true)}</div>`;
+const rtEditorHtml=t=>rtSerialize(rtParse(rtSrc(t)),true);
+
+const ALG={justifyLeft:[2,12,2,9],justifyCenter:[2,12,4,9],justifyRight:[2,12,6,9],justifyFull:[2,12,2,12]};
+const algSvg=k=>{const [a,b,c,d]=ALG[k];const x=(w,y)=>k==="justifyCenter"?(14-w)/2+1:k==="justifyRight"?15-w:1;
+  return `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><rect x="${x(12)}" y="3" width="12" height="1.6"/><rect x="${x(8)}" y="6.2" width="8" height="1.6"/><rect x="${x(12)}" y="9.4" width="12" height="1.6"/><rect x="${x(6)}" y="12.6" width="${k==="justifyFull"?12:6}" height="1.6"/></svg>`.replace(/x="(-?[\d.]+)"/g,(m,v)=>`x="${k==="justifyFull"?1:v}"`);};
+const rteBar=()=>`<div class="rte-bar" role="toolbar" aria-label="Mise en forme du texte">
+  <button type="button" data-rt="bold" title="Gras (Ctrl+B)"><b>G</b></button>
+  <button type="button" data-rt="italic" title="Italique (Ctrl+I)"><i>I</i></button>
+  <button type="button" data-rt="underline" title="Souligné (Ctrl+U)"><u>S</u></button>
+  <button type="button" data-rt="hilite" title="Surligner"><span class="hl">ab</span></button>
+  <span class="sep"></span>
+  <select data-rt-size aria-label="Taille du texte"><option value="">Taille</option>${RT_SIZES.map(v=>`<option value="${v}">${v===RT_BASE?"Normal":v+" pt"}</option>`).join("")}</select>
+  <button type="button" data-rt="sizeUp" title="Agrandir le texte">A+</button>
+  <button type="button" data-rt="sizeDown" title="Réduire le texte">A−</button>
+  <span class="sep"></span>
+  ${[["justifyLeft","Aligner à gauche"],["justifyCenter","Centrer"],["justifyRight","Aligner à droite"],["justifyFull","Justifier (par défaut)"]].map(([k,t])=>`<button type="button" data-rt="${k}" title="${t}">${algSvg(k)}</button>`).join("")}
+  <span class="sep"></span>
+  <button type="button" data-rt="insertUnorderedList" title="Liste à puces">• Puces</button>
+  <button type="button" data-rt="insertOrderedList" title="Liste numérotée">1. Liste</button>
+  <span class="sep"></span>
+  <button type="button" data-rt="clear" title="Effacer la mise en forme de la sélection">Tx</button>
+</div>`;
+const rteField=(label,t,ph)=>`<div class="field"><label id="fTxtL">${label}</label>${rteBar()}<div id="fTxt" class="rte${plainTxt(t).trim()?"":" empty"}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="fTxtL" data-ph="${esc(ph)}" spellcheck="true">${rtEditorHtml(t)}</div></div>`;
+(function rteEvents(){
+  const ed=()=>document.getElementById("fTxt"); let rng=null;
+  const inEd=n=>{const e=ed();return !!(e&&n&&e.contains(n.nodeType===3?n.parentNode:n));};
+  const sync=()=>{const e=ed(),ci=curItem(); if(!e||!ci) return; const v=cleanRt(e.innerHTML);
+    e.classList.toggle("empty",!v); if(v!==(ci.it.texte||"")){ci.it.texte=v;save();updateLive();}};
+  const restore=()=>{const e=ed();if(!e)return;e.focus();if(rng){const s=getSelection();s.removeAllRanges();s.addRange(rng);}};
+  document.addEventListener("selectionchange",()=>{
+    const s=getSelection(); if(!s.rangeCount||!inEd(s.anchorNode)) return; rng=s.getRangeAt(0).cloneRange();
+    document.querySelectorAll(".rte-bar [data-rt]").forEach(b=>{const k=b.dataset.rt; if(!/^(bold|italic|underline|justify\w+|insert\w+List)$/.test(k)&&k!=="hilite")return;
+      let on=false; try{on=k==="hilite"?!/transparent|rgba\(0, 0, 0, 0\)/.test(document.queryCommandValue("hiliteColor")||"transparent"):document.queryCommandState(k);}catch(e){}
+      b.setAttribute("aria-pressed",on?"true":"false");});
+  });
+  const applySize=pt=>{restore();document.execCommand("styleWithCSS",false,false);document.execCommand("fontSize",false,"7");
+    ed().querySelectorAll('font[size="7"]').forEach(f=>{const sp=document.createElement("span");sp.style.fontSize=(pt/RT_BASE)+"em";sp.innerHTML=f.innerHTML;sp.querySelectorAll("[style]").forEach(x=>{x.style.fontSize="";});f.replaceWith(sp);});sync();};
+  const curPt=()=>{const s=getSelection();let n=s.anchorNode;if(n&&n.nodeType===3)n=n.parentNode;const e=ed();if(!n||!e)return RT_BASE;
+    return Math.round(parseFloat(getComputedStyle(n).fontSize)/parseFloat(getComputedStyle(e).fontSize)*RT_BASE*2)/2;};
+  const bar=document.getElementById("editor");
+  bar.addEventListener("mousedown",e=>{if(e.target.closest(".rte-bar button"))e.preventDefault();});
+  bar.addEventListener("click",e=>{
+    const b=e.target.closest(".rte-bar [data-rt]"); if(!b) return; e.preventDefault(); restore(); const k=b.dataset.rt, x=document.execCommand.bind(document);
+    x("styleWithCSS",false,false);
+    if(k==="hilite"){x("styleWithCSS",false,true);const on=!/transparent|rgba\(0, 0, 0, 0\)/.test(document.queryCommandValue("hiliteColor")||"transparent");x("hiliteColor",false,on?"transparent":"#fff176");}
+    else if(k==="sizeUp"||k==="sizeDown"){const c=curPt(),i=RT_SIZES.findIndex(v=>v>=c-0.01);const j=k==="sizeUp"?Math.min(RT_SIZES.length-1,(RT_SIZES[i]>c+0.01?i:i+1)):Math.max(0,i-1);applySize(RT_SIZES[j<0?0:j]);return;}
+    else if(k==="clear"){x("removeFormat");x("styleWithCSS",false,true);x("hiliteColor",false,"transparent");ed().querySelectorAll("[style]").forEach(n=>{n.style.fontSize="";});}
+    else x(k);
+    sync();
+  });
+  bar.addEventListener("change",e=>{const t=e.target; if(t.matches("[data-rt-size]")&&t.value){const v=parseFloat(t.value);t.value="";applySize(v);}});
+  bar.addEventListener("input",e=>{if(e.target.id==="fTxt")sync();});
+  bar.addEventListener("paste",e=>{if(e.target.id!=="fTxt"&&!e.target.closest("#fTxt"))return;e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",false,t);});
+  document.execCommand("defaultParagraphSeparator",false,"p");
+})();
 $("#editor").addEventListener("change",e=>{if(e.target.id==="imgFile"&&e.target.files&&e.target.files.length){addImages([...e.target.files]);e.target.value="";}});
 $("#editor").addEventListener("click",e=>{
   if(e.target.closest("[data-imgadd]")){const f=$("#imgFile");if(f)f.click();return;}
@@ -1685,6 +1801,48 @@ function buildCctpPdf(J){
       draw(line);
     });
   }
+  /* texte enrichi : gras, italique, souligné, surligné, tailles, alignement (justifié par défaut), puces */
+  function rich(src){
+    const blocks=rtParse(rtSrc(src)), base=RT_BASE, INDL=5.5; let num=0, prevLi=false, prevOrd=false;
+    const stl=r=>r.b&&r.i?"bolditalic":r.b?"bold":r.i?"italic":"normal";
+    blocks.forEach(bk=>{
+      const toks=[]; bk.runs.forEach(r=>{
+        if(r.br){toks.push({br:1});return;}
+        const sz=r.sz||base; wa(r.t).split(/( +)/).forEach(p=>{if(p==="")return;font(stl(r),sz,INK);toks.push(p[0]===" "?{sp:1,r,sz,w:doc.getTextWidth(" ")*p.length}:{t:p,r,sz,w:doc.getTextWidth(p)});});});
+      const lh0=base*0.3528*1.38;
+      if(!toks.length){y+=lh0*0.55;prevLi=false;return;}
+      if(bk.li){num=(prevLi&&bk.ord&&prevOrd)?num+1:1;}prevLi=bk.li;prevOrd=bk.ord;
+      const ind=bk.li?INDL:0; let line=[],lw=0,A=0,first=true;
+      const begin=()=>{if(y+lh0>B)np();A=avail()-ind;};
+      const emit=last=>{
+        while(line.length&&line[line.length-1].sp){lw-=line.pop().w;}
+        if(!line.length)return;
+        const lh=Math.max(lh0,...line.map(t=>t.sz*0.3528*1.38));
+        if(y+lh>B)np();
+        const xl=L+ind, avl=avail()-ind, ns=line.filter(t=>t.sp).length, al=bk.align||"justify";
+        let x=xl,extra=0;
+        if(al==="justify"&&!last&&ns>0)extra=Math.max(0,(avl-lw)/ns);
+        else if(al==="center")x=xl+Math.max(0,(avl-lw)/2);
+        else if(al==="right")x=xl+Math.max(0,avl-lw);
+        const yb=y+lh*0.74; let cx=x;
+        line.forEach(t=>{const w=t.w+(t.sp?extra:0); if(t.r&&t.r.hl){doc.setFillColor(255,241,118);doc.rect(cx,y+lh*0.12,w,t.sz*0.3528*1.12,"F");} cx+=w;});
+        cx=x;
+        line.forEach(t=>{const w=t.w+(t.sp?extra:0);
+          if(!t.sp){font(stl(t.r),t.sz,INK);doc.text(t.t,cx,yb);}
+          if(t.r&&t.r.u){doc.setDrawColor(INK[0],INK[1],INK[2]);doc.setLineWidth(0.18);doc.line(cx,yb+0.7,cx+w,yb+0.7);}
+          cx+=w;});
+        if(bk.li&&first){font("normal",base,INK);doc.text(bk.ord?num+".":"\u2022",L+(bk.ord?0.6:1.8),yb);}
+        first=false; y+=lh; line=[]; lw=0;};
+      begin();
+      toks.forEach(t=>{
+        if(t.br){emit(true);begin();return;}
+        if(t.sp&&!line.length)return;
+        if(!t.sp&&line.length&&lw+t.w>A){emit(false);begin();}
+        line.push(t);lw+=t.w;});
+      emit(true);
+    });
+  }
+  const txt=t=>rich(t);
   function keepWith(h){if(y+h>B)np();}
   const artNeed=ar=>10+(ar.imgs&&ar.imgs.length?Math.min(40,clampW(ar.imgs[0].w)*10*0.7):6);
   function article(ar){
@@ -1693,7 +1851,7 @@ function buildCctpPdf(J){
     y+=2.5; toc.length; para(`${ar.code}- ${ar.titre}`.toUpperCase(),"bold",hs,BLUE,{lh:5.2}); y+=0.8;
     (ar.imgs||[]).forEach(i=>{const d=dims(i.src);if(!d)return;const w=clampW(i.w)*10,h=w*d.r;queue.push({src:i.src,type:d.type,w,h,r:d.r});colW=Math.max(colW,w);});
     rightBottom=y; placed=false; placeQ();
-    if(ar.texte) para(ar.texte,"normal",9.5,INK); else if(!isTitle(ar)) para("Description à rédiger.","italic",9.5,MUTED);
+    if(ar.texte) txt(ar.texte); else if(!isTitle(ar)) para("Description à rédiger.","italic",9.5,MUTED);
     if(ar.loc){y+=0.8;para(ar.loc,"italic",9.5,BLUE,{right:true});}
     while(queue.length){np();} // images restantes
     if(y<rightBottom) y=Math.min(rightBottom,B);
@@ -1707,7 +1865,7 @@ function buildCctpPdf(J){
     para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",lvl===2?12:10.5,BLUE,{lh:lvl===2?6.2:5.4});
     if(lvl===2){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,y+0.4,R,y+0.4);}
     y+=lvl===2?2.5:1.5;
-    if(n.texte) para(n.texte,"normal",9.5,INK);
+    if(n.texte) txt(n.texte);
     if((n.imgs||[]).length){
       let x=L,rowH=0; y+=1;
       n.imgs.forEach(i=>{const d=dims(i.src);if(!d)return;const w=clampW(i.w)*10,h=w*d.r;
@@ -1726,7 +1884,7 @@ function buildCctpPdf(J){
     font("bold",17,BLUE); const tl=doc.splitTextToSize(wa(`LOT ${lot.code} - ${lot.titre}`).toUpperCase(),R-L);
     tl.forEach(l=>{doc.text(l,L,y+6);y+=8;});
     doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.7);doc.line(L,y+1,R,y+1);y+=5;
-    if(lot.texte) para(lot.texte,"normal",9.5,INK);
+    if(lot.texte) txt(lot.texte);
     lot.children.forEach(c=>node(c,2));
   });
   /* ---- sommaire ---- */
@@ -2057,7 +2215,7 @@ function libLvApply(c){
 $("#libLv").addEventListener("change",e=>{const c=e.target.closest("[data-liblv]");if(c)libLvApply(c);});
 document.addEventListener("change",e=>{const c=e.target.closest("#plLv [data-liblv]");if(c)libLvApply(c);});
 function libRows(qv){
-  const q=norm(qv===undefined?$("#libQ").value:qv), rows=[], hit=x=>[x.titre,x.texte].join(" ").toLowerCase().includes(q);
+  const q=norm(qv===undefined?$("#libQ").value:qv), rows=[], hit=x=>[x.titre,plainTxt(x.texte)].join(" ").toLowerCase().includes(q);
   const deep=a=>hit(a)||(a.sub||[]).some(deep);
   const arts=(list,d,all)=>list.forEach(a=>{if(!all&&!deep(a))return;rows.push({k:"article",it:a,d});
     if((a.sub||[]).length&&(q||!libClosed.has(a.id)))arts(a.sub,d+1,all||(q&&hit(a)));});
@@ -2079,7 +2237,7 @@ function libTargetText(){
 function renderLib(){$("#libTarget").textContent=libTargetText();renderLibList();renderLibDetail();const st=$("#libStat");if(st){st.textContent=libStat.txt;st.className="lib-stat"+(libStat.ok?"":" bad");}}
 function renderLibList(){
   $("#libLv").innerHTML=libLvHtml();
-  const R=libRows(), q=$("#libQ").value.trim(); if(!R.some(r=>r.it.id===libSel)){const qq=norm(q),self=r=>[r.it.titre,r.it.texte].join(" ").toLowerCase().includes(qq);const fa=q&&(R.find(r=>r.k==="article"&&!isTitle(r.it)&&self(r))||R.find(r=>r.k==="article"&&self(r))||R.find(r=>r.k==="article"));libSel=fa?fa.it.id:R[0]?R[0].it.id:null;}
+  const R=libRows(), q=$("#libQ").value.trim(); if(!R.some(r=>r.it.id===libSel)){const qq=norm(q),self=r=>[r.it.titre,plainTxt(r.it.texte)].join(" ").toLowerCase().includes(qq);const fa=q&&(R.find(r=>r.k==="article"&&!isTitle(r.it)&&self(r))||R.find(r=>r.k==="article"&&self(r))||R.find(r=>r.k==="article"));libSel=fa?fa.it.id:R[0]?R[0].it.id:null;}
   $("#libList").innerHTML=R.length?R.map(r=>{const it=r.it, closed=libClosed.has(it.id)&&!q;
     const info=r.k==="titre"?`${it.children.length} sous-titre${it.children.length>1?"s":""}, ${it.children.reduce((s,x)=>s+libArtCount(x.art),0)} articles`
       :r.k==="sous-titre"?`${libArtCount(it.art)} article${libArtCount(it.art)>1?"s":""}`
@@ -2107,7 +2265,7 @@ function renderLibDetail(){
      ${isTitle(it)?"":`<div class="lib-2"><div class="field"><label for="lbU">Unité</label><select id="lbU" data-lk="u">${UNITS.map(u=>`<option ${u===it.u?"selected":""}>${u}</option>`).join("")}</select></div>
      <div class="field"><label for="lbQ">Qté par défaut</label><input type="number" id="lbQ" data-lk="q" step="0.01" min="0" value="${it.q??""}" placeholder="–"></div>
      <div class="field"><label for="lbP">PU HT indicatif</label><input type="text" inputmode="decimal" class="money" id="lbP" data-lk="pu" value="${money(it.pu)}"></div></div>`}`:""}
-   <div class="field"><label for="lbX">Description</label><textarea id="lbX" data-lk="texte" style="min-height:160px">${esc(it.texte||"")}</textarea></div>
+   <div class="field"><label for="lbX">Description</label><textarea id="lbX" data-lk="texte" style="min-height:160px">${esc(plainTxt(it.texte))}</textarea></div>
    ${f.kind==="article"&&(it.sub||[]).length?`<p class="hint">Sous-articles inclus : ${it.sub.map(s=>esc(s.titre)).join(", ")}</p>`:""}
    <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-libdel="${it.id}">Supprimer</button>
      ${f.kind==="titre"?`<button class="btn" data-libadd="sous-titre">Ajouter un sous-titre</button>`:f.kind==="sous-titre"?`<button class="btn" data-libadd="article">Ajouter un article</button>`:`<button class="btn" data-libadd="sub">Ajouter un sous-article</button>`}</span>
@@ -2460,11 +2618,11 @@ const safeName=x=>String(x||"").replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," "
 function bpuFlat(){
   const rows=[];
   const arts=(list,d)=>list.forEach(ar=>{const has=ar.sub.length||isTitle(ar);
-    rows.push(has?{k:"par",code:ar.code,titre:ar.titre,d,texte:ar.texte||""}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre,d,texte:ar.texte||"",u:ar.u,q:qty(ar),tva:tvaOf(ar)});
+    rows.push(has?{k:"par",code:ar.code,titre:ar.titre,d,texte:plainTxt(ar.texte)}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre,d,texte:plainTxt(ar.texte),u:ar.u,q:qty(ar),tva:tvaOf(ar)});
     arts(ar.sub,d+1);});
   state.data.forEach(lot=>{
-    rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:lot.texte||""});
-    const node=(n,d)=>{rows.push({k:"node",code:n.code,titre:n.titre,d,texte:n.texte||""});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
+    rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
+    const node=(n,d)=>{rows.push({k:"node",code:n.code,titre:n.titre,d,texte:plainTxt(n.texte)});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
     lot.children.forEach(ch=>node(ch,0));
   });
   return rows;

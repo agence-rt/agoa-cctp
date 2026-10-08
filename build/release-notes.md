@@ -1,1 +1,1 @@
-Déploiement n°11 — Triangles : niveau 2 rétabli, niveau 3 agrandi ; puces en point noir ; fiche article : localisation sous la description, images en dessous
+Déploiement n°12 — Descriptions : mise en forme (gras, italique, souligné, surlignage, taille), justification, puces et numérotation
