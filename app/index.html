@@ -568,6 +568,13 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 .rte-bar button{min-width:28px;height:28px;border:1px solid transparent;background:transparent;border-radius:4px;cursor:pointer;font:inherit;font-size:13px;color:var(--ink,#222);padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
 .rte-bar button:hover{background:var(--line)}
 .rte-bar button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.ai-wrap{position:relative;display:inline-flex}
+.ai-wand.busy{opacity:.5;pointer-events:none;animation:aipulse 1s infinite}
+@keyframes aipulse{50%{opacity:.2}}
+.ai-menu{position:absolute;top:32px;left:0;z-index:30;min-width:230px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);padding:6px;display:flex;flex-direction:column;gap:2px}
+.ai-menu[hidden]{display:none}
+.ai-menu button{justify-content:flex-start;text-align:left;height:30px;width:100%}
+.ai-menu .hint{margin:6px 6px 2px;font-size:11.5px;white-space:normal}
 .rte-bar .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
 .rte-bar select{height:28px;font-size:12.5px;width:auto;min-width:86px;padding:0 4px}
 .rte-bar .hl{background:#fff176;padding:0 3px;border-radius:2px}
@@ -855,7 +862,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.19.0", deploiement: 19};
+const APP = {version: "0.20.0", deploiement: 20};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1631,6 +1638,9 @@ const rteBar=()=>`<div class="rte-bar" role="toolbar" aria-label="Mise en forme 
   <button type="button" data-rt="insertOrderedList" title="Liste numérotée">1. Liste</button>
   <span class="sep"></span>
   <button type="button" data-rt="clear" title="Effacer la mise en forme de la sélection">Tx</button>
+  <span class="sep"></span>
+  <span class="ai-wrap"><button type="button" class="ai-wand" title="Reformulation par IA (sélection ou texte entier)" aria-haspopup="true"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M2.5 13.5 9.5 6.5"/><path d="M8.5 5.5l2 2"/><path d="M11.5 1.5v2M10.5 2.5h2M13.5 6v1.6M12.7 6.8h1.6M5 2.5v1.4M4.3 3.2h1.4"/></svg></button>
+    <div class="ai-menu" hidden role="menu"><button type="button" data-ai="reformuler" role="menuitem">Reformuler</button><button type="button" data-ai="corriger" role="menuitem">Corriger l'orthographe</button><button type="button" data-ai="raccourcir" role="menuitem">Raccourcir</button><button type="button" data-ai="prescriptif" role="menuitem">Style prescriptif (CCTP)</button><p class="hint">S'applique à la sélection, ou à tout le texte si rien n'est sélectionné. Annulable avec Ctrl+Z.</p></div></span>
 </div>`;
 const rteField=(label,t,ph)=>`<div class="field dcard"><div class="dcard-h"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="1.5" width="11" height="13" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><label id="fTxtL">${label}</label></div>${rteBar()}<div id="fTxt" class="rte${plainTxt(t).trim()?"":" empty"}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="fTxtL" data-ph="${esc(ph)}" spellcheck="true">${rtEditorHtml(t)}</div></div>`;
 (function rteEvents(){
@@ -1659,6 +1669,33 @@ const rteField=(label,t,ph)=>`<div class="field dcard"><div class="dcard-h"><svg
     else if(k==="clear"){x("removeFormat");x("styleWithCSS",false,true);x("hiliteColor",false,"transparent");ed().querySelectorAll("[style]").forEach(n=>{n.style.fontSize="";});}
     else x(k);
     sync();
+  });
+  const aiMenu=()=>document.querySelector(".ai-menu");
+  document.addEventListener("click",e=>{const m=aiMenu();if(m&&!e.target.closest(".ai-wrap"))m.hidden=true;});
+  let aiBusy=false;
+  async function aiRun(mode){
+    if(!AG||!AG.aiRewrite){toast("La reformulation IA est disponible dans l'application installée.");return;}
+    const e0=ed(); if(!e0||aiBusy) return;
+    const s=getSelection(), hasSel=s.rangeCount&&!s.isCollapsed&&inEd(s.anchorNode)&&inEd(s.focusNode);
+    const range=hasSel?s.getRangeAt(0).cloneRange():(()=>{const r=document.createRange();r.selectNodeContents(e0);return r;})();
+    const text=(hasSel?s.toString():e0.innerText).replace(/\n{2,}/g,"\n").trim();
+    if(!text.trim()){toast("Aucun texte à reformuler.");return;}
+    const wand=document.querySelector(".ai-wand"); aiBusy=true; if(wand)wand.classList.add("busy"); toast("Reformulation en cours…");
+    try{
+      let out;
+      try{out=await AG.aiRewrite(text,mode);}
+      catch(err){ if(/\[no_key\]/.test(String(err&&err.message))&&await AG.aiKey()) out=await AG.aiRewrite(text,mode); else throw err; }
+      e0.focus(); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      const x=document.execCommand.bind(document), lines=String(out).replace(/\r/g,"").split("\n").filter(l=>l.trim()||hasSel);
+      x("delete"); lines.forEach((l,i)=>{if(i)x("insertParagraph");if(l)x("insertText",false,l);});
+      sync(); toast("Texte reformulé (Ctrl+Z pour annuler)");
+    }catch(err){const m=String(err&&err.message||err).replace(/^Error invoking remote method '[^']*': (Error: )?/,"");
+      toast(/\[no_key\]/.test(m)?"Clé API Anthropic non renseignée (menu Aide).":m.replace(/\[\w+\]\s*/,"")||"Reformulation impossible.");}
+    finally{aiBusy=false; if(wand)wand.classList.remove("busy");}
+  }
+  bar.addEventListener("click",e=>{
+    const w=e.target.closest(".ai-wand"); if(w){e.preventDefault();const m=aiMenu();if(m)m.hidden=!m.hidden;return;}
+    const a=e.target.closest("[data-ai]"); if(a){e.preventDefault();const m=aiMenu();if(m)m.hidden=true;aiRun(a.dataset.ai);}
   });
   bar.addEventListener("change",e=>{const t=e.target; if(t.matches("[data-rt-size]")&&t.value){const v=parseFloat(t.value);t.value="";applySize(v);}});
   bar.addEventListener("input",e=>{if(e.target.id==="fTxt")sync();});

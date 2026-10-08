@@ -164,6 +164,39 @@ async function askRagicKey() {
   if (v === null) return;
   setSecret("ragicKey", v.trim());
 }
+async function askAnthropicKey() {
+  const v = await askSecret("Reformulation par IA", "Clé API Anthropic",
+    "Clé API (console.anthropic.com, API Keys) utilisée par la baguette magique des outils de texte pour reformuler les descriptions. Elle est conservée chiffrée sur ce poste. Seul le texte à reformuler est envoyé à Anthropic.");
+  if (v === null) return false;
+  setSecret("anthropicKey", v.trim());
+  return !!v.trim();
+}
+const AI_BASE = "Tu es rédacteur de CCTP pour une agence d'architecture spécialisée dans les copropriétés parisiennes. Tu travailles sur la description d'un ouvrage de travaux. Conserve strictement le sens, les valeurs, quantités, unités, références normatives (DTU, NF…), noms de produits et sigles ; n'invente aucune information et ne supprime aucune exigence. Conserve la structure en paragraphes (un paragraphe par ligne) et les listes. Réponds uniquement par le texte réécrit, en français, sans commentaire, sans titre et sans guillemets.";
+const AI_MODES = {
+  reformuler: "Reformule le texte de manière claire, précise et professionnelle, dans le style prescriptif d'un CCTP.",
+  corriger: "Corrige uniquement l'orthographe, la grammaire, la ponctuation et la typographie, sans modifier le style ni le contenu.",
+  raccourcir: "Raccourcis le texte en gardant toutes les prescriptions utiles ; supprime les redondances et tournures inutiles.",
+  prescriptif: "Réécris le texte dans un style strictement prescriptif et formel de CCTP (« L'entreprise devra… », « Les travaux comprennent… »), au présent ou au futur de l'obligation."
+};
+async function aiRewrite(text, mode) {
+  const key = getSecret("anthropicKey");
+  if (!key) throw new Error("[no_key] Clé API Anthropic manquante");
+  const c = readJson(configPath(), {});
+  let r;
+  try {
+    r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify({ model: c.aiModel || "claude-sonnet-5-5", max_tokens: 4000,
+        system: AI_BASE + " " + (AI_MODES[mode] || AI_MODES.reformuler), messages: [{ role: "user", content: String(text).slice(0, 20000) }] }) });
+  } catch (e) { throw new Error("[network] " + e.message); }
+  if (r.status === 401 || r.status === 403) throw new Error("[auth] Clé API Anthropic refusée");
+  if (r.status === 429) throw new Error("[rate] Trop de requêtes, réessayez dans un instant");
+  if (!r.ok) throw new Error("[tool_error] Anthropic HTTP " + r.status);
+  const j = await r.json();
+  const out = (j.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+  if (!out) throw new Error("[tool_error] Réponse vide");
+  return out;
+}
 async function runCheck(manual) {
   if (!app.isPackaged || !updater) {
     if (manual) dialog.showMessageBox(win, { type: "info", message: "Disponible uniquement dans la version installée." });
@@ -395,7 +428,8 @@ function createWindow() {
       { type: "separator" },
       { label: "Rechercher des mises à jour…", click: () => runCheck(true) },
       { label: "Bibliothèque partagée : choisir le dossier…", click: () => js("window.__libChoose && window.__libChoose()").catch(() => {}) },
-      { label: "Clé API Ragic…", click: () => askRagicKey() }
+      { label: "Clé API Ragic…", click: () => askRagicKey() },
+      { label: "Clé API Anthropic (reformulation IA)…", click: () => askAnthropicKey() }
     ] }
   ]));
 }
@@ -510,6 +544,8 @@ ipcMain.handle("lib-choose", async () => {
 ipcMain.on("get-config", e => { e.returnValue = readJson(configPath(), {}); });
 ipcMain.on("set-config", (e, patch) => { writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), ...patch }, null, 2)); e.returnValue = true; });
 ipcMain.handle("ragic", (e, tool, input) => ragic(tool, input));
+ipcMain.handle("ai-rewrite", (e, text, mode) => aiRewrite(text, mode));
+ipcMain.handle("ai-key", () => askAnthropicKey());
 ipcMain.handle("save-file", async (e, filename, bytes) => {
   const ext = (filename.split(".").pop() || "").toLowerCase();
   const names = { cctp: "Affaire AGOA CCTP", xlsx: "Classeur Excel", pdf: "PDF" };

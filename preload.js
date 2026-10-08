@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("agoa", {
   getConfig: () => ipcRenderer.sendSync("get-config"),
   setConfig: patch => ipcRenderer.sendSync("set-config", patch),
   ragic: (tool, input) => ipcRenderer.invoke("ragic", tool, input),
+  aiRewrite: (text, mode) => ipcRenderer.invoke("ai-rewrite", text, mode),
+  aiKey: () => ipcRenderer.invoke("ai-key"),
   saveFile: (filename, bytes) => ipcRenderer.invoke("save-file", filename, bytes),
   savePDF: filename => ipcRenderer.invoke("save-pdf", filename),
   saveAs: (filename, text) => ipcRenderer.invoke("save-as", filename, text),

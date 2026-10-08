@@ -1,1 +1,1 @@
-Déploiement n°19 — v0.18.1 : tableau comparatif, plus de montants sur les lignes de titre (lot, chapitre, article-titre)
+Déploiement n°20 — Baguette magique IA dans les outils de texte : reformuler, corriger, raccourcir, style prescriptif (clé API Anthropic dans le menu Aide)
