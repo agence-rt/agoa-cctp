@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°13** — v0.13.0 — 2026-10-08 — Arbre : pastilles quantité/unité, liens, +/−, surlignage couleur ; options et variantes multiples ; saisie d'article remaniée
 - **n°12** — v0.12.0 — 2026-10-08 — Descriptions : mise en forme (gras, italique, souligné, surlignage, taille), justification, puces et numérotation
 - **n°11** — v0.11.0 — 2026-10-07 — Triangles : niveau 2 rétabli, niveau 3 agrandi ; puces en point noir ; fiche article : localisation sous la description, images en dessous
 - **n°10** — v0.10.0 — 2026-10-07 — Analyse : écarts en couleur sans pourcentage + bouton Valider, TVA dans les totaux. Rédaction : triangles agrandis, puces, photos sous les sous-titres de niveau 2, localisation sans exemple

@@ -77,13 +77,23 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:6px}
 .tree{max-height:calc(100vh - 120px);overflow:auto;position:sticky;top:12px;display:flex;flex-direction:column}
 .tree-body{padding:8px 0;flex:1}
-.tree details.lotd{margin:8px 8px 6px;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:8px;overflow:hidden;background:var(--surface)}
-.tree details.lotd>summary.lot{margin:0;padding:8px 10px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--accent-soft);border-left:0}
+.tree{--tl:color-mix(in srgb,var(--muted) 55%,var(--line))}
+.tree details.lotd{margin:8px 8px 6px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.tree details.lotd>summary.lot{margin:0;padding:8px 10px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;background:transparent;border-left:3px solid transparent}
 .tree details.lotd>summary.lot::before{margin-top:0}
-.tree details.lotd[open]>summary.lot{border-bottom:1px solid color-mix(in srgb,var(--accent) 30%,var(--line))}
-.tree details.lotd>summary.lot.cur{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.tree details.lotd[open]>summary.lot{border-bottom:1px solid var(--line)}
+.tree details.lotd>summary.lot.cur{background:var(--paper);border-left-color:var(--accent)}
 .tree details.chd{padding-bottom:2px}
-.tree details.chd>summary.chs{padding:6px 10px 6px 14px}
+.tree details.chd>summary.chs{padding:6px 10px 6px 2px;align-items:flex-start}
+.tree details.chd>summary.chs .code{margin-top:0}
+/* liens entre lot / chapitre / article / sous-article */
+.tree .kids{position:relative;margin-left:8px;padding:2px 0 2px 0}
+.tree .kids.lk{margin-left:12px}
+.tree .ti{position:relative;padding-left:16px}
+.tree .ti::before{content:"";position:absolute;left:0;top:0;bottom:0;border-left:1.5px solid var(--tl)}
+.tree .ti:last-child::before{bottom:auto;height:15px}
+.tree .ti::after{content:"";position:absolute;left:0;top:15px;width:14px;border-top:1.5px solid var(--tl)}
+.tree .ti>.art,.tree .ti>summary{margin-left:0}
 .tree .lot-name{cursor:pointer}
 .chk.sm{font-size:13px;margin:0}
 .tree .lot:first-child{margin-top:6px}
@@ -108,8 +118,7 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .tree details>summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);margin-top:6px;flex:none;transition:transform .15s}
 .tree details[open]>summary::before{transform:rotate(45deg)}
 .tree .sub{padding:6px 14px 2px 30px;font-size:12.5px;color:var(--muted)}
-.tree .art{display:flex;gap:7px;align-items:center;padding:4px 10px 4px calc(12px + var(--b,0) * 14px + var(--n,0) * 24px);font-size:13px;border-left:2px solid transparent;cursor:pointer;user-select:none;position:relative}
-.tree .art.nested::before{content:"";position:absolute;left:calc(var(--b,0) * 14px + var(--n,0) * 24px - 4px);top:0;height:55%;width:9px;border-left:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);opacity:.55}
+.tree .art{display:flex;gap:7px;align-items:center;padding:4px 10px 4px 4px;font-size:13px;border-left:2px solid transparent;cursor:pointer;user-select:none;position:relative}
 .tree .art.nested .t{color:var(--ink);font-size:12.5px}
 .tree .art.drop-in{outline:1.5px dashed var(--accent);outline-offset:-2px}
 .tree .art.drop-in::after{content:"en sous-article";margin-left:auto;font-size:11px;color:var(--accent);flex:none}
@@ -136,12 +145,31 @@ tr[data-nid]{cursor:pointer}
 .lv-chk{display:flex;align-items:center;gap:4px;cursor:pointer;font-variant-numeric:tabular-nums}
 .lv-chk input{accent-color:var(--accent);width:15px;height:15px}
 .btn.warn{border-color:var(--ochre);color:var(--ochre);background:var(--ochre-soft)}
-.atg{width:17px;flex:none;border:0;background:none;color:var(--ink,#333);font-size:15px;line-height:1;padding:0;cursor:pointer}
-.art.noq{background:#FFD9A8}.art.noq:hover{background:#FFCB8A}.art.noq.cur{background:#FFC27A}
-:root[data-theme="dark"] .art.noq{background:#4A3414}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .art.noq{background:#4A3414}}
+.atg{width:13px;height:13px;flex:none;border:1px solid var(--muted);border-radius:2px;background:var(--surface);color:var(--ink,#333);font-size:13px;font-weight:700;line-height:10px;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.atg:hover{border-color:var(--accent);color:var(--accent)}
 .dbx-lk{display:flex;gap:6px;margin-top:6px;align-items:center}.dbx-link{flex:1;min-width:0;font-size:12px;padding:5px 8px}.dbx-link.bad{border-color:var(--red)}
-.noq-dot{width:7px;height:7px;border-radius:50%;background:var(--ochre);flex:none;margin-left:auto}
+.pdots{display:flex;gap:4px;margin-left:auto;flex:none;align-items:center}
+.pdot{width:9px;height:9px;border-radius:50%;flex:none}
+.pdot.o{background:#F28C28}.pdot.r{background:#D93025}
+.tree .t[style],.tree .lot-name[style],.tree .node-name[style]{padding:0 6px;border-radius:3px}
+.ovb{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:9px;margin-left:6px;vertical-align:middle;white-space:nowrap;text-transform:none;font-variation-settings:normal}
+.ovb.option{background:#FFE0B2;color:#7A4300}.ovb.variante{background:#D7C4F0;color:#3F2370}.ovb.base{background:#E3E8EE;color:#46525F}
+.ovt{font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap;flex:none}.ovt.in{color:#B35F00;font-weight:650}
+.tot-ov{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+tr.st.ov td{font-weight:500}
+.ovbox .ov-bases{display:flex;flex-direction:column;gap:4px;margin:4px 0}
+.ov-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ov-row{display:grid;grid-template-columns:auto 1fr 110px 28px;gap:8px;align-items:center;margin-bottom:10px}
+.ov-row .ov-sum{grid-column:1/-1;margin:-4px 0 0 4px}
+.dcard{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.dcard-h{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);border-bottom:1px solid var(--line);font-weight:650;font-size:13.5px;color:var(--ink)}
+.dcard-h label{margin:0;font-weight:650;font-size:13.5px}
+.dcard .rte-bar{border:0;border-bottom:1px solid var(--line);border-radius:0}
+.dcard .rte{border:0;border-radius:0}
+.hl-bar{display:flex;align-items:center;gap:6px;margin:-4px 0 12px}
+.hl-bar .flabel{font-size:12px;color:var(--muted);margin-right:4px}
+.hl-sw{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line);cursor:pointer;padding:0;font-size:12px;line-height:1;color:var(--muted);background:var(--surface)}
+.hl-sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
 .chk-row{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:8px 4px}
 .chk-row:hover{background:var(--paper)}
 .chk-row .hint{grid-column:2;color:var(--ochre)}
@@ -170,7 +198,7 @@ input[type=text],input[type=number],select,textarea{width:100%;background:var(--
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;background:var(--surface)}
 textarea{min-height:130px;resize:vertical;line-height:1.5}
 h4.sec{font-size:15px;font-weight:650;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
-.chif{display:grid;grid-template-columns:minmax(96px,1.1fr) 66px minmax(0,1fr) minmax(0,1.15fr) 72px minmax(0,.9fr) minmax(0,1.05fr);gap:8px;align-items:start}
+.chif{display:grid;grid-template-columns:78px minmax(96px,1.1fr) minmax(0,1fr) minmax(0,1.15fr) 72px minmax(0,.9fr) minmax(0,1.05fr);gap:8px;align-items:start}
 .chif .field>label,.chif .flabel{font-size:12.5px}
 .chif input,.chif select,.chif .ro{padding:8px 6px;font-size:13px}
 .chif input,.chif select{background:var(--field-bg)}
@@ -536,9 +564,11 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <button class="btn" id="saveBtn" title="Enregistrer le fichier de l'affaire (.cctp)">Enregistrer</button>
   <button class="btn" id="libBtn">Bibliothèque</button>
   <button class="btn" id="optBtn">Options de l'opération</button>
+  <button class="btn" id="ovBtn" title="Définir les options et variantes de l'opération">Options / variantes</button>
   <div class="total">
     <small>Montant des travaux HT</small>
     <strong class="num" id="totEst">–</strong>
+    <small class="tot-ov" id="totOv"></small>
   </div>
 </header>
 
@@ -654,6 +684,13 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   </div>
 </dialog>
 
+<dialog id="ovDlg" aria-labelledby="ovTitle" style="width:min(720px,94vw);padding:22px 24px">
+  <h3 id="ovTitle">Options et variantes</h3>
+  <p class="hint" style="margin-top:0">Une <b>option</b> ajoute des ouvrages éventuels ; une <b>variante</b> propose une solution alternative. Leurs ouvrages sont chiffrés à part et ne sont pas comptés dans le marché de base. Les ouvrages remplacés sont marqués « base à décompter » : leur montant est déduit.</p>
+  <div id="ovBody"></div>
+  <div class="dlg-act" style="justify-content:space-between"><span style="display:flex;gap:8px"><button class="btn sm" data-ovadd="option">Ajouter une option</button><button class="btn sm" data-ovadd="variante">Ajouter une variante</button></span><button class="btn primary" id="ovClose">Fermer</button></div>
+</dialog>
+
 <dialog id="chkDlg" aria-labelledby="chkTitle">
   <h3 id="chkTitle">Vérification des quantités</h3>
   <div id="chkBody"></div>
@@ -761,7 +798,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.12.0", deploiement: 12};
+const APP = {version: "0.13.0", deploiement: 13};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -813,7 +850,36 @@ if(!store){
   store={affaires:[first],cur:null};
 }
 let quotaWarned=false;
-const save=()=>{if(state){state.updated=Date.now();markDirty();autoSaveFile();}try{libSchedule();}catch(e){}try{LS.setItem(KEY,JSON.stringify(store))}catch(e){if(!quotaWarned){quotaWarned=true;setTimeout(()=>toast("Stockage du navigateur saturé : enregistrez le fichier de l'affaire pour ne rien perdre."),0);}}};
+/* ---------- Options et variantes ----------
+   state.ovs = [{id,kind:"option"|"variante",nom}]. Un lot, chapitre, article ou sous-article porte :
+   ovIn  = id de l'option/variante dont il fait partie (exclu du marché de base, chiffré à part)
+   ovBase = ids des options/variantes dont il est une base à décompter. Tout est hérité par les niveaux inférieurs. */
+let OVV=0, OVC=null;
+const ovl=()=>state.ovs||(state.ovs=[]);
+const ovNum=o=>ovl().filter(x=>x.kind===o.kind).indexOf(o)+1;
+const ovShort=o=>(o.kind==="variante"?"Variante ":"Option ")+ovNum(o);
+const ovLab=o=>ovShort(o)+(o.nom?" – "+o.nom:"");
+const ovById=id=>ovl().find(o=>o.id===id);
+function ovMap(){
+  if(OVC&&OVC.s===state&&OVC.v===OVV) return OVC.m;
+  const m=new Map(), ok=new Set(ovl().map(o=>o.id));
+  const mk=(it,pin,pb)=>{const i=(it.ovIn&&ok.has(it.ovIn))?it.ovIn:pin;const b=[...new Set([...pb,...(it.ovBase||[]).filter(x=>ok.has(x))])];m.set(it,{in:i,base:b});return[i,b];};
+  const art=(list,pin,pb)=>list.forEach(a=>{const[i,b]=mk(a,pin,pb);art(a.sub||[],i,b);});
+  const node=(n,pin,pb)=>{const[i,b]=mk(n,pin,pb);art(n.art||[],i,b);(n.children||[]).forEach(c=>node(c,i,b));};
+  (state.data||[]).forEach(l=>node(l,"",[]));
+  OVC={s:state,v:OVV,m}; return m;
+}
+const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
+const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovShort(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovShort(b));});return a.join(", ");};
+const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span>`:"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=`<span class="ovb base">Base ${esc(ovShort(b))}</span>`;});return h;};
+const ovTxt=it=>{const t=ovTag(it);return t?` [${t.toUpperCase()}]`:"";};
+const btotal=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+btotal(x),0):isTitle(ar)?0:(ovOf(ar).in?0:qty(ar)*ar.pu);
+function ovSumsOver(arts){const r={};ovl().forEach(o=>r[o.id]={in:0,base:0});
+  const v=list=>list.forEach(ar=>{if(ar.sub.length){v(ar.sub);return;}if(isTitle(ar))return;const c=ovOf(ar),t=qty(ar)*ar.pu;if(c.in&&r[c.in])r[c.in].in+=t;c.base.forEach(id=>{if(r[id])r[id].base+=t;});});
+  v(arts);return r;}
+function ovSums(){const all=[];state.data.forEach(l=>{const w=n=>{all.push(...(n.art||[]));(n.children||[]).forEach(w);};w(l);});return ovSumsOver(all);}
+function ovUnder(n){const all=[];const w=x=>{all.push(...(x.art||[]));(x.children||[]).forEach(w);};w(n);return ovSumsOver(all);}
+const save=()=>{OVV++;if(state){state.updated=Date.now();markDirty();autoSaveFile();}try{libSchedule();}catch(e){}try{LS.setItem(KEY,JSON.stringify(store))}catch(e){if(!quotaWarned){quotaWarned=true;setTimeout(()=>toast("Stockage du navigateur saturé : enregistrez le fichier de l'affaire pour ne rien perdre."),0);}}};
 /* Fichier d'affaire .cctp : JSON {format,version,application,enregistre_le,affaire}.
    L'application Windows l'écrira directement en .dce ; une page web n'a droit qu'à une liste
    d'extensions fixe, la maquette l'enregistre donc en .dce.json (même contenu). */
@@ -934,7 +1000,7 @@ function renumberAll(){
 function findAnyNode(k){let r=null;const v=n=>{if(r)return;if(n.nid===k)r=n;(n.children||[]).forEach(v);};state.data.forEach(v);return r;}
 function nodeCtx(k){for(const lot of state.data){if(lot.nid===k)return{lot,ch:null,node:lot,level:"lot"};for(const ch of lot.children){if(ch.nid===k)return{lot,ch,node:ch,level:"chapitre"};for(const s of (ch.children||[]))if(s.nid===k)return{lot,ch,node:s,level:"sous-chapitre"};}}return null;}
 const ownNode=n=>0;
-const nodeTotal=n=>ownNode(n)+(n.art||[]).reduce((s,x)=>s+total(x),0)+(n.children||[]).reduce((s,c)=>s+nodeTotal(c),0);
+const nodeTotal=n=>ownNode(n)+(n.art||[]).reduce((s,x)=>s+btotal(x),0)+(n.children||[]).reduce((s,c)=>s+nodeTotal(c),0);
 function curItem(){const f=locate(state.sel);if(f)return{it:f.art,lot:f.lot,f};const nc=nodeCtx(state.sel);return nc?{it:nc.node,lot:nc.lot,node:true,nc}:null;}
 function selectNode(k){state.sel=k;openPath(k);save();renderTree();renderEditor();}
 const countArts=lot=>{let n=0;lists((list,o,l)=>{if(l===lot)n+=list.length;});return n;};
@@ -1030,7 +1096,7 @@ function imgsField(ar,after){
     <input type="file" id="imgFile" accept="image/*" multiple hidden>
     <button class="btn sm" data-imgadd>Ajouter une image</button></div>`;
 }
-const blank=(u="m²")=>({id:nid(),code:"",titre:"Nouvel article",u,pu:0,tva:null,qman:null,texte:"",loc:"",lignes:[],sub:[]});
+const blank=(u="")=>({id:nid(),code:"",titre:"Nouvel article",u,pu:0,tva:null,qman:null,texte:"",loc:"",lignes:[],sub:[]});
 
 const ents=()=>state.ents||(state.ents=[]);
 const hasOffer=e=>!!(e.offre||e.base!=null);
@@ -1094,19 +1160,28 @@ function openQtyCheck(){
     :`<p class="ok-msg">Toutes les quantités sont renseignées (${n} article${n>1?"s":""} chiffré${n>1?"s":""}). L'affaire est prête pour la consultation.</p>`;
   $("#chkDlg").showModal();
 }
+const HLC=[["j","Jaune","#FFF176"],["o","Orange","#FFCC80"],["r","Rose","#F8BBD9"],["v","Vert","#C5E8B7"],["b","Bleu","#BBDEFB"],["m","Mauve","#D7C4F0"]];
+const hlCol=k=>{const c=HLC.find(x=>x[0]===k);return c?c[2]:"";};
+const hlStyle=it=>it&&it.hl&&hlCol(it.hl)?` style="background:${hlCol(it.hl)};color:#222"`:"";
+const ovTreeTag=it=>{const p=[];const o=it.ovIn&&ovById(it.ovIn);if(o)p.push(ovShort(o));(it.ovBase||[]).forEach(id=>{const b=ovById(id);if(b)p.push("base "+ovShort(b));});return p.length?`<span class="ovt${o?" in":""}" title="${esc(p.join(", "))}">(${esc(p.join(", "))})</span>`:"";};
+const noUnit=ar=>!ar.sub.length&&!isTitle(ar)&&!String(ar.u||"").trim();
+const dotsOf=(ar,noq)=>(noq?`<span class="pdot o" title="Quantité non renseignée"></span>`:"")+(noUnit(ar)?`<span class="pdot r" title="Unité non renseignée"></span>`:"");
+const hlBar=it=>`<div class="hl-bar" role="group" aria-label="Surligner dans la liste de gauche"><span class="flabel">Surlignage dans la liste</span>${HLC.map(([k,n,c])=>`<button type="button" class="hl-sw" data-hl="${k}" style="background:${c}" aria-pressed="${it.hl===k}" title="${n}" aria-label="${n}"></button>`).join("")}<button type="button" class="hl-sw none" data-hl="" aria-pressed="${!it.hl}" title="Aucun surlignage" aria-label="Aucun surlignage">×</button></div>`;
 function renderTree(){
   const cur=locate(state.sel), nc=cur?null:nodeCtx(state.sel), curCh=cur?cur.ch:nc&&nc.ch, curLot=cur?cur.lot:nc&&nc.lot;
   const noq=new Set(missingQty().map(m=>m.ar.id));
   const rows=(list,b,n)=>list.map(ar=>{const has=ar.sub.length>0, op=openIds.has(ar.id);
-    return `<div class="art${ar.id===state.sel?" cur":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" style="--b:${b};--n:${n}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"▾":"▸"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t">${esc(ar.titre)}</span>${noq.has(ar.id)?`<span class="noq-dot" title="Quantité manquante"></span>`:""}</div>`+(has&&op?rows(ar.sub,b,n+1):"");}).join("");
+    const row=`<div class="art${ar.id===state.sel?" cur":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span></div>`;
+    return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
-    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}" title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
+    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}</span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
+    h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
-      h+=`<details class="chd" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}" title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
-      h+=rows(ch.art||[],1,0)+`</details>`;
+      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
+      h+=`<div class="kids">${rows(ch.art||[],1,0)}</div></details>`;
     });
-    h+=`</details>`;
+    h+=`</div></details>`;
   });
   $("#tree").innerHTML=h; renderTreeTop();
   $("#trashBtn").textContent=state.trash.length?`Corbeille (${state.trash.length})`:"Corbeille";
@@ -1121,6 +1196,7 @@ function renderEditor(){
   const {art:ar,lot,ch,list,i,owner}=f, hasSub=ar.sub.length>0, prev=list[i-1];
   el.innerHTML=`
   <div class="art-head"><span class="art-code">${ar.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(ar.titre)}" aria-label="Intitulé de l'article"></div>
+  ${hlBar(ar)}
   <div class="tools" role="toolbar" aria-label="Actions sur l'article">
     <label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>
     <span class="sep"></span>
@@ -1140,6 +1216,7 @@ function renderEditor(){
   ${imgsField(ar)}
   ${isTitle(ar)?""
    :`<h4 class="sec">Chiffrage</h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
+  ${ovBox(ar)}
   <div class="actions">
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${libOrigin(ar)?`<button class="btn maj" data-act="majBdd" title="Remplace l'article modèle de la bibliothèque par cette version">MAJ BDD</button>`:""}</span>
     <button class="btn primary" data-act="addAfter">Ajouter un article après ${ar.code}</button>
@@ -1161,23 +1238,38 @@ function renderNodeEditor(nc){
   const kids=isLot?n.children.map(c=>({code:c.code,titre:c.titre,t:nodeTotal(c),k:`data-seln="${c.nid}"`})):(n.art||[]).map(a=>({code:a.code,titre:a.titre,t:total(a),k:`data-sel="${a.id}"`}));
   $("#editor").innerHTML=`
   <div class="art-head"><span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
+  ${hlBar(n)}
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
   ${rteField("Description",n.texte,isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…")}
   ${isLot?"":imgsField(n,true)}
+  ${ovBox(n)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
   updateLive();
 }
+function ovBox(it){
+  const L=ovl(), c=ovOf(it), inh=c.in&&it.ovIn!==c.in?ovById(c.in):null;
+  const hd=`<h4 class="sec">Option / variante</h4>`;
+  if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie pour cette affaire. Une option ou une variante regroupe des ouvrages chiffrés à part du marché de base.</p>
+    <div class="ov-act"><button class="btn sm" data-ovnew="option">Créer une option</button><button class="btn sm" data-ovnew="variante">Créer une variante</button></div></div>`;
+  return `<div class="ovbox">${hd}
+    <div class="field"><label for="ovIn">Cet ouvrage fait partie de</label><select id="ovIn"><option value="">Marché de base</option>${L.map(o=>`<option value="${o.id}" ${it.ovIn===o.id?"selected":""}>${esc(ovLab(o))}</option>`).join("")}</select>
+      ${inh?`<div class="hint">Hérité du niveau supérieur : ${esc(ovLab(inh))}. Son montant n'est pas compté dans le marché de base.</div>`:it.ovIn?`<div class="hint">Son montant n'est pas compté dans le marché de base ; il est chiffré à part dans ${esc(ovShort(ovById(it.ovIn)))}.</div>`:""}</div>
+    <div class="field"><span class="flabel">Base à décompter</span>
+      <div class="ov-bases">${L.map(o=>`<label class="chk sm"><input type="checkbox" data-ovb="${o.id}" ${(it.ovBase||[]).includes(o.id)?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
+      <div class="hint">À cocher lorsque cet ouvrage est remplacé par l'option ou la variante : son montant est alors déduit du total de celle-ci.</div></div>
+    <div class="ov-act"><button class="btn sm" data-ovnew="option">Créer une option</button><button class="btn sm" data-ovnew="variante">Créer une variante</button><button class="btn sm quiet" id="ovManage">Gérer les options et variantes…</button></div></div>`;
+}
 function chiffrage(ar,lot){
   const lr=rate(lot.tva);
   return `<div class="chif">
+    <div class="field"><label for="fU">Unité</label><select id="fU" data-k="u"><option value="" ${ar.u?"":"selected"}>—</option>${UNITS.map(u=>`<option ${u===ar.u?"selected":""}>${u}</option>`).join("")}</select></div>
     <div class="field"><label for="fQ">Quantité</label><input type="number" id="fQ" data-k="qman" step="${qd(ar.u)?"0.01":"1"}" min="0" value="${ar.qman==null?"":rq(ar.qman,ar.u).toFixed(qd(ar.u))}" placeholder="Saisie"><div class="hint" id="qHint"></div></div>
-    <div class="field"><label for="fU">Unité</label><select id="fU" data-k="u">${UNITS.map(u=>`<option ${u===ar.u?"selected":""}>${u}</option>`).join("")}</select></div>
     <div class="field"><label for="fPU">PU HT</label><input type="text" inputmode="decimal" class="money" id="fPU" data-k="pu" value="${money(ar.pu)}" autocomplete="off"></div>
-    <div class="field auto"><span class="flabel">Total HT</span><div class="ro strong num" id="oT"></div></div>
+    <div class="field auto"><span class="flabel">Montant HT</span><div class="ro strong num" id="oT"></div></div>
     <div class="field"><label for="fTva">TVA</label><select id="fTva" data-k="tva">${state.tvas.map(t=>`<option value="${t.id}" ${t.id===(rate(ar.tva)?ar.tva:defTva())?"selected":""}>${pct(t.taux)}</option>`).join("")}</select></div>
     <div class="field auto noauto"><span class="flabel">Montant TVA</span><div class="ro num" id="oTVA"></div></div>
-    <div class="field auto noauto"><span class="flabel">Total TTC</span><div class="ro num" id="oTTC"></div></div>
+    <div class="field auto noauto"><span class="flabel">Montant TTC</span><div class="ro num" id="oTTC"></div></div>
   </div>
   <div class="metre-box" id="mBox">
     <div class="mb-h"><b>Métré détaillé</b><span class="hint">S'il est renseigné, il remplace la quantité saisie directement.</span></div>
@@ -1215,7 +1307,7 @@ function updateLive(){
   }
   if(ci.node){const s=$(`#tree [data-rennode="${ar.nid}"],#tree [data-lotnid="${ar.nid}"]`);if(s&&!s.matches("input"))s.textContent=ar.titre;}
   else{const tt=$(`#tree .art[data-id="${ar.id}"] .t`); if(tt) tt.textContent=ar.titre;}
-  if(!ci.node){const row=$(`#tree .art[data-id="${ar.id}"]`),miss=missingQty().some(m=>m.ar===ar);if(row&&row.classList.contains("noq")!==miss){row.classList.toggle("noq",miss);const dot=row.querySelector(".noq-dot");if(miss&&!dot)row.insertAdjacentHTML("beforeend",`<span class="noq-dot" title="Quantité manquante"></span>`);if(!miss&&dot)dot.remove();renderTreeTop();}}
+  if(!ci.node){const row=$(`#tree .art[data-id="${ar.id}"]`),miss=missingQty().some(m=>m.ar===ar);if(row){const was=row.classList.contains("noq");row.classList.toggle("noq",miss);const pd=row.querySelector(".pdots");if(pd)pd.innerHTML=dotsOf(ar,miss);if(was!==miss)renderTreeTop();}}
   renderPreview(); renderTotal();
 }
 
@@ -1225,7 +1317,7 @@ function bpuRows(list,mode,lot,d=0){
   const ent=mode==="ent", span=ent?7:6;
   return list.map(ar=>{
     const has=ar.sub.length||isTitle(ar), cur=ar.id===state.sel&&!ent?" cur":"", pad=`style="padding-left:${8+d*16}px"`, idA=ent?"":`data-id="${ar.id}"`;
-    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre.toUpperCase())}</td>`;
+    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre.toUpperCase())}${ovBadge(ar)}</td>`;
     if(has) h+=ent?`<td></td><td></td><td></td><td></td><td></td><td></td></tr>`:`<td></td><td></td><td></td><td></td><td class="n">${ar.sub.length?fmt(total(ar)):""}</td></tr>`;
     else{
       h+=`<td class="n">${fq(qty(ar),ar.u)}</td><td>${esc(ar.u)}</td><td class="n">${pct(tvaOf(ar,lot))}</td>`+(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(ar.pu)}</td><td class="n">${fmt(total(ar))}</td>`)+`</tr>`;
@@ -1235,9 +1327,14 @@ function bpuRows(list,mode,lot,d=0){
   }).join("");
 }
 
+function ovRecap(root){
+  if(!ovl().length) return ""; const S=ovUnder(root); let h="";
+  ovl().forEach(o=>{const q=S[o.id];if(!q||(!q.in&&!q.base))return;
+    h+=`<tr class="st ov"><td colspan="6"><span class="ovb ${o.kind}">${esc(ovShort(o))}</span> ${esc(o.nom||"")}${q.in?` — articles de ${o.kind==="variante"?"la variante":"l'option"} : ${eur2(q.in)}`:""}${q.base?` — base à déduire : −${eur2(q.base)}`:""}</td><td class="n">${eur2(q.in-q.base)}</td></tr>`;});
+  return h;}
 function nodeRow(n,lot,mode,cls="chap"){
   const ent=mode==="ent", span=ent?7:6, cur=!ent&&n.nid===state.sel?" cur":"", idA=ent?"":`data-nid="${n.nid}"`;
-  if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}</td></tr>`;
+  if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n)}</td></tr>`;
   let h=`<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td>${esc(n.titre.toUpperCase())}</td><td class="n">${fq(qty(n),n.u)}</td><td>${esc(n.u)}</td><td class="n">${pct(tvaOf(n,lot))}</td>`
     +(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(n.pu)}</td><td class="n">${fmt(ownNode(n))}</td>`)+`</tr>`;
   if(metreOn(n)&&showMetre(n)) h+=validLines(n).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}">${esc(l.expr)} = ${fmt(evalMetre(l.expr))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
@@ -1256,7 +1353,7 @@ function renderPreview(){
     body=`<table class="prev-bpu"><tr><th>N°</th><th>Désignation</th><th class="n">Qté</th><th>U</th><th class="n">TVA</th><th class="n">PU HT</th><th class="n">Montant HT</th></tr>
       ${nodeRow(root,lot,"moe")}
       ${nodeRows(root,true)}
-      <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}</td><td class="n">${eur2(nodeTotal(root))}</td></tr></table>`;
+      <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}${ovl().length?" (hors options et variantes)":""}</td><td class="n">${eur2(nodeTotal(root))}</td></tr>${ovRecap(root)}</table>`;
   }else{
     const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
     const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"><span class="cw">${cm1(i.w)}</span><span class="rz" title="Glisser pour redimensionner (7 cm max)"></span></div>`).join("")}</div>`:"";
@@ -1293,7 +1390,9 @@ function renderLibPanelList(){
       <button class="x pl-ed" data-pled="${it.id}" aria-label="Modifier ${esc(it.titre)}" title="Modifier dans la bibliothèque">✎</button><button class="x pl-del" data-pldel="${it.id}" aria-label="Supprimer ${esc(it.titre)}" title="Supprimer de la bibliothèque">×</button><button class="x pl-add" data-plins="${it.id}" aria-label="Insérer ${esc(it.titre)}" title="Insérer au point d'insertion">+</button></div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond.":"La bibliothèque est vide."}</p>`;
 }
-function renderTotal(){let t=0;leaves(ar=>t+=qty(ar)*ar.pu);$("#totEst").textContent=eur(t);}
+function renderTotal(){let t=0;leaves(ar=>{if(!ovOf(ar).in)t+=qty(ar)*ar.pu;});$("#totEst").textContent=eur(t);
+  const L=ovl(),S=L.length?ovSums():{},o=$("#totOv");
+  if(o)o.innerHTML=L.length?L.map(x=>{const q=S[x.id]||{in:0,base:0},net=q.in-q.base;return `<span title="${esc(ovLab(x))} : ${eur(q.in)} HT${q.base?`, dont base à déduire ${eur(q.base)} HT`:""}">${esc(ovShort(x))} : ${net>=0?"+":"−"}${eur(Math.abs(net))}</span>`;}).join(" · "):"";}
 
 /* ---------- Actions ---------- */
 function select(id){state.sel=id;openPath(id);save();renderTree();renderEditor();}
@@ -1450,7 +1549,7 @@ const rteBar=()=>`<div class="rte-bar" role="toolbar" aria-label="Mise en forme 
   <span class="sep"></span>
   <button type="button" data-rt="clear" title="Effacer la mise en forme de la sélection">Tx</button>
 </div>`;
-const rteField=(label,t,ph)=>`<div class="field"><label id="fTxtL">${label}</label>${rteBar()}<div id="fTxt" class="rte${plainTxt(t).trim()?"":" empty"}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="fTxtL" data-ph="${esc(ph)}" spellcheck="true">${rtEditorHtml(t)}</div></div>`;
+const rteField=(label,t,ph)=>`<div class="field dcard"><div class="dcard-h"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="1.5" width="11" height="13" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><label id="fTxtL">${label}</label></div>${rteBar()}<div id="fTxt" class="rte${plainTxt(t).trim()?"":" empty"}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="fTxtL" data-ph="${esc(ph)}" spellcheck="true">${rtEditorHtml(t)}</div></div>`;
 (function rteEvents(){
   const ed=()=>document.getElementById("fTxt"); let rng=null;
   const inEd=n=>{const e=ed();return !!(e&&n&&e.contains(n.nodeType===3?n.parentNode:n));};
@@ -1483,6 +1582,39 @@ const rteField=(label,t,ph)=>`<div class="field"><label id="fTxtL">${label}</lab
   bar.addEventListener("paste",e=>{if(e.target.id!=="fTxt"&&!e.target.closest("#fTxt"))return;e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",false,t);});
   document.execCommand("defaultParagraphSeparator",false,"p");
 })();
+$("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)return;
+  if(t.id==="ovIn"){if(t.value)ci.it.ovIn=t.value;else delete ci.it.ovIn;ovRefresh();}
+  else if(t.dataset&&t.dataset.ovb){const a=new Set(ci.it.ovBase||[]);t.checked?a.add(t.dataset.ovb):a.delete(t.dataset.ovb);if(a.size)ci.it.ovBase=[...a];else delete ci.it.ovBase;ovRefresh();}});
+function ovRefresh(){save();renderTree();renderEditor();renderPreview();renderTotal();}
+$("#editor").addEventListener("click",e=>{const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
+$("#ovBtn").onclick=()=>openOv();
+function ovAdd(kind,assign){const o={id:"ov"+nid(),kind,nom:""};ovl().push(o);
+  if(assign){const ci=curItem();if(ci)ci.it.ovIn=o.id;}
+  save();ovRefresh();openOv(o.id);}
+function ovSummary(o){const q=(ovSums()[o.id])||{in:0,base:0};return `Articles : ${eur2(q.in)} HT${q.base?` · base à déduire : −${eur2(q.base)} HT`:""} · <b>${q.in-q.base>=0?"":"−"}${eur2(Math.abs(q.in-q.base))} HT</b>`;}
+function renderOv(focusId){
+  const L=ovl();
+  $("#ovBody").innerHTML=L.length?L.map(o=>`<div class="ov-row" data-ovid="${o.id}"><span class="ovb ${o.kind}">${esc(ovShort(o))}</span>
+    <input type="text" data-ovnom="${o.id}" value="${esc(o.nom||"")}" placeholder="Intitulé (ex. Isolation par l'extérieur)" aria-label="Intitulé de ${esc(ovShort(o))}">
+    <select data-ovkind="${o.id}" aria-label="Type"><option value="option" ${o.kind==="option"?"selected":""}>Option</option><option value="variante" ${o.kind==="variante"?"selected":""}>Variante</option></select>
+    <button class="x" data-ovdel="${o.id}" aria-label="Supprimer ${esc(ovShort(o))}" title="Supprimer">×</button>
+    <div class="hint ov-sum">${ovSummary(o)}</div></div>`).join(""):`<p class="hint">Aucune option ni variante. Ajoutez-en une, puis affectez-lui des lots, chapitres ou articles depuis leur fiche de saisie.</p>`;
+  if(focusId){const i=$(`[data-ovnom="${focusId}"]`);if(i)i.focus();}
+}
+function openOv(focusId){renderOv(focusId);if(!$("#ovDlg").open)$("#ovDlg").showModal();}
+$("#ovDlg").addEventListener("input",e=>{const t=e.target;if(t.dataset.ovnom){const o=ovById(t.dataset.ovnom);if(o){o.nom=t.value;save();}}});
+$("#ovDlg").addEventListener("change",e=>{const t=e.target;if(t.dataset.ovkind){const o=ovById(t.dataset.ovkind);if(o){o.kind=t.value;save();renderOv();}}});
+$("#ovDlg").addEventListener("click",e=>{
+  const a=e.target.closest("[data-ovadd]");if(a){ovAdd(a.dataset.ovadd,false);return;}
+  const d=e.target.closest("[data-ovdel]");if(d){const o=ovById(d.dataset.ovdel);if(!o)return;
+    const strip=it=>{if(it.ovIn===o.id)delete it.ovIn;if(it.ovBase){it.ovBase=it.ovBase.filter(x=>x!==o.id);if(!it.ovBase.length)delete it.ovBase;}};
+    const wa=list=>list.forEach(x=>{strip(x);wa(x.sub||[]);}),wn=n=>{strip(n);wa(n.art||[]);(n.children||[]).forEach(wn);};
+    state.data.forEach(wn);state.ovs=ovl().filter(x=>x!==o);save();renderOv();return;}
+  if(e.target.id==="ovClose")$("#ovDlg").close();});
+$("#ovDlg").addEventListener("close",()=>{renderTree();renderEditor();renderPreview();renderTotal();});
+$("#editor").addEventListener("click",e=>{const b=e.target.closest(".hl-sw");if(!b)return;const ci=curItem();if(!ci)return;
+  if(b.dataset.hl)ci.it.hl=b.dataset.hl;else delete ci.it.hl;
+  save();renderTree();document.querySelectorAll(".hl-sw").forEach(x=>x.setAttribute("aria-pressed",String((x.dataset.hl||"")===(ci.it.hl||""))));});
 $("#editor").addEventListener("change",e=>{if(e.target.id==="imgFile"&&e.target.files&&e.target.files.length){addImages([...e.target.files]);e.target.value="";}});
 $("#editor").addEventListener("click",e=>{
   if(e.target.closest("[data-imgadd]")){const f=$("#imgFile");if(f)f.click();return;}
@@ -2618,7 +2750,7 @@ const safeName=x=>String(x||"").replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," "
 function bpuFlat(){
   const rows=[];
   const arts=(list,d)=>list.forEach(ar=>{const has=ar.sub.length||isTitle(ar);
-    rows.push(has?{k:"par",code:ar.code,titre:ar.titre,d,texte:plainTxt(ar.texte)}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre,d,texte:plainTxt(ar.texte),u:ar.u,q:qty(ar),tva:tvaOf(ar)});
+    rows.push(has?{k:"par",code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte)}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte),u:ar.u,q:qty(ar),tva:tvaOf(ar)});
     arts(ar.sub,d+1);});
   state.data.forEach(lot=>{
     rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
@@ -2660,9 +2792,9 @@ function lotItems(lot){
   const it=[]; const hasLeaf=st=>it.slice(st).some(x=>x.k==="art");
   it.push({k:"lot",code:lot.code,titre:lot.titre});
   const arts=(list,d)=>list.forEach(ar=>{
-    if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre});arts(ar.sub,d+1);
+    if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre+ovTxt(ar)});arts(ar.sub,d+1);
       if(hasLeaf(st)) it.push({k:"sub",lvl:"par",titre:ar.titre,from:st,to:it.length});}
-    else it.push({k:"art",d,ar,id:ar.id,code:ar.code,titre:ar.titre,u:ar.u,q:qty(ar),tva:tvaOf(ar),
+    else it.push({k:"art",d,ar,id:ar.id,code:ar.code,titre:ar.titre+ovTxt(ar),u:ar.u,q:qty(ar),tva:tvaOf(ar),
       metre:(metreOn(ar)&&showMetre(ar))?validLines(ar).map(l=>`${l.expr} = ${fmt(evalMetre(l.expr),2)}${l.note?"   "+l.note:""}`):[]});
   });
   const node=(n,lvl)=>{const st=it.length;it.push({k:"node",lvl,code:n.code,titre:n.titre});if(n.art)arts(n.art,1);(n.children||[]).forEach(c=>node(c,3));
@@ -2974,7 +3106,7 @@ function openAffaire(id){
   markDirty();
   renderHeader(); renderTree(); renderEditor(); show(!state.view||state.view==="home"?"redaction":state.view);
 }
-function affTotal(a){const p=state;state=a;let t=0;try{leaves(ar=>t+=qty(ar)*ar.pu);}finally{state=p;}return t;}
+function affTotal(a){const p=state;state=a;let t=0;try{leaves(ar=>{if(!ovOf(ar).in)t+=qty(ar)*ar.pu;});}finally{state=p;}return t;}
 function renderHome(){
   const q=($("#homeQ").value||"").toLowerCase().trim();
   const list=store.affaires.slice().sort((a,b)=>(b.updated||0)-(a.updated||0))
