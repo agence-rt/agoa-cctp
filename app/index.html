@@ -156,11 +156,16 @@ tr[data-nid]{cursor:pointer}
 .ovb.base{background:transparent;border:1px solid currentColor;padding:0 5px}
 .ovt{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap;flex:none;padding:0 6px;border-radius:9px;line-height:16px}.ovt.in{font-weight:700}
 .tot-ov{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
-tr.st.ov td{font-weight:500}
+tr.ovh td{font-weight:700;letter-spacing:.02em;padding-top:8px;padding-bottom:8px}
+tr.ovs td{font-style:italic;font-size:12px}
+tr.ovtot td{font-weight:700}
 .ovbox .ov-bases{display:flex;flex-direction:column;gap:4px;margin:4px 0}
 .ov-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .ov-row{display:grid;grid-template-columns:auto 1fr 110px 28px;gap:8px;align-items:center;margin-bottom:10px}
 .ov-cols{grid-column:1/-1;display:flex;gap:6px;margin:0 0 0 4px}
+.ann-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ann-wrap{max-height:62vh;overflow:auto;text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px}
+#annCv{max-width:100%;height:auto;cursor:crosshair;touch-action:none;background:#fff}
 .ov-sw{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(0,0,0,.25);cursor:pointer;padding:0}
 .ov-sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
 .ov-row .ov-sum{grid-column:1/-1;margin:-4px 0 0 4px}
@@ -431,6 +436,10 @@ dialog.portal[open]{display:flex;flex-direction:column}
 .pt-tbl tr.lot td{background:var(--accent);color:#fff;font-weight:650}
 .pt-tbl tr.node td{background:var(--accent-soft);font-weight:650}
 .pt-tbl tr.par td{font-weight:600}
+.pt-tbl tr.ovh td{font-weight:700;padding:8px 6px}
+.pt-tbl tr.ovs td{font-style:italic;font-size:12px}
+.pt-tbl tr.ded td{font-style:italic;color:var(--muted,#666)}
+.pt-tbl tr.st td{font-weight:650;border-top:1px solid var(--ink)}
 .pt-tbl .code{white-space:nowrap;color:var(--muted);width:78px}
 .pt-tbl .pt-desc{display:block;font-weight:400;color:var(--muted);font-size:12px;line-height:1.45;margin-top:2px;white-space:pre-wrap}
 .pt-tbl input[type=text]{background:var(--field-bg);padding:6px;font-size:13px}
@@ -695,6 +704,27 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   </div>
 </dialog>
 
+<dialog id="annDlg" aria-labelledby="annTitle" style="width:min(900px,96vw);padding:18px 20px">
+  <h3 id="annTitle" style="margin-top:0">Annoter l'image</h3>
+  <div class="ann-bar" role="toolbar" aria-label="Outils d'annotation">
+    <button type="button" class="btn sm" data-anntool="arrow" aria-pressed="true">Flèche</button>
+    <button type="button" class="btn sm" data-anntool="rect" aria-pressed="false">Carré</button>
+    <span class="sep"></span>
+    <button type="button" class="ov-sw" data-anncol="#E53935" style="background:#E53935" aria-pressed="true" aria-label="Couleur #E53935"></button>
+    <button type="button" class="ov-sw" data-anncol="#FB8C00" style="background:#FB8C00" aria-pressed="false" aria-label="Couleur #FB8C00"></button>
+    <button type="button" class="ov-sw" data-anncol="#FDD835" style="background:#FDD835" aria-pressed="false" aria-label="Couleur #FDD835"></button>
+    <button type="button" class="ov-sw" data-anncol="#43A047" style="background:#43A047" aria-pressed="false" aria-label="Couleur #43A047"></button>
+    <button type="button" class="ov-sw" data-anncol="#1E88E5" style="background:#1E88E5" aria-pressed="false" aria-label="Couleur #1E88E5"></button>
+    <button type="button" class="ov-sw" data-anncol="#212121" style="background:#212121" aria-pressed="false" aria-label="Couleur #212121"></button>
+    <span class="sep"></span>
+    <button type="button" class="btn sm" id="annUndo">Annuler le dernier</button>
+    <button type="button" class="btn sm" id="annClear">Tout effacer</button>
+  </div>
+  <p class="hint" style="margin:8px 0">Cliquez-glissez sur l'image pour tracer une flèche ou un carré.</p>
+  <div class="ann-wrap"><canvas id="annCv"></canvas></div>
+  <div class="dlg-act"><button class="btn" id="annCancel">Annuler</button><button class="btn primary" id="annOk">Valider</button></div>
+</dialog>
+
 <dialog id="ovDlg" aria-labelledby="ovTitle" style="width:min(720px,94vw);padding:22px 24px">
   <h3 id="ovTitle">Options et variantes</h3>
   <p class="hint" style="margin-top:0">Une <b>option</b> ajoute des ouvrages éventuels ; une <b>variante</b> propose une solution alternative. Leurs ouvrages sont chiffrés à part et ne sont pas comptés dans le marché de base. Les ouvrages remplacés sont marqués « base à décompter » : leur montant est déduit.</p>
@@ -809,7 +839,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.15.0", deploiement: 15};
+const APP = {version: "0.16.0", deploiement: 16};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -888,6 +918,11 @@ const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
 const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovShort(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovShort(b));});return a.join(", ");};
 const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?ovChip(o):"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=ovChip(b,true);});return h;};
 const ovTxt=it=>{const t=ovTag(it);return t?` [${t.toUpperCase()}]`:"";};
+function ovLeavesOf(roots){const r=[];const art=l=>l.forEach(a=>{if(a.sub.length)art(a.sub);else if(!isTitle(a))r.push(a);});const nd=n=>{art(n.art||[]);(n.children||[]).forEach(nd);};roots.forEach(nd);return r;}
+function ovBlocksOf(roots){const L=ovLeavesOf(roots);return ovl().map(o=>({o,inn:L.filter(a=>ovOf(a).in===o.id),bas:L.filter(a=>!ovOf(a).in&&ovOf(a).base.includes(o.id))})).filter(b=>b.inn.length||b.bas.length);}
+const hasBaseArt=a=>a.sub.length?a.sub.some(hasBaseArt):!ovOf(a).in;
+const nodeHasBase=n=>{const A=n.art||[],C=n.children||[];return(!A.length&&!C.length)||A.some(hasBaseArt)||C.some(nodeHasBase);};
+const ovWhat=o=>o.kind==="variante"?"la variante":"l'option";
 const sgn=v=>(v>0.004?"+":"")+eur2(v);
 const ovKindLab=o=>o.kind==="variante"?"Variante":"Option";
 const btotal=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+btotal(x),0):isTitle(ar)?0:(ovOf(ar).in?0:qty(ar)*ar.pu);
@@ -1070,7 +1105,7 @@ const isInside=(ar,id)=>ar.sub.some(x=>x.id===id||isInside(x,id));
 const reid=x=>{x.id=nid();(x.imgs||[]).forEach(i=>i.id=nid());x.sub.forEach(reid);return x;};
 /* Images d'article : largeur en cm, 7 cm maximum */
 const IMG_MAX=7, IMG_MIN=2, PX_CM=96/2.54;
-const clampW=w=>Math.max(IMG_MIN,Math.min(IMG_MAX,Math.round((+w||IMG_MAX)*10)/10));
+const clampW=w=>IMG_MAX;
 const cm1=w=>String(clampW(w)).replace(".",",")+" cm";
 function readImage(file,maxPx=1100){
   return new Promise((res,rej)=>{
@@ -1102,14 +1137,13 @@ async function addImages(files){
   }
   if(n){save();renderEditor();renderPreview();toast(n>1?`${n} images ajoutées`:"Image ajoutée");}
 }
-const imgsHtml=ar=>(ar.imgs&&ar.imgs.length)?`<div class="cimgs">${ar.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-aid="${ar.id}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Illustration")}"><span class="cw">${cm1(i.w)}</span><span class="rz" title="Glisser pour redimensionner (7 cm max)"></span></div>`).join("")}</div>`:"";
+const imgsHtml=ar=>(ar.imgs&&ar.imgs.length)?`<div class="cimgs">${ar.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-aid="${ar.id}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Illustration")}"></div>`).join("")}</div>`:"";
 function imgsField(ar,after){
   const L=ar.imgs||[];
-  return `<div class="field imgs"><span class="flabel">${after?"Photos":"Images"} <span class="hint">· ${after?"affichées après la description dans le CCTP":"affichées à droite du texte dans le CCTP"}, 7 cm maximum</span></span>
+  return `<div class="field imgs"><span class="flabel">${after?"Photos":"Images"} <span class="hint">· ${after?"affichées après la description dans le CCTP":"affichées à droite du texte dans le CCTP"}, taille fixe, 7 cm de large</span></span>
     ${L.length?`<div class="img-list">${L.map(i=>`<div class="img-it" data-imgid="${i.id}"><span class="th" style="width:${Math.round(clampW(i.w)*14)}px"><img src="${i.src}" alt=""></span>
       <div class="img-ctl"><span class="nm">${esc(i.name||"Image")}</span>
-        <div class="rw"><label for="iw${i.id}">Largeur</label><input type="range" id="iw${i.id}" data-imgw="${i.id}" min="${IMG_MIN}" max="${IMG_MAX}" step="0.5" value="${clampW(i.w)}"><output>${cm1(i.w)}</output></div>
-        <div><button class="btn sm danger" data-imgdel="${i.id}">Retirer</button></div></div></div>`).join("")}</div>`:""}
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-imgann="${i.id}" title="Ajouter une flèche ou un carré sur la photo">Annoter${(i.shapes||[]).length?` (${i.shapes.length})`:""}</button><button class="btn sm danger" data-imgdel="${i.id}">Retirer</button></div></div></div>`).join("")}</div>`:""}
     <input type="file" id="imgFile" accept="image/*" multiple hidden>
     <button class="btn sm" data-imgadd>Ajouter une image</button></div>`;
 }
@@ -1246,7 +1280,11 @@ async function majBdd(){
   const ci=curItem(); if(!ci||ci.node) return; const ar=ci.it, f=libOrigin(ar);
   if(!f){toast("Cet article n'a plus de modèle dans la bibliothèque : utilisez « Enregistrer dans la bibliothèque »");return;}
   const where=`${esc(f.t.titre)} › ${esc(f.s.titre)}`;
-  if(!await ask(`Remplacer l'article modèle <b>${esc(f.it.titre)}</b> de la bibliothèque (${where}) par cette version de <b>${ar.code}</b> ${esc(ar.titre)} ?<br><span class="hint">Le modèle précédent sera écrasé pour tous les utilisateurs de la bibliothèque partagée.</span>`,"Mettre à jour la bibliothèque",false)) return;
+  const nbS=a=>(a.sub||[]).length, cmp=`<table style="margin:10px 0;font-size:12.5px"><tr><th></th><th>Modèle actuel</th><th>Cette version</th></tr>
+    <tr><td>Intitulé</td><td>${esc(f.it.titre)}</td><td>${esc(ar.titre)}</td></tr>
+    <tr><td>Unité · prix</td><td>${esc(f.it.u||"–")} · ${money(f.it.pu||0)}</td><td>${esc(ar.u||"–")} · ${money(ar.pu||0)}</td></tr>
+    <tr><td>Sous-articles</td><td>${nbS(f.it)}</td><td>${nbS(ar)}</td></tr></table>`;
+  if(!await ask(`<b>Remplacer l'article de la bibliothèque ?</b><br>L'article modèle <b>${esc(f.it.titre)}</b> (${where}) sera <b>écrasé</b> par <b>${ar.code}</b> ${esc(ar.titre)}.${cmp}<span class="hint">Le modèle précédent sera perdu pour tous les utilisateurs de la bibliothèque partagée.</span>`,"Remplacer l'article de la bibliothèque",true)) return;
   const n=toLibArt(ar,true); f.list[f.list.indexOf(f.it)]=n; save(); renderEditor();
   if(state.prev==="lib")renderLibPanel(true);
   toast(`Bibliothèque mise à jour : ${where} › ${n.titre}`);
@@ -1331,9 +1369,10 @@ function updateLive(){
 
 /* ---------- Lignes de BPU ---------- */
 const showMetre=ar=>{const v=validLines(ar);return v.length>1||v.some(l=>l.note.trim()||/[^\d.,\s]/.test(l.expr));};
-function bpuRows(list,mode,lot,d=0){
+function bpuRows(list,mode,lot,d=0,force=false){
   const ent=mode==="ent", span=ent?7:6;
   return list.map(ar=>{
+    if(!force&&(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar))))return "";
     const has=ar.sub.length||isTitle(ar), cur=ar.id===state.sel&&!ent?" cur":"", pad=`style="padding-left:${8+d*16}px"`, idA=ent?"":`data-id="${ar.id}"`;
     let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre.toUpperCase())}${ovBadge(ar)}</td>`;
     if(has) h+=ent?`<td></td><td></td><td></td><td></td><td></td><td></td></tr>`:`<td></td><td></td><td></td><td></td><td class="n">${ar.sub.length?fmt(total(ar)):""}</td></tr>`;
@@ -1341,15 +1380,17 @@ function bpuRows(list,mode,lot,d=0){
       h+=`<td class="n">${fq(qty(ar),ar.u)}</td><td>${esc(ar.u)}</td><td class="n">${pct(tvaOf(ar,lot))}</td>`+(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(ar.pu)}</td><td class="n">${fmt(total(ar))}</td>`)+`</tr>`;
       if(metreOn(ar)&&showMetre(ar)) h+=validLines(ar).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}" ${pad}>${esc(l.expr)} = ${fmt(evalMetre(l.expr))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
     }
-    return h+(ar.sub.length?bpuRows(ar.sub,mode,lot,d+1):"");
+    return h+(ar.sub.length?bpuRows(ar.sub,mode,lot,d+1,force):"");
   }).join("");
 }
 
-function ovRecap(root){
-  if(!ovl().length) return ""; const S=ovUnder(root); let h="";
-  ovl().forEach(o=>{const q=S[o.id];if(!q||(!q.in&&!q.base))return;
-    h+=`<tr class="st ov"><td colspan="6">${ovChip(o)} ${esc(o.nom||"")}${q.in?` — articles de ${o.kind==="variante"?"la variante":"l'option"} : ${eur2(q.in)}`:""}${q.base?` — base à déduire : −${eur2(q.base)}`:""}</td><td class="n">${eur2(q.in-q.base)}</td></tr>`;});
-  return h;}
+function ovBlocksHtml(root,lot){
+  return ovBlocksOf([root]).map(b=>{const o=b.o,c=ovC(o),sum=a=>a.reduce((t,x)=>t+qty(x)*x.pu,0),sI=sum(b.inn),sB=sum(b.bas);
+    let h=`<tr class="ovh" style="background:${c.bg};color:${c.fg}"><td colspan="7">${esc(ovLab(o).toUpperCase())}</td></tr>`;
+    if(b.bas.length)h+=`<tr class="ovs"><td colspan="7" style="color:${c.fg}">Ouvrages du marché de base à déduire</td></tr>${bpuRows(b.bas,"moe",lot,0,true)}<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n">−${eur2(sB)}</td></tr>`;
+    h+=`<tr class="ovs"><td colspan="7" style="color:${c.fg}">Ouvrages de ${ovWhat(o)}</td></tr>${bpuRows(b.inn,"moe",lot,0,true)}<tr class="st"><td colspan="6">Somme de ${ovWhat(o)}</td><td class="n">${eur2(sI)}</td></tr>`;
+    h+=`<tr class="st ovtot" style="background:${c.bg};color:${c.fg}"><td colspan="6">TOTAL ${esc(ovShort(o).toUpperCase())} · ${b.bas.length?"plus-value / moins-value HT":"HT"}</td><td class="n">${sgn(sI-sB)}</td></tr>`;
+    return h;}).join("");}
 function nodeRow(n,lot,mode,cls="chap"){
   const ent=mode==="ent", span=ent?7:6, cur=!ent&&n.nid===state.sel?" cur":"", idA=ent?"":`data-nid="${n.nid}"`;
   if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n)}</td></tr>`;
@@ -1366,16 +1407,16 @@ function renderPreview(){
   const root=f?f.top:nc.node, lot=f?f.lot:nc.lot, isB=state.prev==="bpu";
   let body;
   if(isB){
-    const nodeRows=(n,top)=>(top?"":nodeRow(n,lot,"moe"))
+    const nodeRows=(n,top)=>(!top&&!nodeHasBase(n))?"":(top?"":nodeRow(n,lot,"moe"))
       +(n.art?bpuRows(n.art,"moe",lot):"")+(n.children||[]).map(c=>nodeRows(c,false)).join("");
     body=`<table class="prev-bpu"><tr><th>N°</th><th>Désignation</th><th class="n">Qté</th><th>U</th><th class="n">TVA</th><th class="n">PU HT</th><th class="n">Montant HT</th></tr>
       ${nodeRow(root,lot,"moe")}
       ${nodeRows(root,true)}
-      <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}${ovl().length?" (hors options et variantes)":""}</td><td class="n">${eur2(nodeTotal(root))}</td></tr>${ovRecap(root)}</table>`;
+      <tr class="st"><td colspan="6">Sous-total HT de ${esc(root.titre)}${ovl().length?" (hors options et variantes)":""}</td><td class="n">${eur2(nodeTotal(root))}</td></tr>${ovBlocksHtml(root,lot)}</table>`;
   }else{
-    const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
-    const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"><span class="cw">${cm1(i.w)}</span><span class="rz" title="Glisser pour redimensionner (7 cm max)"></span></div>`).join("")}</div>`:"";
-    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
+    const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}${ovBadge(ar)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
+    const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"></div>`).join("")}</div>`:"";
+    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}${ovBadge(n)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
     body=`<div class="sheet">${nblk(root)}</div>`;
   }
   el.innerHTML=`<div class="prev-h"><b>Aperçu ${root.code} ${esc(root.titre)}</b>
@@ -1605,8 +1646,47 @@ $("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)
   if(t.id==="ovIn"){all(x=>{if(t.value)x.ovIn=t.value;else delete x.ovIn;});ovRefresh();}
   else if(t.dataset&&t.dataset.ovb){const id=t.dataset.ovb;all(x=>{const a=new Set(x.ovBase||[]);t.checked?a.add(id):a.delete(id);if(a.size)x.ovBase=[...a];else delete x.ovBase;});ovRefresh();}});
 function ovRefresh(){save();renderTree();renderEditor();renderPreview();renderTotal();}
-$("#editor").addEventListener("click",e=>{const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
+$("#editor").addEventListener("click",e=>{const an=e.target.closest("[data-imgann]");if(an){annOpen(an.dataset.imgann);return;}const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
 $("#ovBtn").onclick=()=>openOv();
+/* ---------- annotation des images (flèche, carré) ---------- */
+let ANN=null;
+function annDraw(ctx,w,h,shapes){
+  const lw=Math.max(3,Math.round(Math.min(w,h)*0.008));ctx.lineCap="round";ctx.lineJoin="round";
+  shapes.forEach(s=>{const x1=s.x1*w,y1=s.y1*h,x2=s.x2*w,y2=s.y2*h;ctx.strokeStyle=s.c;ctx.fillStyle=s.c;ctx.lineWidth=lw;
+    if(s.t==="rect"){ctx.strokeRect(Math.min(x1,x2),Math.min(y1,y2),Math.abs(x2-x1),Math.abs(y2-y1));return;}
+    const a=Math.atan2(y2-y1,x2-x1),hl=lw*5.5;
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2-Math.cos(a)*hl*0.6,y2-Math.sin(a)*hl*0.6);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(x2-hl*Math.cos(a-0.45),y2-hl*Math.sin(a-0.45));ctx.lineTo(x2-hl*Math.cos(a+0.45),y2-hl*Math.sin(a+0.45));ctx.closePath();ctx.fill();});
+}
+function annRedraw(){const cv=$("#annCv"),ctx=cv.getContext("2d");ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(ANN.img,0,0,cv.width,cv.height);annDraw(ctx,cv.width,cv.height,ANN.cur?[...ANN.shapes,ANN.cur]:ANN.shapes);}
+function annOpen(imgId){
+  const ci=curItem(); if(!ci) return; const im=(ci.it.imgs||[]).find(i=>i.id===imgId); if(!im) return;
+  const img=new Image(); img.onload=()=>{const k=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight)),cv=$("#annCv");
+    cv.width=Math.round(img.naturalWidth*k);cv.height=Math.round(img.naturalHeight*k);
+    ANN={im,img,shapes:JSON.parse(JSON.stringify(im.shapes||[])),tool:"arrow",col:"#E53935",cur:null,k};
+    document.querySelectorAll("[data-anntool]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.anntool==="arrow")));
+    document.querySelectorAll("[data-anncol]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.anncol===ANN.col)));
+    annRedraw();$("#annDlg").showModal();};
+  img.src=im.orig||im.src;
+}
+(function(){const cv=$("#annCv"),pt=e=>{const r=cv.getBoundingClientRect();return{x:Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y:Math.min(1,Math.max(0,(e.clientY-r.top)/r.height))};};
+  cv.addEventListener("pointerdown",e=>{if(!ANN)return;e.preventDefault();cv.setPointerCapture(e.pointerId);const p=pt(e);ANN.cur={t:ANN.tool,c:ANN.col,x1:p.x,y1:p.y,x2:p.x,y2:p.y};});
+  cv.addEventListener("pointermove",e=>{if(!ANN||!ANN.cur)return;const p=pt(e);ANN.cur.x2=p.x;ANN.cur.y2=p.y;annRedraw();});
+  const end=e=>{if(!ANN||!ANN.cur)return;const s=ANN.cur;ANN.cur=null;if(Math.hypot((s.x2-s.x1)*cv.width,(s.y2-s.y1)*cv.height)>8)ANN.shapes.push(s);annRedraw();};
+  cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+  $("#annDlg").addEventListener("click",e=>{if(!ANN)return;
+    const t=e.target.closest("[data-anntool]");if(t){ANN.tool=t.dataset.anntool;document.querySelectorAll("[data-anntool]").forEach(b=>b.setAttribute("aria-pressed",String(b===t)));return;}
+    const c=e.target.closest("[data-anncol]");if(c){ANN.col=c.dataset.anncol;document.querySelectorAll("[data-anncol]").forEach(b=>b.setAttribute("aria-pressed",String(b===c)));return;}
+    if(e.target.id==="annUndo"){ANN.shapes.pop();annRedraw();return;}
+    if(e.target.id==="annClear"){ANN.shapes=[];annRedraw();return;}
+    if(e.target.id==="annCancel"){$("#annDlg").close();ANN=null;return;}
+    if(e.target.id==="annOk"){const im=ANN.im;
+      if(ANN.shapes.length){const o=document.createElement("canvas");o.width=ANN.img.naturalWidth;o.height=ANN.img.naturalHeight;const k=Math.min(1,1600/Math.max(o.width,o.height));o.width=Math.round(o.width*k);o.height=Math.round(o.height*k);
+        const x=o.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,o.width,o.height);x.drawImage(ANN.img,0,0,o.width,o.height);annDraw(x,o.width,o.height,ANN.shapes);
+        im.orig=im.orig||im.src;im.shapes=ANN.shapes;im.src=o.toDataURL("image/jpeg",0.9);}
+      else if(im.orig){im.src=im.orig;delete im.orig;delete im.shapes;}
+      save();$("#annDlg").close();ANN=null;renderEditor();renderPreview();toast("Annotations enregistrées");}});
+})();
 function ovAdd(kind,assign){const used=new Set(ovl().map(x=>x.col)),k0=OVP.findIndex((c,k)=>!used.has(k)),o={id:"ov"+nid(),kind,nom:"",col:k0<0?ovl().length%OVP.length:k0};ovl().push(o);
   if(assign){const ci=curItem();if(ci)ci.it.ovIn=o.id;}
   save();ovRefresh();openOv(o.id);}
@@ -1997,11 +2077,23 @@ function buildCctpPdf(J){
   }
   const txt=t=>rich(t);
   function keepWith(h){if(y+h>B)np();}
+  const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  function ovChips(it){
+    const c=ovOf(it),list=[];const o=c.in&&ovById(c.in);if(o)list.push({o,base:false});c.base.forEach(id=>{const b=ovById(id);if(b)list.push({o:b,base:true});});
+    if(!list.length)return;
+    if(y+6>B)np();let x=L;
+    list.forEach(({o,base})=>{const col=ovC(o),txt=(base?"BASE À DÉCOMPTER – ":"")+ovLab(o).toUpperCase();
+      font("bold",7.2,INK);const w=doc.getTextWidth(wa(txt))+4;
+      if(x+w>R){y+=5.2;x=L;}
+      if(base){doc.setDrawColor(...hex(col.fg));doc.setLineWidth(0.3);doc.roundedRect(x,y,w,4.2,1.2,1.2,"S");}
+      else{doc.setFillColor(...hex(col.bg));doc.roundedRect(x,y,w,4.2,1.2,1.2,"F");}
+      doc.setTextColor(...hex(col.fg));doc.text(wa(txt),x+2,y+3);x+=w+2;});
+    y+=5.6;}
   const artNeed=ar=>10+(ar.imgs&&ar.imgs.length?Math.min(40,clampW(ar.imgs[0].w)*10*0.7):6);
   function article(ar){
     const hs=9.8; keepWith(artNeed(ar));
     queue=[]; colW=0; rightBottom=y; placed=false;
-    y+=2.5; toc.length; para(`${ar.code}- ${ar.titre}`.toUpperCase(),"bold",hs,BLUE,{lh:5.2}); y+=0.8;
+    y+=2.5; toc.length; ovChips(ar); para(`${ar.code}- ${ar.titre}`.toUpperCase(),"bold",hs,BLUE,{lh:5.2}); y+=0.8;
     (ar.imgs||[]).forEach(i=>{const d=dims(i.src);if(!d)return;const w=clampW(i.w)*10,h=w*d.r;queue.push({src:i.src,type:d.type,w,h,r:d.r});colW=Math.max(colW,w);});
     rightBottom=y; placed=false; placeQ();
     if(ar.texte) txt(ar.texte); else if(!isTitle(ar)) para("Description à rédiger.","italic",9.5,MUTED);
@@ -2015,7 +2107,7 @@ function buildCctpPdf(J){
     keepWith(16+(n.texte?10:0)+(n.art&&n.art[0]?artNeed(n.art[0]):0));
     y+=lvl===2?5:3.5;
     toc.push({lvl,text:`${n.code}  ${n.titre}`,page:pageNo()});
-    para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",lvl===2?12:10.5,BLUE,{lh:lvl===2?6.2:5.4});
+    ovChips(n); para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",lvl===2?12:10.5,BLUE,{lh:lvl===2?6.2:5.4});
     if(lvl===2){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,y+0.4,R,y+0.4);}
     y+=lvl===2?2.5:1.5;
     if(n.texte) txt(n.texte);
@@ -2790,13 +2882,21 @@ function loadXLSX(){
 const safeName=x=>String(x||"").replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim();
 function bpuFlat(){
   const rows=[];
-  const arts=(list,d)=>list.forEach(ar=>{const has=ar.sub.length||isTitle(ar);
+  const arts=(list,d)=>list.forEach(ar=>{
+    if(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar)))return;
+    const has=ar.sub.length||isTitle(ar);
     rows.push(has?{k:"par",code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte)}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte),u:ar.u,q:qty(ar),tva:tvaOf(ar)});
     arts(ar.sub,d+1);});
   state.data.forEach(lot=>{
     rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
-    const node=(n,d)=>{rows.push({k:"node",code:n.code,titre:n.titre,d,texte:plainTxt(n.texte)});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
+    const node=(n,d)=>{if(!nodeHasBase(n))return;rows.push({k:"node",code:n.code,titre:n.titre,d,texte:plainTxt(n.texte)});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
     lot.children.forEach(ch=>node(ch,0));
+    ovBlocksOf([lot]).forEach(b=>{const o=b.o;
+      rows.push({k:"ovh",o,lot});
+      if(b.bas.length){rows.push({k:"ovs",o,txt:"Ouvrages du marché de base à déduire"});b.bas.forEach(a=>rows.push({k:"ded",o,ar:a,id:a.id,code:a.code,titre:a.titre,u:a.u,q:qty(a),tva:tvaOf(a),d:0}));rows.push({k:"dsub",o,ids:b.bas.map(a=>a.id)});}
+      rows.push({k:"ovs",o,txt:`Ouvrages de ${ovWhat(o)}`});
+      b.inn.forEach(a=>rows.push({k:"art",id:a.id,ar:a,code:a.code,titre:a.titre,d:0,texte:plainTxt(a.texte),u:a.u,q:qty(a),tva:tvaOf(a),opt:o}));
+      rows.push({k:"osum",o,ids:b.inn.map(a=>a.id)});rows.push({k:"otot",o,hasDed:b.bas.length>0,inIds:b.inn.map(a=>a.id),basIds:b.bas.map(a=>a.id)});});
   });
   return rows;
 }
@@ -2832,15 +2932,26 @@ async function saveXlsx(buf,name){
 function lotItems(lot){
   const it=[]; const hasLeaf=st=>it.slice(st).some(x=>x.k==="art");
   it.push({k:"lot",code:lot.code,titre:lot.titre});
-  const arts=(list,d)=>list.forEach(ar=>{
-    if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre+ovTxt(ar)});arts(ar.sub,d+1);
-      if(hasLeaf(st)) it.push({k:"sub",lvl:"par",grp:ovOf(ar).in||"",titre:ar.titre,from:st,to:it.length});}
-    else it.push({k:"art",d,ar,id:ar.id,code:ar.code,titre:ar.titre+ovTxt(ar),u:ar.u,q:qty(ar),tva:tvaOf(ar),ovIn:ovOf(ar).in||"",ovB:ovOf(ar).base,
+  const leafItem=(ar,d,plain)=>({k:"art",d,ar,id:ar.id,code:ar.code,titre:plain?ar.titre:ar.titre+ovTxt(ar),u:ar.u,q:qty(ar),tva:tvaOf(ar),ovIn:ovOf(ar).in||"",ovB:ovOf(ar).base,
       metre:(metreOn(ar)&&showMetre(ar))?validLines(ar).map(l=>`${l.expr} = ${fmt(evalMetre(l.expr),2)}${l.note?"   "+l.note:""}`):[]});
+  const arts=(list,d)=>list.forEach(ar=>{
+    if(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar)))return;
+    if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre+ovTxt(ar)});arts(ar.sub,d+1);
+      if(hasLeaf(st)) it.push({k:"sub",lvl:"par",grp:"",titre:ar.titre,from:st,to:it.length});}
+    else it.push(leafItem(ar,d,false));
   });
-  const node=(n,lvl)=>{const st=it.length;it.push({k:"node",lvl,code:n.code,titre:n.titre});if(n.art)arts(n.art,1);(n.children||[]).forEach(c=>node(c,3));
-    if(hasLeaf(st)) it.push({k:"sub",lvl:"node"+lvl,grp:ovOf(n).in||"",titre:n.titre,from:st,to:it.length});};
+  const node=(n,lvl)=>{if(!nodeHasBase(n))return;const st=it.length;it.push({k:"node",lvl,code:n.code,titre:n.titre});if(n.art)arts(n.art,1);(n.children||[]).forEach(c=>node(c,3));
+    if(hasLeaf(st)) it.push({k:"sub",lvl:"node"+lvl,grp:"",titre:n.titre,from:st,to:it.length});};
   lot.children.forEach(ch=>node(ch,2));
+  ovBlocksOf([lot]).forEach(b=>{const o=b.o; let st;
+    it.push({k:"ovh",o,ovb:true});
+    if(b.bas.length){it.push({k:"ovs",o,ovb:true,txt:"Ouvrages du marché de base à déduire"});st=it.length;
+      b.bas.forEach(a=>it.push({k:"ded",ovb:true,refId:a.id,code:a.code,titre:a.titre,u:a.u,q:qty(a),tva:tvaOf(a),d:0}));
+      it.push({k:"dsub",ovb:true,o,from:st,to:it.length});}
+    it.push({k:"ovs",o,ovb:true,txt:`Ouvrages de ${ovWhat(o)}`});st=it.length;
+    b.inn.forEach(a=>it.push({...leafItem(a,0,true),ovb:true}));
+    it.push({k:"osum",ovb:true,o,from:st,to:it.length});
+    it.push({k:"otot",ovb:true,o,hasDed:b.bas.length>0});it.push({k:"ottc",ovb:true,o});});
   return it;
 }
 async function exportBpu(entId){
@@ -2879,9 +2990,23 @@ async function buildBpuStyled(E,en){
     const H=["N°","Ref.","Désignation","Qté","U","Qté ent.","TVA","Prix Unitaire","Montant HT","Observations entreprise"];
     H.forEach((t,k)=>{const c=ws.getCell(8,k+1);c.value=t;c.font=F(10,{bold:true,color:{argb:BLUE}});c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true};c.border={top:thin(BLUE),bottom:thin(BLUE)};});
     ws.getRow(8).height=30;
-    const items=lotItems(lot); let r=9; items.forEach(x=>{x.row=r;r+=1+(x.metre?x.metre.length:0);});
-    const lastRow=r-1, val={}; // montants calculés
+    const items=lotItems(lot), baseItems=items.filter(y=>!y.ovb), ovItems=items.filter(y=>y.ovb); let r=9;
+    const asg=x=>{x.row=r;r+=1+(x.metre?x.metre.length:0);};
+    baseItems.forEach(asg); const baseLast=r-1;
+    const rates0=[...new Set(baseItems.filter(y=>y.k==="art").map(y=>y.tva))];
+    r=baseLast+2+(rates0.length+2)+2; ovItems.forEach(asg);
+    const lastRow=ovItems.length?r-1:baseLast, val={}; // montants calculés
     items.forEach(x=>{if(x.k==="art"){const p=pus[x.id];x.m=p!=null?Math.round(p*x.q*100)/100:0;val[x.row]=x.m;}});
+    const baseById={}; baseItems.forEach(x=>{if(x.k==="art")baseById[x.id]=x;});
+    items.forEach(x=>{if(x.k==="ded"){const b=baseById[x.refId];x.m=b?b.m:0;x.baseRow=b?b.row:null;}});
+    const BV={}; ovItems.filter(y=>y.k==="otot").forEach(x=>{const o=x.o,inn=items.filter(y=>y.k==="art"&&y.ovIn===o.id),bas=baseItems.filter(y=>y.k==="art"&&y.ovB.includes(o.id));
+      const vI=Math.round(inn.reduce((a,y)=>a+y.m,0)*100)/100, vB=Math.round(bas.reduce((a,y)=>a+y.m,0)*100)/100, net=Math.round((vI-vB)*100)/100, rts=[...new Set([...inn,...bas].map(y=>y.tva))].sort((a,b)=>a-b);
+      let tv=0; rts.forEach(t=>{tv+=(inn.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)-bas.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0))*t/100;});
+      BV[o.id]={vI,vB,net,rts,ttc:Math.round((net+tv)*100)/100};});
+    const ARGB=h=>"FF"+h.slice(1).toUpperCase();
+    const lineAt=(row,label,formula,result,strong,fillArgb,colArgb)=>{ws.mergeCells(row,1,row,8);const a=ws.getCell(row,1);a.value=label;a.font=F(10,{bold:strong,color:{argb:colArgb||(strong?BLUE:INK)}});a.alignment={vertical:"middle",wrapText:true};
+      const m=ws.getCell(row,9);m.value={formula,result};m.font=F(10,{bold:strong,color:{argb:colArgb||(strong?BLUE:INK)}});m.numFmt=EUR0;m.alignment={horizontal:"right",vertical:"middle"};
+      if(fillArgb)for(let k=1;k<=10;k++)ws.getCell(row,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:fillArgb}};ws.getRow(row).height=20;};
     const sumOf=x=>items.slice(x.from,x.to).filter(y=>y.k==="art"&&(y.ovIn||"")===(x.grp||""));
     items.forEach(x=>{
       const R=ws.getRow(x.row);
@@ -2905,6 +3030,20 @@ async function buildBpuStyled(E,en){
         set(11,x.ovIn||"B",F(8,{color:{argb:MUTED}}),{}); set(12,x.ovB.length?","+x.ovB.join(",")+",":null,F(8,{color:{argb:MUTED}}),{});
         x.metre.forEach((t,k)=>{const rr=x.row+1+k;const a=ws.getCell(rr,1);a.value=k?null:"Métré";a.font=F(9,{italic:true,color:{argb:MUTED}});const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{italic:true,color:{argb:MUTED}});c.alignment={indent:x.d+1};ws.getRow(rr).height=14;});
       }
+      else if(x.k==="ovh"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1),cc=ovC(x.o);c.value=ovLab(x.o).toUpperCase();c.font=F(12,{bold:true,color:{argb:ARGB(cc.fg)}});c.alignment={vertical:"middle"};for(let k=1;k<=10;k++)ws.getCell(x.row,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:ARGB(cc.bg)}};R.height=26;}
+      else if(x.k==="ovs"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1);c.value=x.txt;c.font=F(10,{bold:true,italic:true,color:{argb:ARGB(ovC(x.o).fg)}});c.alignment={vertical:"middle"};R.height=20;}
+      else if(x.k==="ded"){const set=(col,v,font,al,nf)=>{const c=ws.getCell(x.row,col);c.value=v;c.font=font;c.alignment={vertical:"middle",...al};if(nf)c.numFmt=nf;return c;};
+        const lines=Math.max(1,Math.ceil(x.titre.length/58));R.height=Math.max(19,13.5*lines+5);
+        set(1,x.code,F(10,{italic:true}),{horizontal:"left"});set(3,x.titre.toUpperCase(),F(10,{italic:true}),{wrapText:true});
+        set(4,x.q,F(10,{italic:true}),{horizontal:"right"},qd(x.u)?"#,##0.00":"#,##0");set(5,x.u,F(10,{italic:true}),{horizontal:"center"});set(7,x.tva,F(10,{italic:true}),{horizontal:"right"},Number.isInteger(x.tva)?'0" %"':'0.0" %"');
+        const m=set(9,x.baseRow?{formula:`I${x.baseRow}`,result:x.m}:0,F(10,{italic:true}),{horizontal:"right"},EUR);m.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};}
+      else if(x.k==="dsub"){const rows=items.slice(x.from,x.to).map(y=>y.row),v=BV[x.o.id].vB;lineAt(x.row,"Sous-total de la déduction (HT)",`-SUM(${runs(rows)||"0"})`,-v,false,null,ARGB(ovC(x.o).fg));}
+      else if(x.k==="osum"){const rows=items.slice(x.from,x.to).map(y=>y.row);lineAt(x.row,`Somme de ${ovWhat(x.o)} (HT)`,`SUM(${runs(rows)||"0"})`,BV[x.o.id].vI,false,null,ARGB(ovC(x.o).fg));}
+      else if(x.k==="otot"){const ds=ovItems.find(y=>y.k==="dsub"&&y.o===x.o),os=ovItems.find(y=>y.k==="osum"&&y.o===x.o),cc=ovC(x.o);
+        lineAt(x.row,`TOTAL ${ovLab(x.o).toUpperCase()} - ${x.hasDed?"PLUS-VALUE / MOINS-VALUE HT":"HT"}`,`I${os.row}${ds?"+I"+ds.row:""}`,BV[x.o.id].net,true,ARGB(cc.bg),ARGB(cc.fg));}
+      else if(x.k==="ottc"){const ot=ovItems.find(y=>y.k==="otot"&&y.o===x.o),cc=ovC(x.o),v=BV[x.o.id],id=x.o.id,rg=k=>`$${k}$9:$${k}$${lastRow}`;
+        const fT=`I${ot.row}`+v.rts.map(t=>`+ROUND((SUMIFS(${rg("I")},${rg("G")},${t},${rg("K")},"${id}")-SUMIFS(${rg("I")},${rg("G")},${t},${rg("L")},"*,${id},*"))*${t}/100,2)`).join("");
+        lineAt(x.row,`${ovLab(x.o).toUpperCase()} - ${ot.hasDed?"PLUS-VALUE / MOINS-VALUE TTC":"TTC"}`,fT,v.ttc,true,ARGB(cc.bg),ARGB(cc.fg));}
       else if(x.k==="sub"){
         const L=sumOf(x), rows=L.map(y=>y.row), tot=Math.round(L.reduce((a,y)=>a+y.m,0)*100)/100;
         ws.mergeCells(x.row,1,x.row,8); const a=ws.getCell(x.row,1);a.value="Sous-Total HT de "+x.titre.toUpperCase();a.font=F(10,{italic:true});a.alignment={vertical:"middle",horizontal:"left",wrapText:true,indent:x.lvl==="par"?1:0};
@@ -2915,7 +3054,7 @@ async function buildBpuStyled(E,en){
     });
     // totaux du lot
     const arts2=items.filter(y=>y.k==="art"), leaves2=arts2.filter(y=>!y.ovIn), ht=Math.round(leaves2.reduce((a,y)=>a+y.m,0)*100)/100;
-    const rates=[...new Set(leaves2.map(y=>y.tva))].sort((a,b)=>a-b); let rr=lastRow+2;
+    const rates=[...new Set(leaves2.map(y=>y.tva))].sort((a,b)=>a-b); let rr=baseLast+2;
     const line=(label,formula,result,strong,fill)=>{ws.mergeCells(rr,1,rr,8);const a=ws.getCell(rr,1);a.value=label;a.font=F(10,{bold:strong,color:{argb:strong?BLUE:INK}});a.alignment={vertical:"middle"};
       const m=ws.getCell(rr,9);m.value={formula,result};m.font=F(10,{bold:strong,color:{argb:strong?BLUE:INK}});m.numFmt=EUR0;m.alignment={horizontal:"right",vertical:"middle"};
       if(fill)for(let k=1;k<=10;k++)ws.getCell(rr,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};ws.getRow(rr).height=20;rr++;return rr-1;};
@@ -2923,19 +3062,8 @@ async function buildBpuStyled(E,en){
     const tvaRows=[]; let tvaTot=0;
     rates.forEach(t=>{const v=Math.round(leaves2.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)*t)/100;tvaTot+=v;tvaRows.push(line(`MONTANT TVA - ${pct(t)}`,`ROUND(SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$K$9:$K$${lastRow},"B")*${t}/100,2)`,v,false,false));});
     const rTTC=line(`MONTANT TTC - ${lot.code} - ${lot.titre.toUpperCase()}`,`I${rHT}${tvaRows.map(x=>"+I"+x).join("")}`,Math.round((ht+tvaTot)*100)/100,true,true);
-    // options et variantes : plus-values / moins-values, hors marché de base
-    const ovRec=[], usedOv=ovl().filter(o=>arts2.some(y=>y.ovIn===o.id||y.ovB.includes(o.id)));
-    if(usedOv.length){rr++;ws.mergeCells(rr,1,rr,10);const oh=ws.getCell(rr,1);oh.value="OPTIONS ET VARIANTES (hors marché de base)";oh.font=F(10,{bold:true,color:{argb:BLUE}});oh.alignment={vertical:"middle"};ws.getRow(rr).height=22;rr++;
-      usedOv.forEach(o=>{const lab=ovLab(o).toUpperCase(), inn=arts2.filter(y=>y.ovIn===o.id), bas=arts2.filter(y=>y.ovB.includes(o.id));
-        const vI=Math.round(inn.reduce((a,y)=>a+y.m,0)*100)/100, vB=Math.round(bas.reduce((a,y)=>a+y.m,0)*100)/100, net=Math.round((vI-vB)*100)/100;
-        const rts=[...new Set([...inn,...bas].map(y=>y.tva))].sort((a,b)=>a-b);
-        let tv=0; rts.forEach(t=>{tv+=(inn.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)-bas.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0))*t/100;});
-        const rI=line(`${lab} - ouvrages (HT)`,`SUMIFS($I$9:$I$${lastRow},$K$9:$K$${lastRow},"${o.id}")`,vI,false,false);
-        const rB=bas.length?line(`${lab} - base à déduire (HT)`,`-SUMIFS($I$9:$I$${lastRow},$L$9:$L$${lastRow},"*,${o.id},*")`,-vB,false,false):0;
-        const rN=line(`${lab} - PLUS-VALUE / MOINS-VALUE HT`,`I${rI}${rB?"+I"+rB:""}`,net,true,true);
-        const fT=`I${rN}`+rts.map(t=>`+ROUND((SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$K$9:$K$${lastRow},"${o.id}")-SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$L$9:$L$${lastRow},"*,${o.id},*"))*${t}/100,2)`).join("");
-        const rT=line(`${lab} - PLUS-VALUE / MOINS-VALUE TTC`,fT,Math.round((net+tv)*100)/100,true,true);
-        ovRec.push({id:o.id,rN,rT,net,ttc:Math.round((net+tv)*100)/100});});}
+    const ovRec=ovItems.filter(y=>y.k==="otot").map(x=>({id:x.o.id,rN:x.row,rT:ovItems.find(y=>y.k==="ottc"&&y.o===x.o).row,net:BV[x.o.id].net,ttc:BV[x.o.id].ttc}));
+    rr=Math.max(rr,lastRow+1);
     // zone d'observations de l'entreprise
     rr++; ws.mergeCells(rr,1,rr,10); const ol=ws.getCell(rr,1); ol.value="Observations de l'entreprise sur le lot"; ol.font=F(10,{bold:true,color:{argb:BLUE}}); ol.alignment={vertical:"middle"}; ws.getRow(rr).height=20; rr++;
     ws.mergeCells(rr,1,rr+4,10); const ob=ws.getCell(rr,1); ob.alignment={vertical:"top",horizontal:"left",wrapText:true}; ob.font=F(10); ob.protection={locked:false};
@@ -2976,26 +3104,46 @@ function buildBpuBasic(X,en){
   A("Renseignez uniquement la colonne « Prix unitaire HT » ; les montants et totaux se calculent automatiquement. Ne modifiez ni les quantités ni les désignations.");
   A();
   const hdr=A("N°","Ref.","Désignation","U","Qté","TVA (%)","Prix unitaire HT","Montant HT","Annotations entreprise","Groupe","Bases");
-  const first=hdr+1, fr=[];
-  bpuFlat().forEach(r=>{
-    if(r.k==="art"){const c=ovOf(r.ar),n=A(r.code,r.id,r.titre.toUpperCase(),r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:pus[r.id]!=null?r.q*pus[r.id]:0,tva:r.tva,c});}
-    else A(r.code,null,r.titre.toUpperCase());
-    String(r.texte||"").split("\n").map(t=>t.trim()).filter(Boolean).forEach(t=>A(null,null,t));
-  });
-  const last=aoa.length; A(); 
+  const first=hdr+1, fr=[], baseN={}, mm=r=>pus[r.id]!=null?r.q*pus[r.id]:0;
+  const flat=bpuFlat(), BK=["ovh","ovs","ded","dsub","osum","otot"], isBlk=r=>BK.includes(r.k)||r.opt;
+  const body=r=>{String(r.texte||"").split("\n").map(t=>t.trim()).filter(Boolean).forEach(t=>A(null,null,t));};
+  const artRow=r=>{const c=ovOf(r.ar),n=A(r.code,r.id,r.titre.toUpperCase(),r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:mm(r),tva:r.tva});baseN[r.id]=n;return n;};
+  flat.filter(r=>!isBlk(r)).forEach(r=>{if(r.k==="art")artRow(r);else A(r.code,null,r.titre.toUpperCase());body(r);});
+  const baseLast=aoa.length; A();
   const tH=A(null,null,"Total HT"), tT=A(null,null,"Total TVA"), tC=A(null,null,"Total TTC");
+  const wsF=[]; // formules posées après création de la feuille
+  let sH=0,sT=0; fr.forEach(f=>{sH+=f.m;sT+=f.m*f.tva/100;});
+  const blk=flat.filter(isBlk), blkRows=[];
+  if(blk.length){A();A(null,null,"OPTIONS ET VARIANTES (hors marché de base)");}
+  let cur=null;
+  blk.forEach(r=>{
+    if(r.k==="ovh"){A();cur={o:r.o,h:A(null,null,ovLab(r.o).toUpperCase()),ded:[],inn:[],fr:[]};}
+    else if(r.k==="ovs")A(null,null,r.txt);
+    else if(r.k==="ded"){const n=A(r.code,null,r.titre.toUpperCase(),r.u,r.q,r.tva,null,null,null,"",","+r.o.id+",");cur.ded.push(n);cur.fr.push({n,m:baseN[r.id]?fr.find(f=>f.n===baseN[r.id]).m:0,tva:r.tva,ded:true,src:baseN[r.id]});}
+    else if(r.k==="dsub"){cur.dsubRow=A(null,null,"Sous-total de la déduction (HT)");}
+    else if(r.k==="art"&&r.opt){const n=artRow(r);cur.inn.push(n);cur.fr.push({n,m:mm(r),tva:r.tva});body(r);}
+    else if(r.k==="osum"){cur.osumRow=A(null,null,`Somme de ${ovWhat(cur.o)} (HT)`);}
+    else if(r.k==="otot"){cur.hasDed=r.hasDed;cur.last=aoa.length;cur.aRow=A(null,null,`${ovLab(cur.o).toUpperCase()} - ${r.hasDed?"PLUS-VALUE / MOINS-VALUE":"TOTAL"} HT`);cur.bRow=A(null,null,`${ovLab(cur.o).toUpperCase()} - ${r.hasDed?"PLUS-VALUE / MOINS-VALUE":"TOTAL"} TTC`);blkRows.push(cur);}
+  });
   const ws=X.utils.aoa_to_sheet(aoa);
-  let sH=0,sT=0;
-  const OV={};ovl().forEach(o=>OV[o.id]={ht:0,tva:0});
-  fr.forEach(({n,m,tva,c})=>{if(!c.in){sH+=m;sT+=m*tva/100;}else if(OV[c.in]){OV[c.in].ht+=m;OV[c.in].tva+=m*tva/100;}c.base.forEach(id=>{if(OV[id]){OV[id].ht-=m;OV[id].tva-=m*tva/100;}});ws["H"+n]={t:"n",v:m,f:`IF(G${n}="",0,E${n}*G${n})`,z:"#,##0.00;-#,##0.00;;"};if(ws["G"+n])ws["G"+n].z="#,##0.00";if(ws["E"+n])ws["E"+n].z="#,##0.##";});
-  ws["H"+tH]={t:"n",v:sH,f:`SUMIFS(H${first}:H${last},J${first}:J${last},"B")`,z:"#,##0.00"};
-  ws["H"+tT]={t:"n",v:sT,f:`SUMPRODUCT(H${first}:H${last},F${first}:F${last},--(J${first}:J${last}="B"))/100`,z:"#,##0.00"};
-  ws["H"+tC]={t:"n",v:sH+sT,f:`H${tH}+H${tT}`,z:"#,##0.00"};
-  const used=ovl().filter(o=>fr.some(f=>f.c.in===o.id||f.c.base.includes(o.id)));
-  if(used.length){A();A(null,null,"OPTIONS ET VARIANTES (hors marché de base)");
-    used.forEach(o=>{const rg=k=>`${k}${first}:${k}${last}`;const a=A(null,null,`${ovLab(o)} - plus-value / moins-value HT`),b=A(null,null,`${ovLab(o)} - plus-value / moins-value TTC`);
-      ws["H"+a]={t:"n",v:OV[o.id].ht,f:`SUMIFS(${rg("H")},${rg("J")},"${o.id}")-SUMIFS(${rg("H")},${rg("K")},"*,${o.id},*")`,z:"#,##0.00;-#,##0.00"};
-      ws["H"+b]={t:"n",v:OV[o.id].ht+OV[o.id].tva,f:`H${a}+(SUMPRODUCT(${rg("H")},${rg("F")},--(${rg("J")}="${o.id}"))-SUMPRODUCT(${rg("H")},${rg("F")},--ISNUMBER(SEARCH(",${o.id},",${rg("K")}))))/100`,z:"#,##0.00;-#,##0.00"};});}
+  fr.forEach(({n,m,ded,src})=>{
+    if(ded){ws["H"+n]={t:"n",v:m,f:src?`H${src}`:"0",z:"#,##0.00;-#,##0.00;;"};}
+    else{ws["H"+n]={t:"n",v:m,f:`IF(G${n}="",0,E${n}*G${n})`,z:"#,##0.00;-#,##0.00;;"};if(ws["G"+n])ws["G"+n].z="#,##0.00";}
+    if(ws["E"+n])ws["E"+n].z="#,##0.##";});
+  const bf=fr.filter(f=>!f.ded&&f.n<=baseLast);
+  ws["H"+tH]={t:"n",v:sH-blkRows.reduce((a,b)=>a+b.fr.filter(f=>!f.ded).reduce((x,f)=>x+f.m,0),0),f:`SUMIFS(H${first}:H${baseLast},J${first}:J${baseLast},"B")`,z:"#,##0.00"};
+  const baseHT=bf.reduce((a,f)=>a+f.m,0), baseT=bf.reduce((a,f)=>a+f.m*f.tva/100,0);
+  ws["H"+tH].v=baseHT;
+  ws["H"+tT]={t:"n",v:baseT,f:`SUMPRODUCT(H${first}:H${baseLast},F${first}:F${baseLast},--(J${first}:J${baseLast}="B"))/100`,z:"#,##0.00"};
+  ws["H"+tC]={t:"n",v:baseHT+baseT,f:`H${tH}+H${tT}`,z:"#,##0.00"};
+  blkRows.forEach(b=>{const id=b.o.id,rg=k=>`${k}${b.h}:${k}${b.last}`;
+    const vI=b.fr.filter(f=>!f.ded).reduce((a,f)=>a+f.m,0), vD=b.fr.filter(f=>f.ded).reduce((a,f)=>a+f.m,0);
+    const tI=b.fr.filter(f=>!f.ded).reduce((a,f)=>a+f.m*f.tva/100,0), tD=b.fr.filter(f=>f.ded).reduce((a,f)=>a+f.m*f.tva/100,0);
+    const sm=(row,col)=>`SUM(${col}${row})`;
+    if(b.dsubRow)ws["H"+b.dsubRow]={t:"n",v:-vD,f:`-SUM(H${Math.min(...b.ded)}:H${Math.max(...b.ded)})`,z:"#,##0.00;-#,##0.00"};
+    ws["H"+b.osumRow]={t:"n",v:vI,f:`SUMIFS(${rg("H")},${rg("J")},"${id}")`,z:"#,##0.00"};
+    ws["H"+b.aRow]={t:"n",v:vI-vD,f:`H${b.osumRow}${b.dsubRow?"+H"+b.dsubRow:""}`,z:"#,##0.00;-#,##0.00"};
+    ws["H"+b.bRow]={t:"n",v:vI-vD+tI-tD,f:`H${b.aRow}+(SUMPRODUCT(${rg("H")},${rg("F")},--(${rg("J")}="${id}"))-SUMPRODUCT(${rg("H")},${rg("F")},--ISNUMBER(SEARCH(",${id},",${rg("K")}))))/100`,z:"#,##0.00;-#,##0.00"};});
   ws["!ref"]=`A1:K${aoa.length}`;
   ws["!cols"]=[{wch:13},{hidden:true,wch:10},{wch:72},{wch:6},{wch:10},{wch:9},{wch:17},{wch:15},{wch:36},{hidden:true,wch:4},{hidden:true,wch:4}];
   const wb=X.utils.book_new(); X.utils.book_append_sheet(wb,ws,"BPU"); wb.Workbook={CalcPr:{fullCalcOnLoad:true}};
@@ -3074,6 +3222,11 @@ function portalTotals(){let ht=0,tva=0,miss=0,n=0;const O={};ovl().forEach(o=>O[
     if(!c.in){ht+=m;tva+=m*k;}else if(O[c.in]){O[c.in].ht+=m;O[c.in].ttc+=m*(1+k);}
     c.base.forEach(id=>{if(O[id]){O[id].ht-=m;O[id].ttc-=m*(1+k);}});});
   return{ht,tva,ttc:ht+tva,miss,n,O};}
+function portalSums(){
+  const Q={};leaves(ar=>{Q[ar.id]=qty(ar);});const M=id=>PD.pus[id]==null?0:Q[id]*PD.pus[id], sm=ids=>ids.reduce((a,id)=>a+M(id),0);
+  document.querySelectorAll("#ptBody [data-pdm]").forEach(c=>{c.textContent=PD.pus[c.dataset.pdm]==null?"":eur2(M(c.dataset.pdm));});
+  document.querySelectorAll("#ptBody [data-psum]").forEach(c=>{const k=c.dataset.psum,ids=(c.dataset.pids||"").split(",").filter(Boolean),bs=(c.dataset.pbas||"").split(",").filter(Boolean);
+    c.textContent=k==="d"?"−"+eur2(sm(ids)):k==="s"?eur2(sm(ids)):sgn(sm(ids)-sm(bs));});}
 function renderPortal(){
   const en=ents().find(e=>e.id===PD.id), o=state.op||{};
   let h="";
@@ -3082,6 +3235,12 @@ function renderPortal(){
     if(r.k==="lot") h+=`<tr class="lot"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}</td></tr>`;
     else if(r.k==="node") h+=`<tr class="node"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}${desc}</td></tr>`;
     else if(r.k==="par") h+=`<tr class="par"><td class="code">${r.code}</td><td colspan="7" ${pad}>${esc(r.titre.toUpperCase())}${desc}</td></tr>`;
+    else if(r.k==="ovh"){const c=ovC(r.o);h+=`<tr class="ovh" style="background:${c.bg};color:${c.fg}"><td colspan="8">${esc(ovLab(r.o).toUpperCase())}</td></tr>`;}
+    else if(r.k==="ovs") h+=`<tr class="ovs"><td colspan="8" style="color:${ovC(r.o).fg}">${esc(r.txt)}</td></tr>`;
+    else if(r.k==="ded") h+=`<tr class="ded"><td class="code">${r.code}</td><td>${esc(r.titre.toUpperCase())}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td><td></td><td class="n" data-pdm="${r.id}"></td><td></td></tr>`;
+    else if(r.k==="dsub") h+=`<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n" data-psum="d" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
+    else if(r.k==="osum") h+=`<tr class="st"><td colspan="6">Somme de ${ovWhat(r.o)}</td><td class="n" data-psum="s" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
+    else if(r.k==="otot"){const c=ovC(r.o);h+=`<tr class="st ovtot" style="background:${c.bg};color:${c.fg}"><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${r.hasDed?"plus-value / moins-value HT":"HT"}</td><td class="n" data-psum="t" data-pids="${r.inIds.join(",")}" data-pbas="${r.basIds.join(",")}"></td><td></td></tr>`;}
     else{const p=PD.pus[r.id], miss=p==null&&r.q>0;
       h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre.toUpperCase())}${desc}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
         <td><input type="text" inputmode="decimal" class="pu" data-ppu="${r.id}" value="${p==null?"":money(p)}" placeholder="0,00 €" autocomplete="off" aria-label="Prix unitaire HT de ${esc(r.titre)}"></td>
@@ -3103,7 +3262,7 @@ function renderPortal(){
   portalFoot();
 }
 function portalFoot(){
-  const t=portalTotals();
+  const t=portalTotals();portalSums();
   $("#ptTot").innerHTML=`<span>Total HT <b>${eur2(t.ht)}</b></span><span>TVA <b>${eur2(t.tva)}</b></span><span>Total TTC <b>${eur2(t.ttc)}</b></span>${ovl().map(o=>`<span title="Hors marché de base : ${esc(ovLab(o))}">${esc(ovShort(o))} <b>${sgn(t.O[o.id].ht)} HT</b></span>`).join("")}${t.miss?`<span style="color:var(--ochre)">${t.miss} prix manquant${t.miss>1?"s":""}</span>`:`<span style="color:var(--accent)">Tous les prix sont renseignés</span>`}`;
   $("#pPdfName").textContent=PD.devis?PD.devis.nom:"Devis obligatoire";
   $("#pSubmit").disabled=!PD.devis;
