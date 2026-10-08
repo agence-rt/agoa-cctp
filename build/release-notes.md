@@ -1,1 +1,1 @@
-Déploiement n°18 — v0.18.0 : bibliothèque repliée par défaut, colonne de droite redimensionnable, cadres colorés (bleu marché de base avec TVA/TTC, couleur par option/variante) sans fonds, choix d'option par cases, localisation sans fond bleu
+Déploiement n°19 — v0.18.1 : tableau comparatif, plus de montants sur les lignes de titre (lot, chapitre, article-titre)

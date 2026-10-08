@@ -1,7 +1,7 @@
 {
   "name": "agoa-cctp",
   "productName": "AGOA CCTP",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "AGOA CCTP — rédaction des CCTP et BPU, consultation des entreprises, comparatif et synthèse",
   "author": "SELARL Rémi Thollet Architecte",
   "license": "UNLICENSED",
@@ -12,7 +12,7 @@
   "private": true,
   "main": "main.js",
   "agoa": {
-    "deploiement": 18,
+    "deploiement": 19,
     "google": {
       "clientId": "253318887290-luk51sg4fnsg7552foru42v8v8nmrnfj.apps.googleusercontent.com",
       "clientSecret": "",

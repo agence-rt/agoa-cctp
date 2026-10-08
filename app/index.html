@@ -855,7 +855,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.18.0", deploiement: 18};
+const APP = {version: "0.19.0", deploiement: 19};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2798,7 +2798,7 @@ function renderAnalyse(){
       body+=`<tr class="lot"><td class="c1"><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
         <td class="c2"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span> <select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select>
           ${l.rows.length?"":`<button class="x" data-lotdel="${li}" title="Supprimer le lot vide" aria-label="Supprimer le lot vide">×</button>`}</td>
-        <td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
+        <td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td>`).join("")}</tr>`;
       let hide=null;
       rows.forEach((w,i)=>{
         if(anaOvOnly(rows,i)) return;
@@ -2817,8 +2817,7 @@ function renderAnalyse(){
             const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`;
             body+=`<td class="n e1 ${c}">${m?"–":eur2(p)}</td><td class="n ${m?"miss":""}">${m?"–":eur2(w.a[j])}</td>`;});
         }else{
-          const t=w.sub;
-          body+=`<td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(t.e[e.id].ht)}</td>`).join("")}`;
+          body+=`<td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(()=>`<td class="n e1"></td><td class="n"></td>`).join("")}`;
         }
         body+=`</tr>`;
       });
