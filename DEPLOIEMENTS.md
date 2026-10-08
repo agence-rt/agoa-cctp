@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°15** — v0.15.0 — 2026-10-08 — Colonne gauche : +/− sur lots et chapitres, couleurs d'options, héritage option/variante dans les deux sens, déroulé de la bibliothèque
 - **n°14** — v0.14.0 — 2026-10-08 — Options et variantes traitées séparément : BPU Excel (lots + récapitulatif), portail, analyse des offres et synthèse (plus-values / moins-values)
 - **n°13** — v0.13.0 — 2026-10-08 — Arbre : pastilles quantité/unité, liens, +/−, surlignage couleur ; options et variantes multiples ; saisie d'article remaniée
 - **n°12** — v0.12.0 — 2026-10-08 — Descriptions : mise en forme (gras, italique, souligné, surlignage, taille), justification, puces et numérotation

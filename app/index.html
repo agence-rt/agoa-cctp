@@ -115,8 +115,8 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .tree summary:hover .node-x,.tree .sub:hover .node-x,.node-x:focus-visible{opacity:1}
 .tree .sub{margin-top:4px}
 .tree details>summary::-webkit-details-marker{display:none}
-.tree details>summary::before{content:"";width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);margin-top:6px;flex:none;transition:transform .15s}
-.tree details[open]>summary::before{transform:rotate(45deg)}
+.tree details>summary::before{content:"+";width:13px;height:13px;border:1px solid var(--muted);border-radius:2px;background:var(--surface);color:var(--ink,#333);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;line-height:1;margin-top:2px;flex:none}
+.tree details[open]>summary::before{content:"−"}
 .tree .sub{padding:6px 14px 2px 30px;font-size:12.5px;color:var(--muted)}
 .tree .art{display:flex;gap:7px;align-items:center;padding:4px 10px 4px 4px;font-size:13px;border-left:2px solid transparent;cursor:pointer;user-select:none;position:relative}
 .tree .art.nested .t{color:var(--ink);font-size:12.5px}
@@ -153,13 +153,16 @@ tr[data-nid]{cursor:pointer}
 .pdot.o{background:#F28C28}.pdot.r{background:#D93025}
 .tree .t[style],.tree .lot-name[style],.tree .node-name[style]{padding:0 6px;border-radius:3px}
 .ovb{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:9px;margin-left:6px;vertical-align:middle;white-space:nowrap;text-transform:none;font-variation-settings:normal}
-.ovb.option{background:#FFE0B2;color:#7A4300}.ovb.variante{background:#D7C4F0;color:#3F2370}.ovb.base{background:#E3E8EE;color:#46525F}
-.ovt{font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap;flex:none}.ovt.in{color:#B35F00;font-weight:650}
+.ovb.base{background:transparent;border:1px solid currentColor;padding:0 5px}
+.ovt{font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap;flex:none;padding:0 6px;border-radius:9px;line-height:16px}.ovt.in{font-weight:700}
 .tot-ov{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
 tr.st.ov td{font-weight:500}
 .ovbox .ov-bases{display:flex;flex-direction:column;gap:4px;margin:4px 0}
 .ov-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .ov-row{display:grid;grid-template-columns:auto 1fr 110px 28px;gap:8px;align-items:center;margin-bottom:10px}
+.ov-cols{grid-column:1/-1;display:flex;gap:6px;margin:0 0 0 4px}
+.ov-sw{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(0,0,0,.25);cursor:pointer;padding:0}
+.ov-sw[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}
 .ov-row .ov-sum{grid-column:1/-1;margin:-4px 0 0 4px}
 .dcard{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .dcard-h{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);border-bottom:1px solid var(--line);font-weight:650;font-size:13.5px;color:var(--ink)}
@@ -359,6 +362,14 @@ dialog.lib{width:min(1100px,96vw)}
 .lib-row.lv2 .lib-t b{font-weight:500}
 .lib-row.lv0.on,.lib-row.on{background:color-mix(in srgb,var(--accent) 18%,var(--surface))}
 .tg{width:20px;flex:none;border:0;background:none;color:var(--muted);font-size:12px;padding:0}
+.tg.bx{width:13px;height:13px;margin:0 3px;border:1px solid var(--muted);border-radius:2px;background:var(--surface);color:var(--ink,#333);font-size:13px;font-weight:700;line-height:11px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.tg.bx:hover{border-color:var(--accent);color:var(--accent)}
+.gds{display:flex;align-self:stretch;flex:none;margin:-7px 0}
+.pl-row .gds{margin:-5px 0}
+.gd{width:16px;flex:none;position:relative}
+.gd.v::before,.gd.t::before,.gd.l::before{content:"";position:absolute;left:7px;top:0;bottom:0;border-left:1.5px solid var(--muted);opacity:.55}
+.gd.l::before{bottom:50%}
+.gd.t::after,.gd.l::after{content:"";position:absolute;left:7px;right:-2px;top:50%;border-top:1.5px solid var(--muted);opacity:.55}
 .lib-kind{font-weight:650;margin:0 0 12px}
 .lib-detail{overflow:auto;min-height:0}
 .lib-2{display:grid;grid-template-columns:90px 110px 1fr;gap:10px;max-width:440px}
@@ -798,7 +809,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.14.0", deploiement: 14};
+const APP = {version: "0.15.0", deploiement: 15};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -856,8 +867,12 @@ let quotaWarned=false;
    ovBase = ids des options/variantes dont il est une base à décompter. Tout est hérité par les niveaux inférieurs. */
 let OVV=0, OVC=null;
 const ovl=()=>state.ovs||(state.ovs=[]);
+const OVP=[["Orange","#FFE0B2","#8A4B00"],["Mauve","#D7C4F0","#47267F"],["Bleu","#BBDEFB","#0D47A1"],["Vert","#C8E6C9","#1B5E20"],["Rose","#F8BBD9","#880E4F"],["Jaune","#FFF59D","#6D5A00"],["Turquoise","#B2EBF2","#006064"],["Rouge","#FFCDD2","#B71C1C"]];
+const ovC=o=>{const i=(o&&o.col!=null&&OVP[o.col])?o.col:(o&&o.kind==="variante"?1:0);return{bg:OVP[i][1],fg:OVP[i][2],n:OVP[i][0]};};
+const ovChip=(o,base)=>{const c=ovC(o);return base?`<span class="ovb base" style="color:${c.fg};border-color:${c.fg}">Base ${esc(ovShort(o))}</span>`:`<span class="ovb" style="background:${c.bg};color:${c.fg}">${esc(ovShort(o))}</span>`;};
 const ovNum=o=>ovl().filter(x=>x.kind===o.kind).indexOf(o)+1;
 const ovShort=o=>(o.kind==="variante"?"Variante ":"Option ")+ovNum(o);
+const ovAbr=o=>(o.kind==="variante"?"Var. ":"Opt. ")+ovNum(o);
 const ovLab=o=>ovShort(o)+(o.nom?" – "+o.nom:"");
 const ovById=id=>ovl().find(o=>o.id===id);
 function ovMap(){
@@ -871,7 +886,7 @@ function ovMap(){
 }
 const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
 const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovShort(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovShort(b));});return a.join(", ");};
-const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span>`:"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=`<span class="ovb base">Base ${esc(ovShort(b))}</span>`;});return h;};
+const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?ovChip(o):"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=ovChip(b,true);});return h;};
 const ovTxt=it=>{const t=ovTag(it);return t?` [${t.toUpperCase()}]`:"";};
 const sgn=v=>(v>0.004?"+":"")+eur2(v);
 const ovKindLab=o=>o.kind==="variante"?"Variante":"Option";
@@ -1165,7 +1180,8 @@ function openQtyCheck(){
 const HLC=[["j","Jaune","#FFF176"],["o","Orange","#FFCC80"],["r","Rose","#F8BBD9"],["v","Vert","#C5E8B7"],["b","Bleu","#BBDEFB"],["m","Mauve","#D7C4F0"]];
 const hlCol=k=>{const c=HLC.find(x=>x[0]===k);return c?c[2]:"";};
 const hlStyle=it=>it&&it.hl&&hlCol(it.hl)?` style="background:${hlCol(it.hl)};color:#222"`:"";
-const ovTreeTag=it=>{const p=[];const o=it.ovIn&&ovById(it.ovIn);if(o)p.push(ovShort(o));(it.ovBase||[]).forEach(id=>{const b=ovById(id);if(b)p.push("base "+ovShort(b));});return p.length?`<span class="ovt${o?" in":""}" title="${esc(p.join(", "))}">(${esc(p.join(", "))})</span>`:"";};
+const ovTreeTag=it=>{const h=[];const o=it.ovIn&&ovById(it.ovIn);if(o){const c=ovC(o);h.push(`<span class="ovt in" style="background:${c.bg};color:${c.fg}" title="${esc(ovLab(o))}">${esc(ovAbr(o))}</span>`);}
+  (it.ovBase||[]).forEach(id=>{const b=ovById(id);if(b){const c=ovC(b);h.push(`<span class="ovt" style="color:${c.fg};border:1px solid ${c.fg}" title="Base à décompter : ${esc(ovLab(b))}">base ${esc(ovAbr(b))}</span>`);}});return h.join("");};
 const noUnit=ar=>!ar.sub.length&&!isTitle(ar)&&!String(ar.u||"").trim();
 const dotsOf=(ar,noq)=>(noq?`<span class="pdot o" title="Quantité non renseignée"></span>`:"")+(noUnit(ar)?`<span class="pdot r" title="Unité non renseignée"></span>`:"");
 const hlBar=it=>`<div class="hl-bar" role="group" aria-label="Surligner dans la liste de gauche"><span class="flabel">Surlignage dans la liste</span>${HLC.map(([k,n,c])=>`<button type="button" class="hl-sw" data-hl="${k}" style="background:${c}" aria-pressed="${it.hl===k}" title="${n}" aria-label="${n}"></button>`).join("")}<button type="button" class="hl-sw none" data-hl="" aria-pressed="${!it.hl}" title="Aucun surlignage" aria-label="Aucun surlignage">×</button></div>`;
@@ -1255,10 +1271,10 @@ function ovBox(it){
   if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie pour cette affaire. Une option ou une variante regroupe des ouvrages chiffrés à part du marché de base.</p>
     <div class="ov-act"><button class="btn sm" data-ovnew="option">Créer une option</button><button class="btn sm" data-ovnew="variante">Créer une variante</button></div></div>`;
   return `<div class="ovbox">${hd}
-    <div class="field"><label for="ovIn">Cet ouvrage fait partie de</label><select id="ovIn"><option value="">Marché de base</option>${L.map(o=>`<option value="${o.id}" ${it.ovIn===o.id?"selected":""}>${esc(ovLab(o))}</option>`).join("")}</select>
+    <div class="field"><label for="ovIn">Cet ouvrage fait partie de</label><select id="ovIn"${it.ovIn&&ovById(it.ovIn)?` style="background:${ovC(ovById(it.ovIn)).bg};color:${ovC(ovById(it.ovIn)).fg};font-weight:650"`:""}><option value="">Marché de base</option>${L.map(o=>`<option value="${o.id}" style="background:${ovC(o).bg};color:${ovC(o).fg}" ${it.ovIn===o.id?"selected":""}>${esc(ovLab(o))}</option>`).join("")}</select>
       ${inh?`<div class="hint">Hérité du niveau supérieur : ${esc(ovLab(inh))}. Son montant n'est pas compté dans le marché de base.</div>`:it.ovIn?`<div class="hint">Son montant n'est pas compté dans le marché de base ; il est chiffré à part dans ${esc(ovShort(ovById(it.ovIn)))}.</div>`:""}</div>
     <div class="field"><span class="flabel">Base à décompter</span>
-      <div class="ov-bases">${L.map(o=>`<label class="chk sm"><input type="checkbox" data-ovb="${o.id}" ${(it.ovBase||[]).includes(o.id)?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
+      <div class="ov-bases">${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovb="${o.id}" ${(it.ovBase||[]).includes(o.id)?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
       <div class="hint">À cocher lorsque cet ouvrage est remplacé par l'option ou la variante : son montant est alors déduit du total de celle-ci.</div></div>
     <div class="ov-act"><button class="btn sm" data-ovnew="option">Créer une option</button><button class="btn sm" data-ovnew="variante">Créer une variante</button><button class="btn sm quiet" id="ovManage">Gérer les options et variantes…</button></div></div>`;
 }
@@ -1332,7 +1348,7 @@ function bpuRows(list,mode,lot,d=0){
 function ovRecap(root){
   if(!ovl().length) return ""; const S=ovUnder(root); let h="";
   ovl().forEach(o=>{const q=S[o.id];if(!q||(!q.in&&!q.base))return;
-    h+=`<tr class="st ov"><td colspan="6"><span class="ovb ${o.kind}">${esc(ovShort(o))}</span> ${esc(o.nom||"")}${q.in?` — articles de ${o.kind==="variante"?"la variante":"l'option"} : ${eur2(q.in)}`:""}${q.base?` — base à déduire : −${eur2(q.base)}`:""}</td><td class="n">${eur2(q.in-q.base)}</td></tr>`;});
+    h+=`<tr class="st ov"><td colspan="6">${ovChip(o)} ${esc(o.nom||"")}${q.in?` — articles de ${o.kind==="variante"?"la variante":"l'option"} : ${eur2(q.in)}`:""}${q.base?` — base à déduire : −${eur2(q.base)}`:""}</td><td class="n">${eur2(q.in-q.base)}</td></tr>`;});
   return h;}
 function nodeRow(n,lot,mode,cls="chap"){
   const ent=mode==="ent", span=ent?7:6, cur=!ent&&n.nid===state.sel?" cur":"", idA=ent?"":`data-nid="${n.nid}"`;
@@ -1386,8 +1402,8 @@ function renderLibPanelList(){
   $("#plList").innerHTML=R.length?R.map(r=>{const it=r.it, closed=libClosed.has(it.id)&&!q, hasKids=r.k!=="article"||(it.sub||[]).length;
     const info=r.k==="titre"?"titre":r.k==="sous-titre"?`${libArtCount(it.art)} art.`:isTitle(it)?`${libArtCount(it.sub||[])} sous-art.`:`${esc(it.u)}${it.q!=null?` · ${fmt(it.q,it.q%1?2:0)}`:""}`;
     const tip=esc(plainTxt(it.texte).slice(0,280));
-    return `<div class="pl-row lv${Math.min(r.d,3)}" style="--ld:${r.d*14}px" draggable="true" data-plib="${it.id}" title="${tip}">
-      ${hasKids?`<button class="tg" data-pltg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"▸":"▾"}</button>`:`<span class="tg"></span>`}
+    return `<div class="pl-row lv${Math.min(r.d,3)}" style="--ld:0px" draggable="true" data-plib="${it.id}" title="${tip}">${libGuides(R,R.indexOf(r))}
+      ${hasKids?`<button class="tg bx" data-pltg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"+":"−"}</button>`:`<span class="tg"></span>`}
       <span class="pl-t">${esc(it.titre)}</span><span class="hint pl-i">${info}</span>
       <button class="x pl-ed" data-pled="${it.id}" aria-label="Modifier ${esc(it.titre)}" title="Modifier dans la bibliothèque">✎</button><button class="x pl-del" data-pldel="${it.id}" aria-label="Supprimer ${esc(it.titre)}" title="Supprimer de la bibliothèque">×</button><button class="x pl-add" data-plins="${it.id}" aria-label="Insérer ${esc(it.titre)}" title="Insérer au point d'insertion">+</button></div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond.":"La bibliothèque est vide."}</p>`;
@@ -1585,19 +1601,21 @@ const rteField=(label,t,ph)=>`<div class="field dcard"><div class="dcard-h"><svg
   document.execCommand("defaultParagraphSeparator",false,"p");
 })();
 $("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)return;
-  if(t.id==="ovIn"){if(t.value)ci.it.ovIn=t.value;else delete ci.it.ovIn;ovRefresh();}
-  else if(t.dataset&&t.dataset.ovb){const a=new Set(ci.it.ovBase||[]);t.checked?a.add(t.dataset.ovb):a.delete(t.dataset.ovb);if(a.size)ci.it.ovBase=[...a];else delete ci.it.ovBase;ovRefresh();}});
+  const all=cb=>{cb(ci.it);const w=x=>{(x.sub||[]).concat(x.art||[],x.children||[]).forEach(y=>{cb(y);w(y);});};w(ci.it);};
+  if(t.id==="ovIn"){all(x=>{if(t.value)x.ovIn=t.value;else delete x.ovIn;});ovRefresh();}
+  else if(t.dataset&&t.dataset.ovb){const id=t.dataset.ovb;all(x=>{const a=new Set(x.ovBase||[]);t.checked?a.add(id):a.delete(id);if(a.size)x.ovBase=[...a];else delete x.ovBase;});ovRefresh();}});
 function ovRefresh(){save();renderTree();renderEditor();renderPreview();renderTotal();}
 $("#editor").addEventListener("click",e=>{const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
 $("#ovBtn").onclick=()=>openOv();
-function ovAdd(kind,assign){const o={id:"ov"+nid(),kind,nom:""};ovl().push(o);
+function ovAdd(kind,assign){const used=new Set(ovl().map(x=>x.col)),k0=OVP.findIndex((c,k)=>!used.has(k)),o={id:"ov"+nid(),kind,nom:"",col:k0<0?ovl().length%OVP.length:k0};ovl().push(o);
   if(assign){const ci=curItem();if(ci)ci.it.ovIn=o.id;}
   save();ovRefresh();openOv(o.id);}
 function ovSummary(o){const q=(ovSums()[o.id])||{in:0,base:0};return `Articles : ${eur2(q.in)} HT${q.base?` · base à déduire : −${eur2(q.base)} HT`:""} · <b>${q.in-q.base>=0?"":"−"}${eur2(Math.abs(q.in-q.base))} HT</b>`;}
 function renderOv(focusId){
   const L=ovl();
-  $("#ovBody").innerHTML=L.length?L.map(o=>`<div class="ov-row" data-ovid="${o.id}"><span class="ovb ${o.kind}">${esc(ovShort(o))}</span>
+  $("#ovBody").innerHTML=L.length?L.map(o=>`<div class="ov-row" data-ovid="${o.id}">${ovChip(o)}
     <input type="text" data-ovnom="${o.id}" value="${esc(o.nom||"")}" placeholder="Intitulé (ex. Isolation par l'extérieur)" aria-label="Intitulé de ${esc(ovShort(o))}">
+    <div class="ov-cols" role="group" aria-label="Couleur de ${esc(ovShort(o))}">${OVP.map((c,k)=>`<button type="button" class="ov-sw" data-ovcol="${o.id}:${k}" style="background:${c[1]};color:${c[2]}" aria-pressed="${ovC(o).bg===c[1]}" title="${c[0]}" aria-label="${c[0]}"></button>`).join("")}</div>
     <select data-ovkind="${o.id}" aria-label="Type"><option value="option" ${o.kind==="option"?"selected":""}>Option</option><option value="variante" ${o.kind==="variante"?"selected":""}>Variante</option></select>
     <button class="x" data-ovdel="${o.id}" aria-label="Supprimer ${esc(ovShort(o))}" title="Supprimer">×</button>
     <div class="hint ov-sum">${ovSummary(o)}</div></div>`).join(""):`<p class="hint">Aucune option ni variante. Ajoutez-en une, puis affectez-lui des lots, chapitres ou articles depuis leur fiche de saisie.</p>`;
@@ -1607,6 +1625,7 @@ function openOv(focusId){renderOv(focusId);if(!$("#ovDlg").open)$("#ovDlg").show
 $("#ovDlg").addEventListener("input",e=>{const t=e.target;if(t.dataset.ovnom){const o=ovById(t.dataset.ovnom);if(o){o.nom=t.value;save();}}});
 $("#ovDlg").addEventListener("change",e=>{const t=e.target;if(t.dataset.ovkind){const o=ovById(t.dataset.ovkind);if(o){o.kind=t.value;save();renderOv();}}});
 $("#ovDlg").addEventListener("click",e=>{
+  const sw=e.target.closest("[data-ovcol]");if(sw){const[id,k]=sw.dataset.ovcol.split(":"),o=ovById(id);if(o){o.col=+k;save();renderOv();}return;}
   const a=e.target.closest("[data-ovadd]");if(a){ovAdd(a.dataset.ovadd,false);return;}
   const d=e.target.closest("[data-ovdel]");if(d){const o=ovById(d.dataset.ovdel);if(!o)return;
     const strip=it=>{if(it.ovIn===o.id)delete it.ovIn;if(it.ovBase){it.ovBase=it.ovBase.filter(x=>x!==o.id);if(!it.ovBase.length)delete it.ovBase;}};
@@ -2348,6 +2367,12 @@ function libLvApply(c){
 }
 $("#libLv").addEventListener("change",e=>{const c=e.target.closest("[data-liblv]");if(c)libLvApply(c);});
 document.addEventListener("change",e=>{const c=e.target.closest("#plLv [data-liblv]");if(c)libLvApply(c);});
+function libGuides(R,i){
+  const d=R[i].d; let h="";
+  const hasNext=m=>{for(let j=i+1;j<R.length;j++){if(R[j].d<m)return false;if(R[j].d===m)return true;}return false;};
+  for(let k=1;k<d;k++)h+=`<i class="gd${hasNext(k)?" v":""}"></i>`;
+  if(d>0)h+=`<i class="gd ${hasNext(d)?"t":"l"}"></i>`;
+  return h?`<span class="gds">${h}</span>`:"";}
 function libRows(qv){
   const q=norm(qv===undefined?$("#libQ").value:qv), rows=[], hit=x=>[x.titre,plainTxt(x.texte)].join(" ").toLowerCase().includes(q);
   const deep=a=>hit(a)||(a.sub||[]).some(deep);
@@ -2376,8 +2401,8 @@ function renderLibList(){
     const info=r.k==="titre"?`${it.children.length} sous-titre${it.children.length>1?"s":""}, ${it.children.reduce((s,x)=>s+libArtCount(x.art),0)} articles`
       :r.k==="sous-titre"?`${libArtCount(it.art)} article${libArtCount(it.art)>1?"s":""}`
       :(isTitle(it)?"titre":`${esc(it.u)}${it.pu?`, ${money(it.pu)}`:""}`)+((it.sub||[]).length?`, ${it.sub.length} sous-article${it.sub.length>1?"s":""}`:"");
-    return `<div class="lib-row lv${Math.min(r.d,2)}${it.id===libSel?" on":""}" style="--ld:${r.d===0?0:r.d===1?18:40+(r.d-2)*20}px" data-lib="${it.id}" role="option" aria-selected="${it.id===libSel}">
-      ${(r.k!=="article"||(it.sub||[]).length)?`<button class="tg" data-libtg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"▸":"▾"}</button>`:`<span class="tg"></span>`}
+    return `<div class="lib-row lv${Math.min(r.d,2)}${it.id===libSel?" on":""}" style="--ld:0px" data-lib="${it.id}" role="option" aria-selected="${it.id===libSel}">${libGuides(R,R.indexOf(r))}
+      ${(r.k!=="article"||(it.sub||[]).length)?`<button class="tg bx" data-libtg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"+":"−"}</button>`:`<span class="tg"></span>`}
       <div class="lib-t"><b>${esc(it.titre)}</b><span class="hint">${info}</span></div>
       ${state?`<button class="btn sm" data-libins="${it.id}">Insérer</button>`:""}</div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond à la recherche.":"La bibliothèque est vide : créez un premier titre."}</p>`;
@@ -2575,7 +2600,7 @@ function ovFoot(M,Ev){
   const row=(lab,get,cls)=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${sgn(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${sgn(get(e))}</td>`).join("")}</tr>`;
   const net=(O,e,T)=>{const x=e?O.e[e.id]:O.est;return T?x.inT-x.baseT:x["in"]-x.base;};
   return `<tr class="ovh"><td class="c1"></td><td class="c2" colspan="3"><b>Options et variantes</b> <span class="hint">(hors total ci-dessus, plus-value ou moins-value)</span></td><td class="n e1 mo"></td><td class="mo"></td>${Ev.map(()=>`<td class="e1"></td><td></td>`).join("")}</tr>`
-   +L.map(o=>{const O=M.ov[o.id];return row(`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span> ${esc(o.nom||"")} (HT)`,e=>net(O,e,false),"")+row(`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span> ${esc(o.nom||"")} (TTC)`,e=>net(O,e,true),"tot");}).join("");
+   +L.map(o=>{const O=M.ov[o.id];return row(`${ovChip(o)} ${esc(o.nom||"")} (HT)`,e=>net(O,e,false),"")+row(`${ovChip(o)} ${esc(o.nom||"")} (TTC)`,e=>net(O,e,true),"tot");}).join("");
 }
 function anaSums(M,pred){
   const r={est:0,estT:0,rt:{}}; M.E.forEach(e=>{r[e.id]=0;r[e.id+"T"]=0;});
