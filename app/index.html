@@ -798,7 +798,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.13.0", deploiement: 13};
+const APP = {version: "0.14.0", deploiement: 14};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -873,6 +873,8 @@ const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
 const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovShort(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovShort(b));});return a.join(", ");};
 const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span>`:"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=`<span class="ovb base">Base ${esc(ovShort(b))}</span>`;});return h;};
 const ovTxt=it=>{const t=ovTag(it);return t?` [${t.toUpperCase()}]`:"";};
+const sgn=v=>(v>0.004?"+":"")+eur2(v);
+const ovKindLab=o=>o.kind==="variante"?"Variante":"Option";
 const btotal=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+btotal(x),0):isTitle(ar)?0:(ovOf(ar).in?0:qty(ar)*ar.pu);
 function ovSumsOver(arts){const r={};ovl().forEach(o=>r[o.id]={in:0,base:0});
   const v=list=>list.forEach(ar=>{if(ar.sub.length){v(ar.sub);return;}if(isTitle(ar))return;const c=ovOf(ar),t=qty(ar)*ar.pu;if(c.in&&r[c.in])r[c.in].in+=t;c.base.forEach(id=>{if(r[id])r[id].base+=t;});});
@@ -2531,7 +2533,9 @@ function anaSync(){
 const medianOf=a=>{const v=a.slice().sort((x,y)=>x-y),n=v.length;return n?(n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2):null;};
 function anaModel(){
   const live=anaSync(), A=state.ana, E=offers();
-  const M={A,E,lots:[],flags:Object.fromEntries(E.map(e=>[e.id,0])),miss:Object.fromEntries(E.map(e=>[e.id,0])),nflag:0};
+  const M={A,E,lots:[],flags:Object.fromEntries(E.map(e=>[e.id,0])),miss:Object.fromEntries(E.map(e=>[e.id,0])),nflag:0,ov:{}};
+  ovl().forEach(o=>{M.ov[o.id]={est:{in:0,inT:0,base:0,baseT:0},e:Object.fromEntries(E.map(e=>[e.id,{in:0,inT:0,base:0,baseT:0}]))};});
+  const ovAcc=(id,key,w)=>{const O=M.ov[id];if(!O)return;const k=1+tvaOf(w.o,null)/100;O.est[key]+=w.est;O.est[key+"T"]+=w.est*k;E.forEach((e,j)=>{if(w.a[j]!=null){O.e[e.id][key]+=w.a[j];O.e[e.id][key+"T"]+=w.a[j]*k;}});};
   const emptyT=()=>({est:0,estT:0,e:Object.fromEntries(E.map(e=>[e.id,{ht:0,ttc:0}]))});
   A.lots.forEach((l,li)=>{
     const rows=l.rows.map((r,ri)=>{const o=live.info.get(r.id);return {li,ri,d:r.d,x:!!r.x,ex:false,k:o.k,o:o.obj,leaf:o.k==="art",q:0,est:0,estT:0,p:[],a:[],miss:[],dev:[],flagged:false,sub:null};});
@@ -2557,13 +2561,21 @@ function anaModel(){
     // sous-totaux de blocs et totaux du lot
     const tot=emptyT(); tot.rt={}; let n=0;
     rows.forEach((w,i)=>{
-      if(w.leaf&&!w.ex){const tx=tvaOf(w.o,null), R=tot.rt[tx]||(tot.rt[tx]={est:0,e:Object.fromEntries(E.map(e=>[e.id,0]))});R.est+=w.est;E.forEach((e,j)=>{if(w.a[j]!=null)R.e[e.id]+=w.a[j];});
+      if(w.leaf&&!w.ex){const oc=ovOf(w.o);if(oc.in)ovAcc(oc.in,"in",w);oc.base.forEach(id=>ovAcc(id,"base",w));}
+      if(w.leaf&&!w.ex&&!ovOf(w.o).in){const tx=tvaOf(w.o,null), R=tot.rt[tx]||(tot.rt[tx]={est:0,e:Object.fromEntries(E.map(e=>[e.id,0]))});R.est+=w.est;E.forEach((e,j)=>{if(w.a[j]!=null)R.e[e.id]+=w.a[j];});
         tot.est+=w.est;tot.estT+=w.estT;n++;E.forEach((e,j)=>{if(w.a[j]!=null){tot.e[e.id].ht+=w.a[j];tot.e[e.id].ttc+=w.a[j]*(1+tvaOf(w.o,null)/100);}});}
-      if(!w.leaf){const t=emptyT();for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++){const x=rows[j];if(!x.leaf||x.ex)continue;t.est+=x.est;E.forEach((e,q)=>{if(x.a[q]!=null)t.e[e.id].ht+=x.a[q];});}w.sub=t;}
+      if(!w.leaf){const t=emptyT(),grp=ovOf(w.o).in||"";for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++){const x=rows[j];if(!x.leaf||x.ex||(ovOf(x.o).in||"")!==grp)continue;t.est+=x.est;E.forEach((e,q)=>{if(x.a[q]!=null)t.e[e.id].ht+=x.a[q];});}w.sub=t;}
     });
     M.lots.push({l,li,rows,tot,n});
   });
   return M;
+}
+function ovFoot(M,Ev){
+  const L=ovl().filter(o=>{const O=M.ov[o.id];return O&&(O.est.in||O.est.base||Ev.some(e=>O.e[e.id].in||O.e[e.id].base));}); if(!L.length) return "";
+  const row=(lab,get,cls)=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${sgn(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${sgn(get(e))}</td>`).join("")}</tr>`;
+  const net=(O,e,T)=>{const x=e?O.e[e.id]:O.est;return T?x.inT-x.baseT:x["in"]-x.base;};
+  return `<tr class="ovh"><td class="c1"></td><td class="c2" colspan="3"><b>Options et variantes</b> <span class="hint">(hors total ci-dessus, plus-value ou moins-value)</span></td><td class="n e1 mo"></td><td class="mo"></td>${Ev.map(()=>`<td class="e1"></td><td></td>`).join("")}</tr>`
+   +L.map(o=>{const O=M.ov[o.id];return row(`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span> ${esc(o.nom||"")} (HT)`,e=>net(O,e,false),"")+row(`<span class="ovb ${o.kind}">${esc(ovShort(o))}</span> ${esc(o.nom||"")} (TTC)`,e=>net(O,e,true),"tot");}).join("");
 }
 function anaSums(M,pred){
   const r={est:0,estT:0,rt:{}}; M.E.forEach(e=>{r[e.id]=0;r[e.id+"T"]=0;});
@@ -2621,7 +2633,7 @@ function renderAnalyse(){
         const cls=`${w.k==="ch"?"ch":w.k==="par"?"par":"art"}${w.ex?" xc":""} hov`, ind=`padding-left:${w.d*14}px`;
         const ctl=`<span class="ana-grip" draggable="true" data-agrip="${li}:${w.ri}" title="Glisser pour déplacer cette ligne${w.leaf?"":" et son contenu"}">⋮⋮</span><input type="checkbox" class="ana-inc" data-ainc="${li}:${w.ri}" ${w.x?"":"checked"} title="${w.x?"Réintégrer ce poste":"Écarter ce poste de l'analyse"}"> `;
         const mv=`<span class="ana-ctl"><button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button><button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
-        body+=`<tr class="${cls}" data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}</td>`;
+        body+=`<tr class="${cls}" data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
         if(w.leaf){
           body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
@@ -2648,7 +2660,7 @@ function renderAnalyse(){
   const rates=Object.keys(T.rt).map(Number).sort((a,b)=>b-a);
   const trow=(lab,get,cls="")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(get(e))}</td>`).join("")}</tr>`;
   const tvaRows=rates.map(tx=>{const R=T.rt[tx];return (rates.length>1?trow(`Base HT soumise à ${pct(tx)}`,e=>e?R.e[e.id]:R.est):"")+trow(`TVA à ${pct(tx)}`,e=>(e?R.e[e.id]:R.est)*tx/100);}).join("");
-  const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${tvaRows}${frow("Total TTC",T,"T","tot")}
+  const foot=`<tfoot>${frow("Total HT",T,"")}${V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):""}${tvaRows}${frow("Total TTC",T,"T","tot")}${ovFoot(M,Ev)}
     <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
     <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
   tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${body}</tbody>`+foot;
@@ -2733,6 +2745,10 @@ function renderSynth(){
    <h3>Ce que cela représente pour un copropriétaire</h3>
    <table><tr><th>Pour un lot de</th><th class="n">Quote-part TTC</th></tr>
      ${[50,100,200].map(t=>`<tr><td>${t} / 10 000<sup>e</sup></td><td class="n">${eur(rT*t/10000)}</td></tr>`).join("")}</table>
+   ${ovl().some(o=>{const O=M.ov[o.id];return O&&(O.est.in||O.est.base);})?`<h3>Options et variantes</h3>
+   <p class="body">Les options et variantes ne sont pas comprises dans les montants ci-dessus. Plus-value (+) ou moins-value (−) en TTC par rapport au marché de base :</p>
+   <table><tr><th></th><th class="n">Chiffrage MOE</th>${ents.map(e=>`<th class="n">${esc(e.nom)}</th>`).join("")}</tr>
+   ${ovl().filter(o=>{const O=M.ov[o.id];return O&&(O.est.in||O.est.base);}).map(o=>{const O=M.ov[o.id],nt=x=>x.inT-x.baseT;return `<tr><td><b>${esc(ovLab(o))}</b></td><td class="n">${sgn(nt(O.est))}</td>${ents.map(e=>`<td class="n${e.id===ret.id?" strong":""}">${sgn(nt(O.e[e.id]))}</td>`).join("")}</tr>`;}).join("")}</table>`:""}
    ${privLot.length?`<h3>Travaux à charge privative</h3>
    <p class="body">Les lots privatifs (${privLot.map(l=>esc(l.titre.toLowerCase())).join(", ")}) sont commandés individuellement par les copropriétaires qui le souhaitent, aux prix unitaires de l'entreprise retenue. Montant de référence pour l'ensemble des articles chiffrés : ${eur(prv[ret.id+"T"])} TTC.</p>`:""}`;
   $("#selRet").onchange=e=>{state.retenue=e.target.value;save();renderSynth();};
@@ -2793,12 +2809,12 @@ function lotItems(lot){
   it.push({k:"lot",code:lot.code,titre:lot.titre});
   const arts=(list,d)=>list.forEach(ar=>{
     if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre+ovTxt(ar)});arts(ar.sub,d+1);
-      if(hasLeaf(st)) it.push({k:"sub",lvl:"par",titre:ar.titre,from:st,to:it.length});}
-    else it.push({k:"art",d,ar,id:ar.id,code:ar.code,titre:ar.titre+ovTxt(ar),u:ar.u,q:qty(ar),tva:tvaOf(ar),
+      if(hasLeaf(st)) it.push({k:"sub",lvl:"par",grp:ovOf(ar).in||"",titre:ar.titre,from:st,to:it.length});}
+    else it.push({k:"art",d,ar,id:ar.id,code:ar.code,titre:ar.titre+ovTxt(ar),u:ar.u,q:qty(ar),tva:tvaOf(ar),ovIn:ovOf(ar).in||"",ovB:ovOf(ar).base,
       metre:(metreOn(ar)&&showMetre(ar))?validLines(ar).map(l=>`${l.expr} = ${fmt(evalMetre(l.expr),2)}${l.note?"   "+l.note:""}`):[]});
   });
   const node=(n,lvl)=>{const st=it.length;it.push({k:"node",lvl,code:n.code,titre:n.titre});if(n.art)arts(n.art,1);(n.children||[]).forEach(c=>node(c,3));
-    if(hasLeaf(st)) it.push({k:"sub",lvl:"node"+lvl,titre:n.titre,from:st,to:it.length});};
+    if(hasLeaf(st)) it.push({k:"sub",lvl:"node"+lvl,grp:ovOf(n).in||"",titre:n.titre,from:st,to:it.length});};
   lot.children.forEach(ch=>node(ch,2));
   return it;
 }
@@ -2827,7 +2843,7 @@ async function buildBpuStyled(E,en){
     const sn=sheetName(lot), ws=wb.addWorksheet(sn,{views:[{state:"frozen",ySplit:8,showGridLines:false}],
       pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0,horizontalCentered:true,printTitlesRow:"1:8",margins:{left:.35,right:.35,top:.5,bottom:.55,header:.25,footer:.25}},
       headerFooter:{oddFooter:'&L&"Arial,Regular"&8AGOA CCTP&C&"Arial,Regular"&8&A&R&"Arial,Regular"&8Page &P / &N'}});
-    ws.columns=[{width:14},{width:11,hidden:true},{width:62},{width:11},{width:8},{width:11},{width:8},{width:15},{width:18},{width:38}];
+    ws.columns=[{width:14},{width:11,hidden:true},{width:62},{width:11},{width:8},{width:11},{width:8},{width:15},{width:18},{width:38},{width:3,hidden:true},{width:3,hidden:true}];
     const mrg=(r1,r2,text,font,al,h)=>{ws.mergeCells(r1,1,r2,10);const c=ws.getCell(r1,1);c.value=text;c.font=font;c.alignment={vertical:"middle",wrapText:true,...al};};
     mrg(1,2,"Bordereau des prix unitaires (BPU) - "+ref,F(12,{bold:true}),{horizontal:"center"}); ws.getRow(1).height=20; ws.getRow(2).height=4;
     mrg(3,4,oper,F(10,{bold:true}),{horizontal:"center"}); ws.getRow(3).height=4; ws.getRow(4).height=34;
@@ -2841,7 +2857,7 @@ async function buildBpuStyled(E,en){
     const items=lotItems(lot); let r=9; items.forEach(x=>{x.row=r;r+=1+(x.metre?x.metre.length:0);});
     const lastRow=r-1, val={}; // montants calculés
     items.forEach(x=>{if(x.k==="art"){const p=pus[x.id];x.m=p!=null?Math.round(p*x.q*100)/100:0;val[x.row]=x.m;}});
-    const sumOf=x=>items.slice(x.from,x.to).filter(y=>y.k==="art");
+    const sumOf=x=>items.slice(x.from,x.to).filter(y=>y.k==="art"&&(y.ovIn||"")===(x.grp||""));
     items.forEach(x=>{
       const R=ws.getRow(x.row);
       if(x.k==="lot"){const c=ws.getCell(x.row,3);c.value=x.titre.toUpperCase();c.font=F(14,{bold:true,color:{argb:BLUE}});c.alignment={vertical:"middle",wrapText:true};const a=ws.getCell(x.row,1);a.value=x.code;a.font=F(10,{bold:true,italic:true});a.alignment={vertical:"middle"};R.height=28;}
@@ -2861,32 +2877,46 @@ async function buildBpuStyled(E,en){
         const pu=set(8,pus[x.id]!=null?pus[x.id]:null,F(10,{bold:true,color:{argb:BLUE}}),{horizontal:"right"},EUR0); pu.border=box; pu.protection={locked:false}; pu.dataValidation={type:"decimal",operator:"greaterThanOrEqual",allowBlank:true,formulae:[0],showErrorMessage:true,errorTitle:"Prix unitaire",error:"Saisissez un montant positif en euros."};
         const m=set(9,{formula:`IF(ISNUMBER(H${x.row}),IF(ISNUMBER(F${x.row}),ROUND(H${x.row}*F${x.row},2),ROUND(H${x.row}*D${x.row},2)),0)`,result:x.m},F(10,{italic:true}),{horizontal:"right"},EUR); m.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};
         const ob=set(10,nts[x.id]||null,F(9),{wrapText:true,horizontal:"left"}); ob.border=box; ob.protection={locked:false};
+        set(11,x.ovIn||"B",F(8,{color:{argb:MUTED}}),{}); set(12,x.ovB.length?","+x.ovB.join(",")+",":null,F(8,{color:{argb:MUTED}}),{});
         x.metre.forEach((t,k)=>{const rr=x.row+1+k;const a=ws.getCell(rr,1);a.value=k?null:"Métré";a.font=F(9,{italic:true,color:{argb:MUTED}});const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{italic:true,color:{argb:MUTED}});c.alignment={indent:x.d+1};ws.getRow(rr).height=14;});
       }
       else if(x.k==="sub"){
         const L=sumOf(x), rows=L.map(y=>y.row), tot=Math.round(L.reduce((a,y)=>a+y.m,0)*100)/100;
         ws.mergeCells(x.row,1,x.row,8); const a=ws.getCell(x.row,1);a.value="Sous-Total HT de "+x.titre.toUpperCase();a.font=F(10,{italic:true});a.alignment={vertical:"middle",horizontal:"left",wrapText:true,indent:x.lvl==="par"?1:0};
-        const m=ws.getCell(x.row,9);m.value={formula:`SUM(${runs(rows)})`,result:tot};m.font=F(10,{italic:true,bold:x.lvl==="node2"});m.numFmt=EUR0;m.alignment={vertical:"middle",horizontal:"right"};
+        const m=ws.getCell(x.row,9);m.value={formula:`SUM(${runs(rows)||"0"})`,result:tot};m.font=F(10,{italic:true,bold:x.lvl==="node2"});m.numFmt=EUR0;m.alignment={vertical:"middle",horizontal:"right"};
         if(x.lvl==="node2"){for(let k=1;k<=10;k++)ws.getCell(x.row,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};}
         R.height=19;
       }
     });
     // totaux du lot
-    const leaves2=items.filter(y=>y.k==="art"), ht=Math.round(leaves2.reduce((a,y)=>a+y.m,0)*100)/100;
+    const arts2=items.filter(y=>y.k==="art"), leaves2=arts2.filter(y=>!y.ovIn), ht=Math.round(leaves2.reduce((a,y)=>a+y.m,0)*100)/100;
     const rates=[...new Set(leaves2.map(y=>y.tva))].sort((a,b)=>a-b); let rr=lastRow+2;
     const line=(label,formula,result,strong,fill)=>{ws.mergeCells(rr,1,rr,8);const a=ws.getCell(rr,1);a.value=label;a.font=F(10,{bold:strong,color:{argb:strong?BLUE:INK}});a.alignment={vertical:"middle"};
       const m=ws.getCell(rr,9);m.value={formula,result};m.font=F(10,{bold:strong,color:{argb:strong?BLUE:INK}});m.numFmt=EUR0;m.alignment={horizontal:"right",vertical:"middle"};
       if(fill)for(let k=1;k<=10;k++)ws.getCell(rr,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};ws.getRow(rr).height=20;rr++;return rr-1;};
-    const rHT=line(`MONTANT HT - ${lot.code} - ${lot.titre.toUpperCase()}`,`SUM(${runs(leaves2.map(y=>y.row))||"I9"})`,ht,true,true);
+    const rHT=line(`MONTANT HT - ${lot.code} - ${lot.titre.toUpperCase()}`,`SUMIFS($I$9:$I$${lastRow},$K$9:$K$${lastRow},"B")`,ht,true,true);
     const tvaRows=[]; let tvaTot=0;
-    rates.forEach(t=>{const v=Math.round(leaves2.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)*t)/100;tvaTot+=v;tvaRows.push(line(`MONTANT TVA - ${pct(t)}`,`ROUND(SUMIF($G$9:$G$${lastRow},${t},$I$9:$I$${lastRow})*${t}/100,2)`,v,false,false));});
+    rates.forEach(t=>{const v=Math.round(leaves2.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)*t)/100;tvaTot+=v;tvaRows.push(line(`MONTANT TVA - ${pct(t)}`,`ROUND(SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$K$9:$K$${lastRow},"B")*${t}/100,2)`,v,false,false));});
     const rTTC=line(`MONTANT TTC - ${lot.code} - ${lot.titre.toUpperCase()}`,`I${rHT}${tvaRows.map(x=>"+I"+x).join("")}`,Math.round((ht+tvaTot)*100)/100,true,true);
+    // options et variantes : plus-values / moins-values, hors marché de base
+    const ovRec=[], usedOv=ovl().filter(o=>arts2.some(y=>y.ovIn===o.id||y.ovB.includes(o.id)));
+    if(usedOv.length){rr++;ws.mergeCells(rr,1,rr,10);const oh=ws.getCell(rr,1);oh.value="OPTIONS ET VARIANTES (hors marché de base)";oh.font=F(10,{bold:true,color:{argb:BLUE}});oh.alignment={vertical:"middle"};ws.getRow(rr).height=22;rr++;
+      usedOv.forEach(o=>{const lab=ovLab(o).toUpperCase(), inn=arts2.filter(y=>y.ovIn===o.id), bas=arts2.filter(y=>y.ovB.includes(o.id));
+        const vI=Math.round(inn.reduce((a,y)=>a+y.m,0)*100)/100, vB=Math.round(bas.reduce((a,y)=>a+y.m,0)*100)/100, net=Math.round((vI-vB)*100)/100;
+        const rts=[...new Set([...inn,...bas].map(y=>y.tva))].sort((a,b)=>a-b);
+        let tv=0; rts.forEach(t=>{tv+=(inn.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0)-bas.filter(y=>y.tva===t).reduce((a,y)=>a+y.m,0))*t/100;});
+        const rI=line(`${lab} - ouvrages (HT)`,`SUMIFS($I$9:$I$${lastRow},$K$9:$K$${lastRow},"${o.id}")`,vI,false,false);
+        const rB=bas.length?line(`${lab} - base à déduire (HT)`,`-SUMIFS($I$9:$I$${lastRow},$L$9:$L$${lastRow},"*,${o.id},*")`,-vB,false,false):0;
+        const rN=line(`${lab} - PLUS-VALUE / MOINS-VALUE HT`,`I${rI}${rB?"+I"+rB:""}`,net,true,true);
+        const fT=`I${rN}`+rts.map(t=>`+ROUND((SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$K$9:$K$${lastRow},"${o.id}")-SUMIFS($I$9:$I$${lastRow},$G$9:$G$${lastRow},${t},$L$9:$L$${lastRow},"*,${o.id},*"))*${t}/100,2)`).join("");
+        const rT=line(`${lab} - PLUS-VALUE / MOINS-VALUE TTC`,fT,Math.round((net+tv)*100)/100,true,true);
+        ovRec.push({id:o.id,rN,rT,net,ttc:Math.round((net+tv)*100)/100});});}
     // zone d'observations de l'entreprise
     rr++; ws.mergeCells(rr,1,rr,10); const ol=ws.getCell(rr,1); ol.value="Observations de l'entreprise sur le lot"; ol.font=F(10,{bold:true,color:{argb:BLUE}}); ol.alignment={vertical:"middle"}; ws.getRow(rr).height=20; rr++;
     ws.mergeCells(rr,1,rr+4,10); const ob=ws.getCell(rr,1); ob.alignment={vertical:"top",horizontal:"left",wrapText:true}; ob.font=F(10); ob.protection={locked:false};
     for(let a=rr;a<=rr+4;a++)for(let b=1;b<=10;b++){const c=ws.getCell(a,b);c.border={top:a===rr?thin(LINE):undefined,bottom:a===rr+4?thin(LINE):undefined,left:b===1?thin(LINE):undefined,right:b===10?thin(LINE):undefined};c.protection={locked:false};ws.getRow(a).height=20;}
     await ws.protect("",{selectLockedCells:true,selectUnlockedCells:true,formatColumns:true,formatRows:true});
-    rec.push({sn,code:lot.code,titre:lot.titre,rHT,rTTC,ht,ttc:Math.round((ht+tvaTot)*100)/100});
+    rec.push({sn,code:lot.code,titre:lot.titre,rHT,rTTC,ht,ttc:Math.round((ht+tvaTot)*100)/100,ovs:ovRec});
   }
   // récapitulatif
   const rs=wb.addWorksheet("Total de l'affaire",{views:[{showGridLines:false}],pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
@@ -2902,6 +2932,13 @@ async function buildBpuStyled(E,en){
   rs.getCell(q+1,2).value="MONTANT TOTAL"; rs.getCell(q+1,2).font=F(10,{bold:true,color:{argb:BLUE}});
   [[3,sH],[4,sT],[5,sC]].forEach(([col,v])=>{const L=String.fromCharCode(64+col);const c=rs.getCell(q+1,col);c.value={formula:`SUM(${L}${q0}:${L}${q-1})`,result:Math.round(v*100)/100};c.font=F(10,{bold:true,color:{argb:BLUE}});c.numFmt=EUR0;c.alignment={horizontal:"right"};});
   for(let k=1;k<=5;k++)rs.getCell(q+1,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}}; rs.getRow(q+1).height=22;
+  {const ovAll=ovl().filter(o=>rec.some(x=>(x.ovs||[]).some(y=>y.id===o.id)));
+   if(ovAll.length){let z=q+3;rs.mergeCells(z,1,z,5);const hh=rs.getCell(z,1);hh.value="Options et variantes : plus-values / moins-values (non comprises dans le montant total)";hh.font=F(10,{bold:true,color:{argb:BLUE}});z++;
+    ovAll.forEach(o=>{const parts=rec.map(x=>{const y=(x.ovs||[]).find(v=>v.id===o.id);return y?{sn:`'${x.sn.replace(/'/g,"''")}'`,y}:null;}).filter(Boolean);
+      rs.getCell(z,1).value=ovShort(o);rs.getCell(z,1).font=F(10,{italic:true});rs.getCell(z,2).value=(o.nom||"").toUpperCase();rs.getCell(z,2).font=F(10);
+      const vN=parts.reduce((a,p)=>a+p.y.net,0), vT=parts.reduce((a,p)=>a+p.y.ttc,0);
+      const put=(col,f,res)=>{const c=rs.getCell(z,col);c.value={formula:f,result:Math.round(res*100)/100};c.font=F(10);c.numFmt=EUR0;c.alignment={horizontal:"right"};};
+      put(3,parts.map(p=>`${p.sn}!I${p.y.rN}`).join("+"),vN);put(5,parts.map(p=>`${p.sn}!I${p.y.rT}`).join("+"),vT);put(4,`E${z}-C${z}`,vT-vN);rs.getRow(z).height=20;z++;});}}
   await rs.protect("",{selectLockedCells:true,selectUnlockedCells:true});
   return await wb.xlsx.writeBuffer();
 }
@@ -2913,10 +2950,10 @@ function buildBpuBasic(X,en){
   if(en&&depotUrl(en)) A("Dépôt de l'offre (BPU rempli + devis PDF) : "+depotUrl(en));
   A("Renseignez uniquement la colonne « Prix unitaire HT » ; les montants et totaux se calculent automatiquement. Ne modifiez ni les quantités ni les désignations.");
   A();
-  const hdr=A("N°","Ref.","Désignation","U","Qté","TVA (%)","Prix unitaire HT","Montant HT","Annotations entreprise");
+  const hdr=A("N°","Ref.","Désignation","U","Qté","TVA (%)","Prix unitaire HT","Montant HT","Annotations entreprise","Groupe","Bases");
   const first=hdr+1, fr=[];
   bpuFlat().forEach(r=>{
-    if(r.k==="art"){const n=A(r.code,r.id,r.titre.toUpperCase(),r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null);fr.push({n,m:pus[r.id]!=null?r.q*pus[r.id]:0,tva:r.tva});}
+    if(r.k==="art"){const c=ovOf(r.ar),n=A(r.code,r.id,r.titre.toUpperCase(),r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:pus[r.id]!=null?r.q*pus[r.id]:0,tva:r.tva,c});}
     else A(r.code,null,r.titre.toUpperCase());
     String(r.texte||"").split("\n").map(t=>t.trim()).filter(Boolean).forEach(t=>A(null,null,t));
   });
@@ -2924,12 +2961,18 @@ function buildBpuBasic(X,en){
   const tH=A(null,null,"Total HT"), tT=A(null,null,"Total TVA"), tC=A(null,null,"Total TTC");
   const ws=X.utils.aoa_to_sheet(aoa);
   let sH=0,sT=0;
-  fr.forEach(({n,m,tva})=>{sH+=m;sT+=m*tva/100;ws["H"+n]={t:"n",v:m,f:`IF(G${n}="",0,E${n}*G${n})`,z:"#,##0.00;-#,##0.00;;"};if(ws["G"+n])ws["G"+n].z="#,##0.00";if(ws["E"+n])ws["E"+n].z="#,##0.##";});
-  ws["H"+tH]={t:"n",v:sH,f:`SUM(H${first}:H${last})`,z:"#,##0.00"};
-  ws["H"+tT]={t:"n",v:sT,f:`SUMPRODUCT(H${first}:H${last},F${first}:F${last})/100`,z:"#,##0.00"};
+  const OV={};ovl().forEach(o=>OV[o.id]={ht:0,tva:0});
+  fr.forEach(({n,m,tva,c})=>{if(!c.in){sH+=m;sT+=m*tva/100;}else if(OV[c.in]){OV[c.in].ht+=m;OV[c.in].tva+=m*tva/100;}c.base.forEach(id=>{if(OV[id]){OV[id].ht-=m;OV[id].tva-=m*tva/100;}});ws["H"+n]={t:"n",v:m,f:`IF(G${n}="",0,E${n}*G${n})`,z:"#,##0.00;-#,##0.00;;"};if(ws["G"+n])ws["G"+n].z="#,##0.00";if(ws["E"+n])ws["E"+n].z="#,##0.##";});
+  ws["H"+tH]={t:"n",v:sH,f:`SUMIFS(H${first}:H${last},J${first}:J${last},"B")`,z:"#,##0.00"};
+  ws["H"+tT]={t:"n",v:sT,f:`SUMPRODUCT(H${first}:H${last},F${first}:F${last},--(J${first}:J${last}="B"))/100`,z:"#,##0.00"};
   ws["H"+tC]={t:"n",v:sH+sT,f:`H${tH}+H${tT}`,z:"#,##0.00"};
-  ws["!ref"]=`A1:I${aoa.length}`;
-  ws["!cols"]=[{wch:13},{hidden:true,wch:10},{wch:72},{wch:6},{wch:10},{wch:9},{wch:17},{wch:15},{wch:36}];
+  const used=ovl().filter(o=>fr.some(f=>f.c.in===o.id||f.c.base.includes(o.id)));
+  if(used.length){A();A(null,null,"OPTIONS ET VARIANTES (hors marché de base)");
+    used.forEach(o=>{const rg=k=>`${k}${first}:${k}${last}`;const a=A(null,null,`${ovLab(o)} - plus-value / moins-value HT`),b=A(null,null,`${ovLab(o)} - plus-value / moins-value TTC`);
+      ws["H"+a]={t:"n",v:OV[o.id].ht,f:`SUMIFS(${rg("H")},${rg("J")},"${o.id}")-SUMIFS(${rg("H")},${rg("K")},"*,${o.id},*")`,z:"#,##0.00;-#,##0.00"};
+      ws["H"+b]={t:"n",v:OV[o.id].ht+OV[o.id].tva,f:`H${a}+(SUMPRODUCT(${rg("H")},${rg("F")},--(${rg("J")}="${o.id}"))-SUMPRODUCT(${rg("H")},${rg("F")},--ISNUMBER(SEARCH(",${o.id},",${rg("K")}))))/100`,z:"#,##0.00;-#,##0.00"};});}
+  ws["!ref"]=`A1:K${aoa.length}`;
+  ws["!cols"]=[{wch:13},{hidden:true,wch:10},{wch:72},{wch:6},{wch:10},{wch:9},{wch:17},{wch:15},{wch:36},{hidden:true,wch:4},{hidden:true,wch:4}];
   const wb=X.utils.book_new(); X.utils.book_append_sheet(wb,ws,"BPU"); wb.Workbook={CalcPr:{fullCalcOnLoad:true}};
     return X.write(wb,{bookType:"xlsx",type:"array"});
 }
@@ -3001,7 +3044,11 @@ function openPortal(entId){
   PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null};
   renderPortal(); $("#portalDlg").showModal();
 }
-function portalTotals(){let ht=0,tva=0,miss=0,n=0;leaves(ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0)miss++;return;}const m=q*p;ht+=m;tva+=m*tvaOf(ar)/100;});return{ht,tva,ttc:ht+tva,miss,n};}
+function portalTotals(){let ht=0,tva=0,miss=0,n=0;const O={};ovl().forEach(o=>O[o.id]={ht:0,ttc:0});
+  leaves(ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0)miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
+    if(!c.in){ht+=m;tva+=m*k;}else if(O[c.in]){O[c.in].ht+=m;O[c.in].ttc+=m*(1+k);}
+    c.base.forEach(id=>{if(O[id]){O[id].ht-=m;O[id].ttc-=m*(1+k);}});});
+  return{ht,tva,ttc:ht+tva,miss,n,O};}
 function renderPortal(){
   const en=ents().find(e=>e.id===PD.id), o=state.op||{};
   let h="";
@@ -3032,7 +3079,7 @@ function renderPortal(){
 }
 function portalFoot(){
   const t=portalTotals();
-  $("#ptTot").innerHTML=`<span>Total HT <b>${eur2(t.ht)}</b></span><span>TVA <b>${eur2(t.tva)}</b></span><span>Total TTC <b>${eur2(t.ttc)}</b></span>${t.miss?`<span style="color:var(--ochre)">${t.miss} prix manquant${t.miss>1?"s":""}</span>`:`<span style="color:var(--accent)">Tous les prix sont renseignés</span>`}`;
+  $("#ptTot").innerHTML=`<span>Total HT <b>${eur2(t.ht)}</b></span><span>TVA <b>${eur2(t.tva)}</b></span><span>Total TTC <b>${eur2(t.ttc)}</b></span>${ovl().map(o=>`<span title="Hors marché de base : ${esc(ovLab(o))}">${esc(ovShort(o))} <b>${sgn(t.O[o.id].ht)} HT</b></span>`).join("")}${t.miss?`<span style="color:var(--ochre)">${t.miss} prix manquant${t.miss>1?"s":""}</span>`:`<span style="color:var(--accent)">Tous les prix sont renseignés</span>`}`;
   $("#pPdfName").textContent=PD.devis?PD.devis.nom:"Devis obligatoire";
   $("#pSubmit").disabled=!PD.devis;
 }

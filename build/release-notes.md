@@ -1,1 +1,1 @@
-Déploiement n°13 — Arbre : pastilles quantité/unité, liens, +/−, surlignage couleur ; options et variantes multiples ; saisie d'article remaniée
+Déploiement n°14 — Options et variantes traitées séparément : BPU Excel (lots + récapitulatif), portail, analyse des offres et synthèse (plus-values / moins-values)
