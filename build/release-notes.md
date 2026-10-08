@@ -1,1 +1,1 @@
-Déploiement n°20 — Baguette magique IA dans les outils de texte : reformuler, corriger, raccourcir, style prescriptif (clé API Anthropic dans le menu Aide)
+Déploiement n°21 — Clé API IA commune : chiffrée dans le dossier de la bibliothèque partagée, aucune saisie sur les autres postes

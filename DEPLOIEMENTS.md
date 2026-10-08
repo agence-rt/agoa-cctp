@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°21** — v0.21.0 — 2026-10-08 — Clé API IA commune : chiffrée dans le dossier de la bibliothèque partagée, aucune saisie sur les autres postes
 - **n°20** — v0.20.0 — 2026-10-08 — Baguette magique IA dans les outils de texte : reformuler, corriger, raccourcir, style prescriptif (clé API Anthropic dans le menu Aide)
 - **n°19** — v0.19.0 — 2026-10-08 — v0.18.1 : tableau comparatif, plus de montants sur les lignes de titre (lot, chapitre, article-titre)
 - **n°18** — v0.18.0 — 2026-10-08 — v0.18.0 : bibliothèque repliée par défaut, colonne de droite redimensionnable, cadres colorés (bleu marché de base avec TVA/TTC, couleur par option/variante) sans fonds, choix d'option par cases, localisation sans fond bleu

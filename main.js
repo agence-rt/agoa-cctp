@@ -164,12 +164,40 @@ async function askRagicKey() {
   if (v === null) return;
   setSecret("ragicKey", v.trim());
 }
+/* Clé IA commune : fichier chiffré à côté de la bibliothèque partagée (Dropbox de l'agence).
+   Le chiffrement évite qu'elle apparaisse en clair ; il ne remplace pas le contrôle d'accès au dossier. */
+const AI_KEY_FILE = "agoa-ia.cle";
+const aiKeyFile = () => { const d = findLibDir(); return d ? path.join(d, AI_KEY_FILE) : null; };
+const aiCryptoKey = () => crypto.scryptSync("agoa-cctp/ia/" + REPO.owner, "agoa-ia-v1", 32);
+function readSharedAiKey() {
+  const f = aiKeyFile(); if (!f) return "";
+  try {
+    const b = Buffer.from(fs.readFileSync(f, "utf8").trim(), "base64");
+    const d = crypto.createDecipheriv("aes-256-gcm", aiCryptoKey(), b.subarray(0, 12)); d.setAuthTag(b.subarray(12, 28));
+    return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString("utf8");
+  } catch { return ""; }
+}
+function writeSharedAiKey(key) {
+  const f = aiKeyFile(); if (!f) return false;
+  if (!key) { try { fs.unlinkSync(f); } catch {} return true; }
+  const iv = crypto.randomBytes(12), c = crypto.createCipheriv("aes-256-gcm", aiCryptoKey(), iv);
+  const enc = Buffer.concat([c.update(key, "utf8"), c.final()]);
+  writeAtomic(f, Buffer.concat([iv, c.getAuthTag(), enc]).toString("base64"), false);
+  return true;
+}
+const aiKey = () => readSharedAiKey() || getSecret("anthropicKey");
 async function askAnthropicKey() {
+  const shared = !!findLibDir();
   const v = await askSecret("Reformulation par IA", "Clé API Anthropic",
-    "Clé API (console.anthropic.com, API Keys) utilisée par la baguette magique des outils de texte pour reformuler les descriptions. Elle est conservée chiffrée sur ce poste. Seul le texte à reformuler est envoyé à Anthropic.");
+    "Clé API (console.anthropic.com, API Keys) utilisée par la baguette magique des outils de texte. " +
+    (shared ? "Elle sera partagée avec toute l'agence : enregistrée, chiffrée, dans le dossier de la bibliothèque commune ; les autres postes n'ont rien à saisir. Laissez vide pour la supprimer. "
+            : "Dossier commun introuvable : elle est conservée chiffrée sur ce poste uniquement. ") +
+    "Seul le texte à reformuler est envoyé à Anthropic.");
   if (v === null) return false;
-  setSecret("anthropicKey", v.trim());
-  return !!v.trim();
+  const k = v.trim();
+  if (shared && writeSharedAiKey(k)) { setSecret("anthropicKey", ""); return !!k; }
+  setSecret("anthropicKey", k);
+  return !!k;
 }
 const AI_BASE = "Tu es rédacteur de CCTP pour une agence d'architecture spécialisée dans les copropriétés parisiennes. Tu travailles sur la description d'un ouvrage de travaux. Conserve strictement le sens, les valeurs, quantités, unités, références normatives (DTU, NF…), noms de produits et sigles ; n'invente aucune information et ne supprime aucune exigence. Conserve la structure en paragraphes (un paragraphe par ligne) et les listes. Réponds uniquement par le texte réécrit, en français, sans commentaire, sans titre et sans guillemets.";
 const AI_MODES = {
@@ -179,7 +207,7 @@ const AI_MODES = {
   prescriptif: "Réécris le texte dans un style strictement prescriptif et formel de CCTP (« L'entreprise devra… », « Les travaux comprennent… »), au présent ou au futur de l'obligation."
 };
 async function aiRewrite(text, mode) {
-  const key = getSecret("anthropicKey");
+  const key = aiKey();
   if (!key) throw new Error("[no_key] Clé API Anthropic manquante");
   const c = readJson(configPath(), {});
   let r;
@@ -429,7 +457,7 @@ function createWindow() {
       { label: "Rechercher des mises à jour…", click: () => runCheck(true) },
       { label: "Bibliothèque partagée : choisir le dossier…", click: () => js("window.__libChoose && window.__libChoose()").catch(() => {}) },
       { label: "Clé API Ragic…", click: () => askRagicKey() },
-      { label: "Clé API Anthropic (reformulation IA)…", click: () => askAnthropicKey() }
+      { label: "Clé API Anthropic partagée (reformulation IA)…", click: () => askAnthropicKey() }
     ] }
   ]));
 }
