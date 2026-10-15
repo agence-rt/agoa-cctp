@@ -1,1 +1,1 @@
-Déploiement n°25 — Consultation : plus de tableau BPU, exports CCTP/BPU, dépôt des offres dans Dropbox 03 - RETOUR ENTREPRISES
+Déploiement n°26 — CCTP : bandeau d'en-tête affiné, architecte présenté comme syndic et immeuble sur la page de garde

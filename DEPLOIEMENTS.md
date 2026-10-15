@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°26** — v0.26.0 — 2026-10-15 — CCTP : bandeau d'en-tête affiné, architecte présenté comme syndic et immeuble sur la page de garde
 - **n°25** — v0.25.0 — 2026-10-15 — Consultation : plus de tableau BPU, exports CCTP/BPU, dépôt des offres dans Dropbox 03 - RETOUR ENTREPRISES
 - **n°24** — v0.24.0 — 2026-10-15 — CCTP : charte graphique de l'agence (rouge) et page de garde architecte / syndic / immeuble
 - **n°23** — v0.23.0 — 2026-10-15 — Présentation du CCTP (interface et PDF) : lot en bandeau plein, chapitre en bandeau, sous-titres à carré, articles à pastille, retraits par niveau

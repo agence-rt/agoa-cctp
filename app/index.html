@@ -313,13 +313,13 @@ mark{background:#fff176;color:inherit;padding:0}
 .sheet .blk.lv2 .h{background:var(--accent-soft);border-left:5px solid var(--accent);color:var(--accent);font-size:15px;padding:9px 14px;border-radius:0 5px 5px 0;margin:10px 0 8px}
 .sheet .blk.lv2 .cd{background:var(--band);color:#fff}
 .sheet .cover{margin:0 0 26px;padding-bottom:22px;border-bottom:1px dashed var(--line);cursor:default}
-.sheet .cv-ban{background:var(--band);color:#fff;font-weight:800;text-align:center;font-size:21px;letter-spacing:.02em;text-transform:uppercase;padding:26px 14px;clip-path:polygon(26px 0,100% 0,100% 100%,0 100%,0 26px)}
+.sheet .cv-ban{background:var(--band);color:#fff;font-weight:800;text-align:center;font-size:15px;letter-spacing:.03em;text-transform:uppercase;padding:9px 14px;clip-path:polygon(12px 0,100% 0,100% 100%,0 100%,0 12px)}
 .sheet .cv-t{margin:22px 0 0;color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;border-bottom:2px solid var(--accent);padding-bottom:6px}
 .sheet .cv-o{margin:14px 0 4px;font-size:22px;line-height:1.2;font-weight:800;text-transform:uppercase;color:var(--ink)}
 .sheet .cv-i{margin:0;color:var(--accent);font-size:15px}
 .sheet .cv-a,.sheet .cv-d{margin:2px 0 0;color:var(--muted);font-size:13px}
 .sheet .cv-ph{display:block;max-width:100%;max-height:260px;margin:16px auto 0;border:1px solid var(--line)}
-.sheet .cv-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.sheet .cv-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
 .sheet .cv-card{border:1px solid var(--line);min-width:0}
 .sheet .cv-card>b{display:block;background:var(--band);color:#fff;font-size:11px;letter-spacing:.08em;padding:5px 10px;clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px)}
 .sheet .cv-card>div{padding:8px 10px;font-size:13px;line-height:1.45}
@@ -896,7 +896,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.25.0", deploiement: 25};
+const APP = {version: "0.26.0", deploiement: 26};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1510,8 +1510,8 @@ function coverHtml(){
     <p class="cv-t">CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES</p><p class="cv-o">${esc(o.objet||"Objet des travaux")}</p>
     ${o.immeuble?`<p class="cv-i">${esc(o.immeuble)}</p>`:""}${o.ref?`<p class="cv-a">Code travaux : ${esc(o.ref)}</p>`:""}${dts?`<p class="cv-d">${esc(dts)}</p>`:""}
     ${o.photo?`<img class="cv-ph" src="${o.photo}" alt="Photo de l'opération">`:""}
-    <div class="cv-cols">${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
-    <div class="cv-arch"><small>ARCHITECTE – MAÎTRISE D'ŒUVRE</small><div class="n">${esc(C.arch.nom)}</div><span>${esc(C.arch.tel)}</span><span>${esc(C.arch.adresse)}</span><br><span>${esc(C.arch.web)}</span><span>${esc(C.arch.email)}</span></div></div>`;
+    <div class="cv-cols">${card("ARCHITECTE",[{t:C.arch.nom,b:1},{t:C.arch.adresse},{t:C.arch.tel&&"Tél. : "+C.arch.tel},{t:C.arch.web},{t:C.arch.email}].filter(x=>x.t))}${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
+</div>`;
 }
 const prevSeg=()=>`<div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${state.prev===k}">${l}</button>`).join("")}</div>`;
 function renderLibPanel(force){
@@ -2117,10 +2117,10 @@ function buildCctpPdf(J){
   /* ---- page de garde (charte de l'agence) ---- */
   const cut=(x,y,w,h,c)=>{doc.setFillColor(RED[0],RED[1],RED[2]);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,y,[1,1],"F",true);};
   const C=coverInfo(o);
-  cut(L,16,R-L,26,9);
-  { let fs=27; const nm=wa(AGENCE.marque).toUpperCase(); font("bold",fs,WHITE); while(doc.getTextWidth(nm)>R-L-18&&fs>12){fs-=1;doc.setFontSize(fs);}
-    doc.text(nm,L+(R-L)/2,16+13+fs*0.3528*0.36,{align:"center"}); }
-  let cy=60; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
+  cut(L,16,R-L,13,4.5);
+  { let fs=17; const nm=wa(AGENCE.marque).toUpperCase(); font("bold",fs,WHITE); while(doc.getTextWidth(nm)>R-L-18&&fs>12){fs-=1;doc.setFontSize(fs);}
+    doc.text(nm,L+(R-L)/2,16+6.5+fs*0.3528*0.36,{align:"center"}); }
+  let cy=50; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
   doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.7); doc.line(L,cy+3,R,cy+3);
   cy+=15; font("bold",21,INK);
   doc.splitTextToSize(wa(o.objet||"Objet des travaux").toUpperCase(),R-L).slice(0,3).forEach(l=>{doc.text(l,L,cy);cy+=9.2;});
@@ -2130,25 +2130,21 @@ function buildCctpPdf(J){
   if(o.ref){doc.text("Code travaux : "+wa(o.ref),L,cy);cy+=5.2;}
   const dts=[o.dateEdition&&"Édition : "+o.dateEdition,o.dateRemise&&"Remise des offres : "+o.dateRemise].filter(Boolean).join("   ·   ");
   if(dts){doc.text(wa(dts),L,cy);cy+=5.2;}
-  const ROW=198;
+  const ROW=206;
   if(o.photo){
     const d=dims(o.photo);
     if(d){const top=cy+4, maxW=R-L, maxH=ROW-8-top; if(maxH>25){let w=maxW,h=w*d.r;if(h>maxH){h=maxH;w=h/d.r;}
       const x=L+(maxW-w)/2; try{doc.addImage(o.photo,d.type,x,top,w,h,undefined,"FAST");}catch(e){console.error(e);}
       doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.rect(x,top,w,h);}}
   }
-  const cw=(R-L-8)/2;
+  const GP=5, cw=(R-L-2*GP)/3;
+  const archL=[{t:C.arch.nom,b:1},{t:C.arch.adresse},{t:C.arch.tel&&"Tél. : "+C.arch.tel},{t:C.arch.web},{t:C.arch.email}].filter(x=>x.t);
   const card=(x,title,lines)=>{ if(!lines.length)return;
     cut(x,ROW,cw,6.6,2.6); font("bold",8.5,WHITE); doc.text(title,x+3.2,ROW+4.6);
-    let yy=ROW+12; lines.slice(0,8).forEach(l=>{font(l.b?"bold":"normal",l.b?10.5:9.5,INK);
-      doc.splitTextToSize(wa(l.t),cw-6).slice(0,2).forEach(t=>{doc.text(t,x+3.2,yy);yy+=4.7;}); yy+=l.b?0.6:0.3;});
-    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.rect(x,ROW,cw,Math.max(yy-ROW-1.5,20));};
-  card(L,"SYNDIC",C.syndic); card(L+cw+8,"IMMEUBLE",C.immeuble);
-  { const y0=247,h=36; cut(L,y0,R-L,h,9);
-    font("normal",7.8,[255,214,214]); doc.text("ARCHITECTE – MAÎTRISE D'ŒUVRE",L+8,y0+8);
-    font("bold",14,WHITE); doc.text(wa(C.arch.nom),L+8,y0+15.5);
-    font("bold",11,WHITE); doc.text(wa(C.arch.tel),L+8,y0+22.5); doc.text(wa(C.arch.adresse),R-6,y0+22.5,{align:"right"});
-    font("bold",10,WHITE); doc.text(wa(C.arch.web),L+8,y0+30.5); doc.text(wa(C.arch.email),R-6,y0+30.5,{align:"right"}); }
+    let yy=ROW+12; lines.slice(0,9).forEach(l=>{font(l.b?"bold":"normal",l.b?10:9,INK);
+      doc.splitTextToSize(wa(l.t),cw-6).slice(0,3).forEach(t=>{doc.text(t,x+3.2,yy);yy+=4.5;}); yy+=l.b?0.6:0.3;});
+    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.rect(x,ROW,cw,Math.max(yy-ROW-1.5,42));};
+  card(L,"ARCHITECTE",archL); card(L+cw+GP,"SYNDIC",C.syndic); card(L+2*(cw+GP),"IMMEUBLE",C.immeuble);
   /* ---- corps ---- */
   doc.addPage();
   let y=T, rightBottom=T, placed=false, queue=[], colW=0; const GAP=5, toc=[];
@@ -2319,7 +2315,7 @@ function buildCctpPdf(J){
   for(let p=2;p<=N;p++){
     doc.setPage(p); font("normal",8,MUTED);
     doc.text(wa("CCTP - "+(o.objet||"")).slice(0,95),L,13);
-    doc.setFillColor(RED[0],RED[1],RED[2]); doc.rect(L,15.3,R-L,0.7,"F");
+    doc.setFillColor(RED[0],RED[1],RED[2]); doc.rect(L,15.5,R-L,0.35,"F");
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,PH-14,R,PH-14);
     doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
     font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),L+(R-L)/2,PH-5.6,{align:"center"});
