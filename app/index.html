@@ -314,7 +314,7 @@ mark{background:#fff176;color:inherit;padding:0}
 .sheet .blk.lv2 .cd{background:var(--band);color:#fff}
 .sheet .cover{margin:0 0 26px;padding-bottom:22px;border-bottom:1px dashed var(--line);cursor:default}
 .sheet .cv-ban{background:var(--band);color:#fff;font-weight:800;text-align:center;font-size:15px;letter-spacing:.03em;text-transform:uppercase;padding:9px 14px;clip-path:polygon(12px 0,100% 0,100% 100%,0 100%,0 12px)}
-.sheet .cv-t{margin:22px 0 0;color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;border-bottom:2px solid var(--accent);padding-bottom:6px}
+.sheet .cv-t{margin:4px 0 0;color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;border-bottom:2px solid var(--accent);padding-bottom:6px}
 .sheet .cv-o{margin:14px 0 4px;font-size:22px;line-height:1.2;font-weight:800;text-transform:uppercase;color:var(--ink)}
 .sheet .cv-i{margin:0;color:var(--accent);font-size:15px}
 .sheet .cv-a,.sheet .cv-d{margin:2px 0 0;color:var(--muted);font-size:13px}
@@ -896,7 +896,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.26.0", deploiement: 26};
+const APP = {version: "0.27.0", deploiement: 27};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1506,8 +1506,7 @@ function renderPreview(){
 function coverHtml(){
   const o=state.op||{}, C=coverInfo(o), card=(t,l)=>l.length?`<div class="cv-card"><b>${t}</b><div>${l.map(x=>x.b?`<b>${esc(x.t)}</b>`:`<span>${esc(x.t)}</span>`).join("")}</div></div>`:"";
   const dts=[o.dateEdition&&"Édition : "+o.dateEdition,o.dateRemise&&"Remise des offres : "+o.dateRemise].filter(Boolean).join("  ·  ");
-  return `<div class="cover" aria-label="Page de garde"><div class="cv-ban">${esc(AGENCE.marque)}</div>
-    <p class="cv-t">CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES</p><p class="cv-o">${esc(o.objet||"Objet des travaux")}</p>
+  return `<div class="cover" aria-label="Page de garde"><p class="cv-t">CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES</p><p class="cv-o">${esc(o.objet||"Objet des travaux")}</p>
     ${o.immeuble?`<p class="cv-i">${esc(o.immeuble)}</p>`:""}${o.ref?`<p class="cv-a">Code travaux : ${esc(o.ref)}</p>`:""}${dts?`<p class="cv-d">${esc(dts)}</p>`:""}
     ${o.photo?`<img class="cv-ph" src="${o.photo}" alt="Photo de l'opération">`:""}
     <div class="cv-cols">${card("ARCHITECTE",[{t:C.arch.nom,b:1},{t:C.arch.adresse},{t:C.arch.tel&&"Tél. : "+C.arch.tel},{t:C.arch.web},{t:C.arch.email}].filter(x=>x.t))}${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
@@ -2117,11 +2116,8 @@ function buildCctpPdf(J){
   /* ---- page de garde (charte de l'agence) ---- */
   const cut=(x,y,w,h,c)=>{doc.setFillColor(RED[0],RED[1],RED[2]);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,y,[1,1],"F",true);};
   const C=coverInfo(o);
-  cut(L,16,R-L,13,4.5);
-  { let fs=17; const nm=wa(AGENCE.marque).toUpperCase(); font("bold",fs,WHITE); while(doc.getTextWidth(nm)>R-L-18&&fs>12){fs-=1;doc.setFontSize(fs);}
-    doc.text(nm,L+(R-L)/2,16+6.5+fs*0.3528*0.36,{align:"center"}); }
-  let cy=50; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
-  doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.7); doc.line(L,cy+3,R,cy+3);
+  let cy=32; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
+  doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(L,cy+3,R,cy+3);
   cy+=15; font("bold",21,INK);
   doc.splitTextToSize(wa(o.objet||"Objet des travaux").toUpperCase(),R-L).slice(0,3).forEach(l=>{doc.text(l,L,cy);cy+=9.2;});
   cy+=1; font("normal",13,RED);
@@ -2315,8 +2311,8 @@ function buildCctpPdf(J){
   for(let p=2;p<=N;p++){
     doc.setPage(p); font("normal",8,MUTED);
     doc.text(wa("CCTP - "+(o.objet||"")).slice(0,95),L,13);
-    doc.setFillColor(RED[0],RED[1],RED[2]); doc.rect(L,15.5,R-L,0.35,"F");
-    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,PH-14,R,PH-14);
+    doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,R,15.5);
+    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PH-14,R,PH-14);
     doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
     font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),L+(R-L)/2,PH-5.6,{align:"center"});
   }

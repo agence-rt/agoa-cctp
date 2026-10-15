@@ -1,1 +1,1 @@
-Déploiement n°26 — CCTP : bandeau d'en-tête affiné, architecte présenté comme syndic et immeuble sur la page de garde
+Déploiement n°27 — CCTP : suppression du bandeau Remi Thollet Architecte, filets d'en-tête et de pied plus fins
