@@ -277,7 +277,7 @@ tr.st td{font-weight:650;border-top:1.5px solid var(--ink);border-bottom:0}
 td.blank{background:repeating-linear-gradient(-45deg,transparent 0 6px,var(--line) 6px 7px);min-width:70px}
 .prev-bpu th{top:45px}
 .sheet{font-family:var(--doc);padding:16px 20px;font-size:14px;line-height:1.6;font-weight:500}
-.sheet .blk{padding:8px 10px;margin:0 -10px 10px;border-left:2px solid transparent;cursor:pointer}
+.sheet .blk{padding:8px 10px;margin:0 -10px 10px calc(var(--ind,0px) - 10px);border-left:2px solid transparent;cursor:pointer}
 .sheet .blk.cur{border-left-color:var(--accent);background:var(--accent-soft)}
 .sheet .h{font-weight:600;color:var(--accent);text-transform:uppercase;font-size:13.5px;margin:0 0 6px}
 .sheet .blk p{margin:0 0 6px}
@@ -304,6 +304,16 @@ mark{background:#fff176;color:inherit;padding:0}
 .img-ctl input[type=range]{flex:1;min-width:80px;accent-color:var(--accent)}
 .img-ctl output{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
 #fLoc{background:var(--field-bg)}
+.sheet .cd{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:11px;letter-spacing:0;text-transform:none;padding:1px 8px;border-radius:10px;margin-right:9px;vertical-align:1px}
+.sheet .blk.lv1 .h{background:var(--accent);color:#fff;font-size:17px;letter-spacing:.04em;padding:12px 16px;border-radius:5px;margin:6px 0 10px}
+.sheet .blk.lv1 .cd{background:rgba(255,255,255,.22);color:#fff}
+.sheet .blk.lv2 .h{background:var(--accent-soft);border-left:5px solid var(--accent);color:var(--accent);font-size:15px;padding:9px 14px;border-radius:0 5px 5px 0;margin:10px 0 8px}
+.sheet .blk.lv2 .cd{background:var(--accent);color:#fff}
+.sheet .blk.lv3 .h,.sheet .blk.st .h{color:var(--accent);font-size:13.5px;border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:6px}
+.sheet .blk.st .h::before,.sheet .blk.lv3 .h::before{content:"";display:inline-block;width:8px;height:8px;background:var(--accent);margin-right:9px;vertical-align:0}
+.sheet .blk.ar .h{color:var(--ink);font-size:13px}
+.sheet .blk.ar{border-left:2px solid var(--line)}
+.sheet .blk.cur{border-left-color:var(--accent)}
 .sheet .loc{text-align:right;color:var(--accent);font-style:italic}
 .sheet .empty{color:var(--muted);font-style:italic}
 
@@ -862,7 +872,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.22.0", deploiement: 22};
+const APP = {version: "0.23.0", deploiement: 23};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1445,10 +1455,13 @@ function renderPreview(){
         +`<tr class="occ"><td colspan="6">TVA</td><td class="n">${eur2(tv)}</td></tr>`
         +`<tr class="st occ"><td colspan="6">Total TTC${ovl().length?" (marché de base)":""}</td><td class="n">${eur2(ht+tv)}</td></tr>`,BLUEC);})()}${ovBlocksHtml(root,lot)}</table>`;
   }else{
-    const blk=list=>list.map(ar=>`<div class="blk${ar.id===state.sel?" cur":""}" data-id="${ar.id}"><p class="h">${ar.code}- ${esc(ar.titre)}${ovBadge(ar)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub)).join("");
+    const IND=16;
+    const blk=(list,d,base)=>list.map(ar=>{const cont=ar.sub.length||isTitle(ar);
+      return `<div class="blk ${cont?"st":"ar"}${ar.id===state.sel?" cur":""}" data-id="${ar.id}" style="--ind:${base+d*IND}px"><p class="h"><span class="cd">${ar.code}</span>${esc(ar.titre)}${ovBadge(ar)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub,d+1,base);}).join("");
     const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"></div>`).join("")}</div>`:"";
-    const nblk=n=>`<div class="blk nblk${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h">${n.code}- ${esc(n.titre)}${ovBadge(n)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art):"")+(n.children||[]).map(nblk).join("");
-    body=`<div class="sheet">${nblk(root)}</div>`;
+    const nblk=(n,lvl)=>`<div class="blk nblk lv${lvl}${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h"><span class="cd">${n.code}</span>${lvl===1?"LOT — ":""}${esc(n.titre)}${ovBadge(n)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art,0,(lvl-1)*IND+IND):"")+(n.children||[]).map(c=>nblk(c,lvl+1)).join("");
+    const rl=root===lot?1:(lot.children.includes(root)?2:3);
+    body=`<div class="sheet">${nblk(root,rl)}</div>`;
   }
   el.innerHTML=`<div class="prev-h"><b>Aperçu ${root.code} ${esc(root.titre)}</b>
     ${prevSeg()}</div>${body}`;
@@ -2095,13 +2108,14 @@ function buildCctpPdf(J){
   }
   function np(){doc.addPage();y=T;rightBottom=T;placed=false;placeQ();}
   const narrow=()=>queue.length>0||y<rightBottom-0.1;
-  const avail=()=>(R-L)-(narrow()?colW+GAP:0);
+  let off=0; // décalage du corps de texte (retrait par niveau)
+  const avail=()=>(R-L-off)-(narrow()?colW+GAP:0);
   function para(text,st,sz,c,opt={}){
     font(st,sz,c); const lh=opt.lh||sz*0.3528*1.38;
     const startLine=()=>{if(y+lh>B)np();};
     const draw=line=>{
       const xr=R-(narrow()?colW+GAP:0);
-      if(opt.right) doc.text(line,xr,y+lh*0.74,{align:"right"}); else doc.text(line,L+(opt.indent||0),y+lh*0.74);
+      if(opt.right) doc.text(line,xr,y+lh*0.74,{align:"right"}); else doc.text(line,L+off+(opt.indent||0),y+lh*0.74);
       y+=lh;};
     String(wa(text)).split("\n").forEach(p=>{
       if(!p.trim()){y+=lh*0.55;return;}
@@ -2129,7 +2143,7 @@ function buildCctpPdf(J){
         if(!line.length)return;
         const lh=Math.max(lh0,...line.map(t=>t.sz*0.3528*1.38));
         if(y+lh>B)np();
-        const xl=L+ind, avl=avail()-ind, ns=line.filter(t=>t.sp).length, al=bk.align||"justify";
+        const xl=L+off+ind, avl=avail()-ind, ns=line.filter(t=>t.sp).length, al=bk.align||"justify";
         let x=xl,extra=0;
         if(al==="justify"&&!last&&ns>0)extra=Math.max(0,(avl-lw)/ns);
         else if(al==="center")x=xl+Math.max(0,(avl-lw)/2);
@@ -2141,7 +2155,7 @@ function buildCctpPdf(J){
           if(!t.sp){font(stl(t.r),t.sz,INK);doc.text(t.t,cx,yb);}
           if(t.r&&t.r.u){doc.setDrawColor(INK[0],INK[1],INK[2]);doc.setLineWidth(0.18);doc.line(cx,yb+0.7,cx+w,yb+0.7);}
           cx+=w;});
-        if(bk.li&&first){font("normal",base,INK);doc.text(bk.ord?num+".":"\u2022",L+(bk.ord?0.6:1.8),yb);}
+        if(bk.li&&first){font("normal",base,INK);doc.text(bk.ord?num+".":"\u2022",L+off+(bk.ord?0.6:1.8),yb);}
         first=false; y+=lh; line=[]; lw=0;};
       begin();
       toks.forEach(t=>{
@@ -2158,20 +2172,31 @@ function buildCctpPdf(J){
   function ovChips(it){
     const c=ovOf(it),list=[];const o=c.in&&ovById(c.in);if(o)list.push({o,base:false});c.base.forEach(id=>{const b=ovById(id);if(b)list.push({o:b,base:true});});
     if(!list.length)return;
-    if(y+6>B)np();let x=L;
+    if(y+6>B)np();let x=L+off;
     list.forEach(({o,base})=>{const col=ovC(o),txt=(base?"BASE À DÉCOMPTER – ":"")+ovLab(o).toUpperCase();
       font("bold",7.2,INK);const w=doc.getTextWidth(wa(txt))+4;
-      if(x+w>R){y+=5.2;x=L;}
+      if(x+w>R){y+=5.2;x=L+off;}
       if(base){doc.setDrawColor(...hex(col.fg));doc.setLineWidth(0.3);doc.roundedRect(x,y,w,4.2,1.2,1.2,"S");}
       else{doc.setFillColor(...hex(col.bg));doc.roundedRect(x,y,w,4.2,1.2,1.2,"F");}
       doc.setTextColor(...hex(col.fg));doc.text(wa(txt),x+2,y+3);x+=w+2;});
     y+=5.6;}
   const artNeed=ar=>10+(ar.imgs&&ar.imgs.length?Math.min(40,clampW(ar.imgs[0].w)*10*0.7):6);
-  function article(ar){
-    const hs=9.8; keepWith(artNeed(ar));
+  function article(ar,d,base){
+    const cont=ar.sub.length||isTitle(ar); off=base+d*4;
+    keepWith(artNeed(ar)+(cont?4:0));
     queue=[]; colW=0; rightBottom=y; placed=false;
-    y+=2.5; toc.length; ovChips(ar); para(`${ar.code}- ${ar.titre}`.toUpperCase(),"bold",hs,BLUE,{lh:5.2}); y+=0.8;
-    (ar.imgs||[]).forEach(i=>{const d=dims(i.src);if(!d)return;const w=clampW(i.w)*10,h=w*d.r;queue.push({src:i.src,type:d.type,w,h,r:d.r});colW=Math.max(colW,w);});
+    y+=cont?4:2.5; ovChips(ar);
+    if(cont){ // sous-titre : carré + intitulé bleu + filet
+      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(L+off,y+1.7,1.8,1.8,"F");
+      para(`${ar.code}  ${ar.titre}`.toUpperCase(),"bold",10.6,BLUE,{lh:5.4,indent:4.2});
+      doc.setDrawColor(LINE[0],LINE[1],LINE[2]); doc.setLineWidth(0.3); doc.line(L+off,y+0.4,R,y+0.4); y+=1.4;
+    }else{ // article : pastille du numéro + intitulé sombre
+      const y0=y; font("bold",8,BLUE); const cw=doc.getTextWidth(wa(ar.code))+4.2;
+      doc.setFillColor(PALE[0],PALE[1],PALE[2]); doc.roundedRect(L+off,y0+0.3,cw,4.7,1.2,1.2,"F");
+      font("bold",8,BLUE); doc.text(wa(ar.code),L+off+2.1,y0+3.6);
+      para(String(ar.titre).toUpperCase(),"bold",9.6,INK,{lh:5.1,indent:cw+2.2}); y+=0.9;
+    }
+    (ar.imgs||[]).forEach(i=>{const dd=dims(i.src);if(!dd)return;const w=clampW(i.w)*10,h=w*dd.r;queue.push({src:i.src,type:dd.type,w,h,r:dd.r});colW=Math.max(colW,w);});
     rightBottom=y; placed=false; placeQ();
     if(ar.texte) txt(ar.texte); else if(!isTitle(ar)) para("Description à rédiger.","italic",9.5,MUTED);
     if(ar.loc){y+=0.8;para(ar.loc,"italic",9.5,BLUE,{right:true});}
@@ -2179,14 +2204,21 @@ function buildCctpPdf(J){
     if(y<rightBottom) y=Math.min(rightBottom,B);
     queue=[]; colW=0; y+=2.2;
   }
-  const arts=list=>list.forEach(ar=>{article(ar);arts(ar.sub||[]);});
+  const arts=(list,d,base)=>list.forEach(ar=>{article(ar,d,base);arts(ar.sub||[],d+1,base);});
   function node(n,lvl){
+    off=0;
     keepWith(16+(n.texte?10:0)+(n.art&&n.art[0]?artNeed(n.art[0]):0));
-    y+=lvl===2?5:3.5;
+    y+=lvl===2?6:3.5;
     toc.push({lvl,text:`${n.code}  ${n.titre}`,page:pageNo()});
-    ovChips(n); para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",lvl===2?12:10.5,BLUE,{lh:lvl===2?6.2:5.4});
-    if(lvl===2){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,y+0.4,R,y+0.4);}
-    y+=lvl===2?2.5:1.5;
+    ovChips(n);
+    if(lvl===2){ // chapitre : bandeau pâle + barre bleue
+      font("bold",12.5,BLUE); const ls=doc.splitTextToSize(wa(`${n.code}  ${n.titre}`).toUpperCase(),R-L-9), hh=ls.length*6+3.6;
+      if(y+hh>B)np();
+      doc.setFillColor(PALE[0],PALE[1],PALE[2]); doc.rect(L,y,R-L,hh,"F"); doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(L,y,1.8,hh,"F");
+      font("bold",12.5,BLUE); ls.forEach((l,k)=>doc.text(l,L+5,y+4.9+k*6)); y+=hh+3.5;
+    }else{
+      para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",10.5,BLUE,{lh:5.4}); y+=1.5;
+    }
     if(n.texte) txt(n.texte);
     if((n.imgs||[]).length){
       let x=L,rowH=0; y+=1;
@@ -2197,15 +2229,15 @@ function buildCctpPdf(J){
         x+=w+3;rowH=Math.max(rowH,h);});
       y+=rowH+3;
     }
-    if(n.art) arts(n.art);
+    if(n.art) arts(n.art,0,4);
     (n.children||[]).forEach(c=>node(c,3));
   }
   state.data.forEach((lot,i)=>{
     if(i>0) np();
     toc.push({lvl:1,text:`LOT ${lot.code}  ${lot.titre}`,page:pageNo()});
-    font("bold",17,BLUE); const tl=doc.splitTextToSize(wa(`LOT ${lot.code} - ${lot.titre}`).toUpperCase(),R-L);
-    tl.forEach(l=>{doc.text(l,L,y+6);y+=8;});
-    doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.7);doc.line(L,y+1,R,y+1);y+=5;
+    off=0; font("bold",16,[255,255,255]); const tl=doc.splitTextToSize(wa(`LOT ${lot.code} - ${lot.titre}`).toUpperCase(),R-L-10), hh=tl.length*8+5;
+    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(L,y,R-L,hh,"F");
+    font("bold",16,[255,255,255]); tl.forEach((l,k)=>doc.text(l,L+5,y+8.6+k*8)); y+=hh+6;
     if(lot.texte) txt(lot.texte);
     lot.children.forEach(c=>node(c,2));
   });

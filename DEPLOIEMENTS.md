@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°23** — v0.23.0 — 2026-10-15 — Présentation du CCTP (interface et PDF) : lot en bandeau plein, chapitre en bandeau, sous-titres à carré, articles à pastille, retraits par niveau
 - **n°22** — v0.22.0 — 2026-10-14 — Installateur : dossier proposé par défaut C:\agoa\AGOA-CCTP (première installation)
 - **n°21** — v0.21.0 — 2026-10-08 — Clé API IA commune : chiffrée dans le dossier de la bibliothèque partagée, aucune saisie sur les autres postes
 - **n°20** — v0.20.0 — 2026-10-08 — Baguette magique IA dans les outils de texte : reformuler, corriger, raccourcir, style prescriptif (clé API Anthropic dans le menu Aide)
