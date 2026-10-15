@@ -569,6 +569,59 @@ ipcMain.handle("lib-choose", async () => {
   writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), libDir: r.filePaths[0] }, null, 2), false);
   return r.filePaths[0];
 });
+/* ---------- dossier Dropbox « 02 - ETUDE / 03 - RETOUR ENTREPRISES » d'une opération ---------- */
+const isDirP = p => { try { return fs.statSync(p).isDirectory(); } catch { return false; } };
+const subFind = (d, re) => subdirs(d).find(n => re.test(n));
+function dbxRel(p) {   // chemin relatif à la racine Dropbox : identique d'un poste à l'autre
+  const pp = path.resolve(p);
+  for (const r of dropboxRoots()) { const rr = path.resolve(r); if (pp.toLowerCase().startsWith(rr.toLowerCase() + path.sep)) return "/" + pp.slice(rr.length + 1).split(path.sep).join("/"); }
+  return p;
+}
+function dbxResolve(p) {
+  p = String(p || "").trim(); if (!p) return null;
+  for (const r of dropboxRoots()) { const c = path.join(r, p); if (isDirP(c)) return c; }
+  return isDirP(p) ? p : null;
+}
+function dbxFindOp(ref) {
+  const parts = String(ref || "").trim().toUpperCase().split("-"), imm = parts[0].trim(), lt = (parts[1] || "").trim();
+  if (!imm) return null;
+  for (const root of dropboxRoots()) {
+    const parents = [root, ...subdirs(root).filter(n => /^agence|t&k|thollet/i.test(n)).map(n => path.join(root, n))];
+    for (const p of parents) {
+      const ops = subFind(p, /^01\b.*operations?/i); if (!ops) continue;
+      const opsD = path.join(p, ops), cands = [];
+      for (const g of subdirs(opsD)) { const gd = path.join(opsD, g), im = subdirs(gd).find(n => n.toUpperCase() === imm); if (im) cands.push(path.join(gd, im)); }
+      const direct = subdirs(opsD).find(n => n.toUpperCase() === imm); if (direct) cands.push(path.join(opsD, direct));
+      for (const imD of cands) {
+        let opD = imD;
+        if (lt) { const l = subdirs(imD).find(n => new RegExp("^" + lt + "\\s*[-–]", "i").test(n)); if (!l) continue; opD = path.join(imD, l); }
+        const et = subFind(opD, /^02\b.*[eé]tude/i); if (!et) continue;
+        const etD = path.join(opD, et), rt = subFind(etD, /^03\b.*retour/i), rtD = path.join(etD, rt || "03 - RETOUR ENTREPRISES");
+        if (!rt) { try { fs.mkdirSync(rtD, { recursive: true }); } catch { return null; } }
+        return rtD;
+      }
+    }
+  }
+  return null;
+}
+ipcMain.handle("dbx-find", (e, ref, saved) => {
+  let d = dbxResolve(saved), auto = false;
+  if (!d) { d = dbxFindOp(ref); auto = !!d; }
+  return d ? { dir: d, rel: dbxRel(d), auto } : null;
+});
+ipcMain.handle("dbx-choose", async () => {
+  const r = await dialog.showOpenDialog(win, { title: "Choisir le dossier « 03 - RETOUR ENTREPRISES » de l'opération", defaultPath: dropboxRoots()[0], properties: ["openDirectory", "createDirectory"] });
+  if (r.canceled || !r.filePaths[0]) return null;
+  return { dir: r.filePaths[0], rel: dbxRel(r.filePaths[0]), auto: false };
+});
+ipcMain.handle("dbx-write", (e, dir, sub, files) => {
+  if (!dir || !isDirP(dir)) throw new Error("Dossier de dépôt introuvable");
+  const clean = s => String(s || "").replace(/[\\/:*?"<>|]+/g, "-").replace(/\.+$/, "").trim();
+  const d = path.join(dir, clean(sub) || "Entreprise"); fs.mkdirSync(d, { recursive: true });
+  const out = [];
+  for (const f of files || []) { const n = clean(f.name); if (!n) continue; fs.writeFileSync(path.join(d, n), Buffer.from(f.bytes)); out.push(n); }
+  return { dir: d, files: out };
+});
 ipcMain.on("get-config", e => { e.returnValue = readJson(configPath(), {}); });
 ipcMain.on("set-config", (e, patch) => { writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), ...patch }, null, 2)); e.returnValue = true; });
 ipcMain.handle("ragic", (e, tool, input) => ragic(tool, input));

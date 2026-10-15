@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld("agoa", {
   libRead: () => ipcRenderer.invoke("lib-read"),
   libWrite: (text, mtime) => ipcRenderer.invoke("lib-write", text, mtime),
   libChoose: () => ipcRenderer.invoke("lib-choose"),
+  dbxFind: (ref, saved) => ipcRenderer.invoke("dbx-find", ref, saved),
+  dbxChoose: () => ipcRenderer.invoke("dbx-choose"),
+  dbxWrite: (dir, sub, files) => ipcRenderer.invoke("dbx-write", dir, sub, files),
   openFile: () => ipcRenderer.invoke("open-dialog"),
   checkUpdates: () => ipcRenderer.invoke("check-updates"),
   onOpenFile: cb => ipcRenderer.on("open-file", (e, name, text, file) => cb(name, text, file))

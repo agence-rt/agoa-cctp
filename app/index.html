@@ -338,7 +338,13 @@ mark{background:#fff176;color:inherit;padding:0}
 .sheet .empty{color:var(--muted);font-style:italic}
 
 /* consultation / analyse / synthèse */
-.consult{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:20px;align-items:start}
+.consult{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+.docs-grid{display:grid;gap:12px;margin:8px 16px 16px}
+.doc-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;font:inherit}
+.doc-card b{font-size:15.5px}.doc-card span{font-size:12.5px;color:var(--muted)}
+.doc-card:hover{border-color:var(--accent)}
+.doc-card.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}.doc-card.primary span{color:inherit;opacity:.88}
+.dbx-st{margin:8px 0 0;font-size:12.5px;overflow-wrap:anywhere}.dbx-st.ok{color:var(--green-ink)}.dbx-st.bad{color:var(--ochre)}
 .pane-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .pane-h h2{font-size:16px;margin:0;font-weight:650}
 .pane-h p{margin:2px 0 0;color:var(--muted);font-size:13px}
@@ -500,7 +506,7 @@ dialog.portal[open]{display:flex;flex-direction:column}
 .imp-sum{font-size:13px;margin:10px 0;padding:10px 12px;border-radius:6px;background:var(--paper)}
 .imp-sum.err{color:var(--red)}
 dialog::backdrop{background:rgba(20,30,45,.45)}
-table.prev-bpu,#cmpTable,#bpuTable,#entTable,.pt-tbl,.synth table{font-family:var(--tbl)}
+table.prev-bpu,#cmpTable,#entTable,.pt-tbl,.synth table{font-family:var(--tbl)}
 .pane-h h2{font-family:var(--disp);font-weight:400;letter-spacing:.03em;text-transform:uppercase;font-size:19px}
 .qok{background:var(--green-soft);color:var(--green-ink);font-weight:600;border-radius:999px;display:inline-block;margin-right:18px}
 td.best{background:var(--green-soft)}
@@ -677,23 +683,21 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
         <div id="entRes"></div>
       </div>
       <div class="remise-box">
-        <label for="dbxPath">Dossier Dropbox « 03 - RETOUR ENTREPRISES »</label>
-        <input type="text" id="dbxPath" placeholder="/Agence T&K/01-OPERATIONS/(H)/HEINE22/G - PLOMB BALCONS R+2/02 - ETUDE/03 - RETOUR ENTREPRISES" autocomplete="off">
-        <p class="hint" style="margin:6px 0 0">Un sous-dossier est créé automatiquement pour chaque entreprise. Elle y dépose son BPU rempli (<span id="dbxEx1"></span>) et son devis sous en-tête (<span id="dbxEx2"></span>). L'application Windows surveille ce dossier et alimente l'analyse des offres sans ressaisie.</p>
-        <div class="rb-act"><button class="btn sm" id="dbxSuggest">Proposer le chemin</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
+        <label for="dbxPath">Dossier de dépôt des offres : « 02 - ETUDE / 03 - RETOUR ENTREPRISES » de l'opération (Dropbox)</label>
+        <input type="text" id="dbxPath" placeholder="Retrouvé automatiquement à partir du code travaux" autocomplete="off">
+        <p class="dbx-st" id="dbxSt"></p>
+        <p class="hint" style="margin:6px 0 0">Les offres déposées par la page de saisie ou importées sont rangées dans ce dossier, dans un sous-dossier par entreprise : BPU rempli (<span id="dbxEx1"></span>) et devis sous en-tête (<span id="dbxEx2"></span>).</p>
+        <div class="rb-act"><button class="btn sm" id="dbxSuggest">Retrouver le dossier</button> <button class="btn sm" id="dbxChoose">Choisir le dossier…</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
       </div>
       <table id="entTable"></table>
     </div>
     <div class="pane">
-      <div class="pane-h">
-        <div><h2>BPU à remplir par l'entreprise</h2><p>Les colonnes hachurées sont complétées par l'entreprise</p></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" id="expCctp">Exporter le CCTP (PDF)</button>
-          <button class="btn primary" id="expBpuBtn">Exporter le BPU (Excel)</button>
-        </div>
-      </div>
+      <div class="pane-h"><div><h2>Dossier de consultation</h2><p>Pièces à transmettre aux entreprises</p></div></div>
       <div id="qtyWarn"></div>
-      <div class="scroll"><table id="bpuTable"></table></div>
+      <div class="docs-grid">
+        <button class="doc-card" id="expCctp"><b>Exporter le CCTP</b><span>PDF : page de garde, sommaire et descriptifs des ouvrages</span></button>
+        <button class="doc-card primary" id="expBpuBtn"><b>Exporter le BPU</b><span>Excel : bordereau des prix à remplir par l'entreprise</span></button>
+      </div>
     </div>
   </section>
 
@@ -892,7 +896,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.24.0", deploiement: 24};
+const APP = {version: "0.25.0", deploiement: 25};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2453,6 +2457,40 @@ function dbxSuggest(){
   const ini=imm.replace(/[^A-Z]/g,"").charAt(0)||"#";
   return `/Agence T&K/01-OPERATIONS/(${ini})/${imm}/${lt?lt+" - ":""}${String(o.objet||"").toUpperCase()}/02 - ETUDE/03 - RETOUR ENTREPRISES`;
 }
+let dbxCur=null;
+async function dbxResolveDir(force){
+  if(!AG||!AG.dbxFind) return null;
+  try{const r=await AG.dbxFind((state.op&&state.op.ref)||"",force?"":(state.dropbox||""));
+    if(r&&r.dir){dbxCur=r.dir; if(r.auto&&r.rel&&state.dropbox!==r.rel){state.dropbox=r.rel;save();}}else dbxCur=null;
+    return dbxCur;}catch(e){console.error(e);dbxCur=null;return null;}
+}
+async function dbxStatus(){
+  const st=$("#dbxSt"); if(!st) return;
+  if(!AG||!AG.dbxFind){st.className="dbx-st";st.textContent="Dépôt automatique dans Dropbox : disponible dans l'application Windows.";return;}
+  const d=await dbxResolveDir(false); $("#dbxPath").value=state.dropbox||d||"";
+  st.className="dbx-st "+(d?"ok":"bad");
+  st.textContent=d?"✓ Dossier trouvé sur cet ordinateur : "+d:"Dossier introuvable sur cet ordinateur. Vérifiez le code travaux (ex. HEINE22-G) ou choisissez le dossier.";
+}
+async function dbxChoosePick(){
+  if(!AG||!AG.dbxChoose){toast("Disponible dans l'application Windows.");return null;}
+  const r=await AG.dbxChoose(); if(!r||!r.dir) return null;
+  state.dropbox=r.rel||r.dir; save(); dbxCur=r.dir; $("#dbxPath").value=state.dropbox; dbxStatus(); return r.dir;
+}
+/* range les fichiers d'une offre dans .../03 - RETOUR ENTREPRISES/<Entreprise>/ */
+async function depositFiles(en,files){
+  if(!files.length) return;
+  if(!AG||!AG.dbxWrite){toast("Offre enregistrée dans l'affaire. Le dépôt dans Dropbox se fait depuis l'application Windows.");return;}
+  let dir=await dbxResolveDir(false);
+  if(!dir){ if(!await ask("Le dossier « 03 - RETOUR ENTREPRISES » de cette opération est introuvable sur cet ordinateur. Le choisir maintenant pour y déposer l'offre ?","Choisir le dossier")){toast("Offre enregistrée dans l'affaire, mais non déposée dans Dropbox.");return;}
+    dir=await dbxChoosePick(); if(!dir){toast("Offre enregistrée dans l'affaire, mais non déposée dans Dropbox.");return;} }
+  try{const r=await AG.dbxWrite(dir,dbxSub(en),files);toast(`Offre de ${en.nom} déposée dans Dropbox : …/03 - RETOUR ENTREPRISES/${dbxSub(en)} (${r.files.length} fichier${r.files.length>1?"s":""})`);}
+  catch(e){toast("Le dépôt dans Dropbox a échoué : "+(e&&e.message||"erreur"));}
+}
+async function bpuBytes(en){
+  let E=null; try{E=await loadExcelJS();}catch(e){}
+  if(E){try{const b=await buildBpuStyled(E,en);return new Uint8Array(b.buffer?b.buffer:b);}catch(err){console.error(err);}}
+  const X=await loadXLSX(); const b=buildBpuBasic(X,en); return new Uint8Array(b.buffer?b.buffer:b);
+}
 function renderConsult(){
   const M=missingQty();
   $("#qtyWarn").innerHTML=M.length?`<div class="qwarn"><span>${M.length} article${M.length>1?"s":""} chiffré${M.length>1?"s":""} sans quantité. Les quantités doivent être remplies avant la consultation.</span><button class="btn sm" id="qwGo">Voir la liste</button></div>`
@@ -2464,16 +2502,7 @@ function renderConsult(){
     <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${hasOffer(e)?`<span class="hint ent-sub offer-ok">✓ ${esc(offerInfo(e))}</span>`:""}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
-  let h=`<tr><th>N°</th><th>Désignation</th><th class="n">Qté</th><th>U</th><th class="n">TVA</th><th class="n">Qté ent.</th><th class="n">PU HT</th><th class="n">Montant HT</th></tr>`;
-  state.data.forEach(lot=>{
-    h+=`<tr class="chap"><td class="code">${lot.code}</td><td colspan="7">${esc(lot.titre.toUpperCase())}</td></tr>`;
-    lot.children.forEach(ch=>{
-      h+=nodeRow(ch,lot,"ent","chap");
-      if(ch.art) h+=bpuRows(ch.art,"ent",lot);
-      (ch.children||[]).forEach(s=>h+=nodeRow(s,lot,"ent","par")+bpuRows(s.art||[],"ent",lot));
-    });
-  });
-  $("#bpuTable").innerHTML=h;
+  dbxStatus();
 }
 
 $("#qtyWarn").addEventListener("click",e=>{if(e.target.id==="qwGo")openQtyCheck();});
@@ -3364,7 +3393,7 @@ async function parseBpuFile(file){
   return {pus,notes,qents,total,read:Object.keys(pus).length,missing,unknown,qdiff:Object.keys(qents).length};
 }
 /* import d'un BPU complété (analyse ou consultation) */
-let impData=null;
+let impData=null, impFile=null;
 function openImport(entId){
   const sel=$("#impEnt");
   sel.innerHTML=ents().map(e=>`<option value="${e.id}" ${e.id===entId?"selected":""}>${esc(e.nom)}</option>`).join("")+`<option value="__new">Autre entreprise…</option>`;
@@ -3374,7 +3403,7 @@ function openImport(entId){
 $("#impEnt").addEventListener("change",e=>{$("#impNameF").hidden=e.target.value!=="__new";});
 $("#impCancel").onclick=()=>$("#impDlg").close();
 $("#impFile").addEventListener("change",async e=>{
-  const f=e.target.files[0], sum=$("#impSum"); impData=null; $("#impOk").disabled=true; if(!f){sum.hidden=true;return;}
+  const f=e.target.files[0], sum=$("#impSum"); impData=null; impFile=f||null; $("#impOk").disabled=true; if(!f){sum.hidden=true;return;}
   sum.hidden=false; sum.className="imp-sum"; sum.textContent="Lecture du fichier…";
   try{const d=await parseBpuFile(f); impData=d.read>0?d:null;
     sum.innerHTML=`<b>${d.read}</b> prix lus sur <b>${d.total}</b> articles chiffrés.${d.missing?` <span style="color:var(--ochre)">${d.missing} prix manquant${d.missing>1?"s":""} (quantité renseignée, prix absent).</span>`:" Tous les prix sont renseignés."}${d.qdiff?` <span style="color:var(--ochre)">${d.qdiff} quantité${d.qdiff>1?"s":""} modifiée${d.qdiff>1?"s":""} par l'entreprise (colonne « Qté ent. ») : l'analyse reste calculée sur vos quantités.</span>`:""}${d.unknown?` ${d.unknown} ligne${d.unknown>1?"s":""} ne correspond${d.unknown>1?"ent":""} à aucun article actuel.`:""}`;
@@ -3386,14 +3415,19 @@ $("#impOk").onclick=()=>{
   if(!impData) return; let en;
   if($("#impEnt").value==="__new"){const n=$("#impName").value.trim();if(!n){$("#impName").focus();return;}en={id:"e"+nid(),nom:n,statut:"À consulter",base:null,travaux:[]};ents().push(en);}
   else en=ents().find(e=>e.id===$("#impEnt").value);
-  if(!en) return; registerOffer(en,impData); $("#impDlg").close();
+  if(!en) return; registerOffer(en,impData); $("#impDlg").close(); const fi=impFile;
   if(state.view==="analyse")renderAnalyse(); else renderConsult();
   toast(`Offre de ${en.nom} importée : l'analyse est à jour`);
+  if(fi&&AG&&AG.dbxWrite){fi.arrayBuffer().then(b=>depositFiles(en,[{name:dbxFile(en,"BPU")+".xlsx",bytes:new Uint8Array(b)}])).catch(err=>console.error(err));}
 };
 $("#impBtn").onclick=()=>openImport(null);
 $("#expBpuBtn").onclick=()=>exportBpu(null);
-$("#dbxPath").addEventListener("input",e=>{state.dropbox=e.target.value;save();});
-$("#dbxSuggest").onclick=()=>{const v=dbxSuggest();if(!v){toast("Renseignez d'abord le code travaux dans les options de l'opération.");return;}state.dropbox=v;$("#dbxPath").value=v;save();toast("Chemin proposé : vérifiez le nom du dossier de l'opération");};
+{let tm;$("#dbxPath").addEventListener("input",e=>{state.dropbox=e.target.value;save();clearTimeout(tm);tm=setTimeout(dbxStatus,500);});}
+$("#dbxSuggest").onclick=async()=>{
+  if(!(state.op&&state.op.ref)){toast("Renseignez d'abord le code travaux dans les options de l'opération.");return;}
+  if(AG&&AG.dbxFind){const d=await dbxResolveDir(true);await dbxStatus();toast(d?"Dossier de dépôt trouvé":"Dossier introuvable : choisissez-le manuellement");return;}
+  const v=dbxSuggest();state.dropbox=v;$("#dbxPath").value=v;save();toast("Chemin proposé : vérifiez le nom du dossier de l'opération");};
+$("#dbxChoose").onclick=()=>{dbxChoosePick();};
 $("#portalPrev").onclick=()=>{const E=ents();if(!E.length){toast("Ajoutez d'abord une entreprise à consulter.");return;}openPortal(E[0].id);};
 
 /* page de saisie côté entreprise (simulation) */
@@ -3474,7 +3508,7 @@ $("#ptBody").addEventListener("focusout",e=>{const t=e.target;if(t.dataset&&t.da
 $("#ptBody").addEventListener("focusin",e=>{if(e.target.dataset&&e.target.dataset.ppu)setTimeout(()=>e.target.select(),0);});
 $("#ptBody").addEventListener("change",async e=>{
   const t=e.target;
-  if(t.id==="pPdf"&&t.files[0]){const f=t.files[0];PD.devis={nom:f.name,taille:f.size};portalFoot();}
+  if(t.id==="pPdf"&&t.files[0]){const f=t.files[0];PD.devis={nom:f.name,taille:f.size};try{PD.devisBuf=new Uint8Array(await f.arrayBuffer());}catch(x){PD.devisBuf=null;}portalFoot();}
   if(t.id==="pImp"&&t.files[0]){try{const d=await parseBpuFile(t.files[0]);Object.assign(PD.pus,d.pus);Object.assign(PD.notes,d.notes);renderPortal();toast(`${d.read} prix repris depuis votre fichier Excel`);}catch(err){toast(err.message||"Fichier illisible.");}t.value="";}
 });
 $("#ptBody").addEventListener("click",async e=>{
@@ -3485,7 +3519,8 @@ $("#ptBody").addEventListener("click",async e=>{
     const en=ents().find(x=>x.id===PD.id), t=portalTotals(); if(!en||!PD.devis) return;
     if(t.miss&&!await ask(`Il manque <b>${t.miss}</b> prix unitaire${t.miss>1?"s":""} sur des articles chiffrés. Soumettre l'offre en l'état ?`,"Soumettre quand même")) return;
     registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},devis:PD.devis});
-    $("#portalDlg").close(); PD=null; renderConsult(); toast(`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
+    const dv=PD.devisBuf; $("#portalDlg").close(); PD=null; renderConsult(); toast(`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
+    try{const files=[{name:dbxFile(en,"BPU")+".xlsx",bytes:await bpuBytes(en)}]; if(dv)files.push({name:dbxFile(en,"DEVIS")+".pdf",bytes:dv}); await depositFiles(en,files);}catch(err){console.error(err);toast("Offre enregistrée, mais le dépôt dans Dropbox a échoué.");}
   }
 });
 $("#entTable").addEventListener("input",e=>{const l=e.target.closest("[data-entlink]");if(!l)return;const en=ents()[+l.dataset.entlink];en.depot=l.value.trim();save();
