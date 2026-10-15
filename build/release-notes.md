@@ -1,1 +1,1 @@
-Déploiement n°23 — Présentation du CCTP (interface et PDF) : lot en bandeau plein, chapitre en bandeau, sous-titres à carré, articles à pastille, retraits par niveau
+Déploiement n°24 — CCTP : charte graphique de l'agence (rouge) et page de garde architecte / syndic / immeuble

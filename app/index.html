@@ -276,6 +276,9 @@ tr[data-id]{cursor:pointer}
 tr.st td{font-weight:650;border-top:1.5px solid var(--ink);border-bottom:0}
 td.blank{background:repeating-linear-gradient(-45deg,transparent 0 6px,var(--line) 6px 7px);min-width:70px}
 .prev-bpu th{top:45px}
+.sheet{--accent:#C10003;--accent-soft:#FBE9E9;--line:#EBC9C9;--band:#C10003}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .sheet{--accent:#F0686B;--accent-soft:#3A1B1D;--line:#5A2B2E;--band:#B3171C}}
+:root[data-theme="dark"] .sheet{--accent:#F0686B;--accent-soft:#3A1B1D;--line:#5A2B2E;--band:#B3171C}
 .sheet{font-family:var(--doc);padding:16px 20px;font-size:14px;line-height:1.6;font-weight:500}
 .sheet .blk{padding:8px 10px;margin:0 -10px 10px calc(var(--ind,0px) - 10px);border-left:2px solid transparent;cursor:pointer}
 .sheet .blk.cur{border-left-color:var(--accent);background:var(--accent-soft)}
@@ -305,10 +308,27 @@ mark{background:#fff176;color:inherit;padding:0}
 .img-ctl output{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
 #fLoc{background:var(--field-bg)}
 .sheet .cd{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:11px;letter-spacing:0;text-transform:none;padding:1px 8px;border-radius:10px;margin-right:9px;vertical-align:1px}
-.sheet .blk.lv1 .h{background:var(--accent);color:#fff;font-size:17px;letter-spacing:.04em;padding:12px 16px;border-radius:5px;margin:6px 0 10px}
+.sheet .blk.lv1 .h{background:var(--band);color:#fff;font-size:17px;letter-spacing:.04em;padding:12px 16px;border-radius:0;clip-path:polygon(14px 0,100% 0,100% 100%,0 100%,0 14px);margin:6px 0 10px}
 .sheet .blk.lv1 .cd{background:rgba(255,255,255,.22);color:#fff}
 .sheet .blk.lv2 .h{background:var(--accent-soft);border-left:5px solid var(--accent);color:var(--accent);font-size:15px;padding:9px 14px;border-radius:0 5px 5px 0;margin:10px 0 8px}
-.sheet .blk.lv2 .cd{background:var(--accent);color:#fff}
+.sheet .blk.lv2 .cd{background:var(--band);color:#fff}
+.sheet .cover{margin:0 0 26px;padding-bottom:22px;border-bottom:1px dashed var(--line);cursor:default}
+.sheet .cv-ban{background:var(--band);color:#fff;font-weight:800;text-align:center;font-size:21px;letter-spacing:.02em;text-transform:uppercase;padding:26px 14px;clip-path:polygon(26px 0,100% 0,100% 100%,0 100%,0 26px)}
+.sheet .cv-t{margin:22px 0 0;color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;border-bottom:2px solid var(--accent);padding-bottom:6px}
+.sheet .cv-o{margin:14px 0 4px;font-size:22px;line-height:1.2;font-weight:800;text-transform:uppercase;color:var(--ink)}
+.sheet .cv-i{margin:0;color:var(--accent);font-size:15px}
+.sheet .cv-a,.sheet .cv-d{margin:2px 0 0;color:var(--muted);font-size:13px}
+.sheet .cv-ph{display:block;max-width:100%;max-height:260px;margin:16px auto 0;border:1px solid var(--line)}
+.sheet .cv-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+.sheet .cv-card{border:1px solid var(--line);min-width:0}
+.sheet .cv-card>b{display:block;background:var(--band);color:#fff;font-size:11px;letter-spacing:.08em;padding:5px 10px;clip-path:polygon(8px 0,100% 0,100% 100%,0 100%,0 8px)}
+.sheet .cv-card>div{padding:8px 10px;font-size:13px;line-height:1.45}
+.sheet .cv-card>div b{display:block;font-weight:700;color:var(--ink)}
+.sheet .cv-card>div span{display:block;overflow-wrap:anywhere}
+.sheet .cv-arch{margin-top:14px;background:var(--band);color:#fff;font-weight:700;padding:12px 16px 14px;clip-path:polygon(18px 0,100% 0,100% 100%,0 100%,0 18px)}
+.sheet .cv-arch small{display:block;font-size:10.5px;letter-spacing:.08em;opacity:.8}
+.sheet .cv-arch .n{font-size:15px;margin:3px 0 4px}
+.sheet .cv-arch span{display:inline-block;margin-right:18px;font-size:13px}
 .sheet .blk.lv3 .h,.sheet .blk.st .h{color:var(--accent);font-size:13.5px;border-bottom:1px solid var(--line);padding-bottom:4px;margin-top:6px}
 .sheet .blk.st .h::before,.sheet .blk.lv3 .h::before{content:"";display:inline-block;width:8px;height:8px;background:var(--accent);margin-right:9px;vertical-align:0}
 .sheet .blk.ar .h{color:var(--ink);font-size:13px}
@@ -865,14 +885,14 @@ const ENTS = [
  {id:"D",nom:"Entreprise D",base:null,statut:"En attente",date:"–"}
 ];
 const UNITS=["u","ens","ft","m²","ml","m³","mois","kg"];
-const OP_FIELDS=[["ref","Code travaux"],["immeuble","Immeuble"],["objet","Objet des travaux"],["adresse","Adresse"],["cp","Code postal"],["ville","Ville"],["mo","Maître d'ouvrage"],["syndic","Syndic"],["adresseSyndic","Adresse du syndic"],["gestionnaire","Gestionnaire"],["emailGest","E-mail du gestionnaire"],["moe","Maîtrise d'œuvre"],["parcelle","Parcelle cadastrale"],["nbLots","Nombre de lots"],["amiante","Diagnostic amiante"],["plomb","Diagnostic plomb"],["dateEdition","Date d'édition"],["dateRemise","Date de remise des offres"]];
+const OP_FIELDS=[["ref","Code travaux"],["immeuble","Immeuble"],["objet","Objet des travaux"],["adresse","Adresse"],["cp","Code postal"],["ville","Ville"],["mo","Maître d'ouvrage"],["syndic","Syndic"],["adresseSyndic","Adresse du syndic"],["telSyndic","Téléphone du syndic"],["gestionnaire","Gestionnaire"],["emailGest","E-mail du gestionnaire"],["moe","Maîtrise d'œuvre (architecte)"],["moeTel","Téléphone de l'architecte"],["moeAdresse","Adresse de l'architecte"],["moeWeb","Site web de l'architecte"],["moeEmail","E-mail de l'architecte"],["parcelle","Parcelle cadastrale"],["nbLots","Nombre de lots"],["amiante","Diagnostic amiante"],["plomb","Diagnostic plomb"],["dateEdition","Date d'édition"],["dateRemise","Date de remise des offres"]];
 const RAGIC={server:"Ragic",apname:"agoa",sheet:"/operations/10",codeField:"1000295"};
 const $=s=>document.querySelector(s);
 
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.23.0", deploiement: 23};
+const APP = {version: "0.24.0", deploiement: 24};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -907,7 +927,19 @@ const fresh=()=>({id:"aff-364",updated:Date.now(),data:DATA,sel:null,view:"redac
   op:{ref:"364",immeuble:"Les Dryades",objet:"Ravalement des façades",adresse:"27 rue de la Convention",cp:"42000",ville:"Saint-Étienne",mo:"SDC représenté par Foncia Loire Auvergne",syndic:"Foncia Loire Auvergne",adresseSyndic:"5 rue du Lieutenant Morin, 42026 Saint-Étienne Cedex 1",gestionnaire:"",emailGest:"",moe:"Thomas Kochanski Architecte",parcelle:"",nbLots:"",amiante:"Amiante dans les colles des faïences",plomb:"",dateEdition:"Janvier 2024",dateRemise:"15 mars 2024",ragicId:null},
   tvas:[{id:"t20",taux:20,lib:"Taux normal"},{id:"t10",taux:10,lib:"Taux intermédiaire"},{id:"t55",taux:5.5,lib:"Taux réduit (rénovation énergétique)"}]});
 const DEF_TVAS=()=>[{id:"t20",taux:20,lib:"Taux normal"},{id:"t10",taux:10,lib:"Taux intermédiaire"},{id:"t55",taux:5.5,lib:"Taux réduit (rénovation énergétique)"}];
-const EMPTY_OP=()=>Object.fromEntries([["ref",""],["immeuble",""],["objet",""],["adresse",""],["cp",""],["ville",""],["mo",""],["syndic",""],["adresseSyndic",""],["gestionnaire",""],["emailGest",""],["moe",""],["parcelle",""],["nbLots",""],["amiante",""],["plomb",""],["dateEdition",""],["dateRemise",""],["ragicId",null]]);
+const AGENCE={nom:"Rémi Thollet Architecte",marque:"Remi Thollet Architecte",tel:"09 66 93 97 28",adresse:"47 avenue Mathurin Moreau 75019 PARIS",web:"www.remithollet.fr",email:"agence@remithollet.fr"};
+const OP_DEF={moe:AGENCE.nom,moeTel:AGENCE.tel,moeAdresse:AGENCE.adresse,moeWeb:AGENCE.web,moeEmail:AGENCE.email};
+function coverInfo(o){
+  const v=k=>String(o[k]||"").trim(), d=(k,def)=>v(k)||def;
+  const adr=[v("adresse"),[v("cp"),v("ville")].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const L=(a)=>a.filter(x=>x.t);
+  return {
+    arch:{nom:d("moe",AGENCE.nom),tel:d("moeTel",AGENCE.tel),adresse:d("moeAdresse",AGENCE.adresse),web:d("moeWeb",AGENCE.web),email:d("moeEmail",AGENCE.email)},
+    syndic:L([{t:v("syndic"),b:1},{t:v("adresseSyndic")},{t:v("gestionnaire")&&"Gestionnaire : "+v("gestionnaire")},{t:v("telSyndic")&&"Tél. : "+v("telSyndic")},{t:v("emailGest")}]),
+    immeuble:L([{t:v("immeuble"),b:1},{t:adr},{t:v("mo")&&"Maître d'ouvrage : "+v("mo")},{t:v("parcelle")&&"Parcelle cadastrale : "+v("parcelle")},{t:v("nbLots")&&"Nombre de lots : "+v("nbLots")}])
+  };
+}
+const EMPTY_OP=()=>Object.fromEntries([["ref",""],["immeuble",""],["objet",""],["adresse",""],["cp",""],["ville",""],["mo",""],["syndic",""],["adresseSyndic",""],["telSyndic",""],["gestionnaire",""],["emailGest",""],["moe",""],["moeTel",""],["moeAdresse",""],["moeWeb",""],["moeEmail",""],["parcelle",""],["nbLots",""],["amiante",""],["plomb",""],["dateEdition",""],["dateRemise",""],["ragicId",null]]);
 function newAffaire(){
   const bt=lib().find(t=>t.base)||baseTitre(); // départ : base commune à tout projet
   const children=bt.children.map(s=>({titre:s.titre,texte:s.texte||"",art:s.art.map(fromLib)}));
@@ -1461,11 +1493,21 @@ function renderPreview(){
     const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"></div>`).join("")}</div>`:"";
     const nblk=(n,lvl)=>`<div class="blk nblk lv${lvl}${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h"><span class="cd">${n.code}</span>${lvl===1?"LOT — ":""}${esc(n.titre)}${ovBadge(n)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art,0,(lvl-1)*IND+IND):"")+(n.children||[]).map(c=>nblk(c,lvl+1)).join("");
     const rl=root===lot?1:(lot.children.includes(root)?2:3);
-    body=`<div class="sheet">${nblk(root,rl)}</div>`;
+    body=`<div class="sheet">${(root===lot&&lot===state.data[0])?coverHtml():""}${nblk(root,rl)}</div>`;
   }
   el.innerHTML=`<div class="prev-h"><b>Aperçu ${root.code} ${esc(root.titre)}</b>
     ${prevSeg()}</div>${body}`;
   const c=el.querySelector(".cur"); if(c&&el.scrollHeight>el.clientHeight){const r=c.getBoundingClientRect(),p=el.getBoundingClientRect();if(r.top<p.top+50||r.bottom>p.bottom)c.scrollIntoView({block:"nearest"});}
+}
+function coverHtml(){
+  const o=state.op||{}, C=coverInfo(o), card=(t,l)=>l.length?`<div class="cv-card"><b>${t}</b><div>${l.map(x=>x.b?`<b>${esc(x.t)}</b>`:`<span>${esc(x.t)}</span>`).join("")}</div></div>`:"";
+  const dts=[o.dateEdition&&"Édition : "+o.dateEdition,o.dateRemise&&"Remise des offres : "+o.dateRemise].filter(Boolean).join("  ·  ");
+  return `<div class="cover" aria-label="Page de garde"><div class="cv-ban">${esc(AGENCE.marque)}</div>
+    <p class="cv-t">CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES</p><p class="cv-o">${esc(o.objet||"Objet des travaux")}</p>
+    ${o.immeuble?`<p class="cv-i">${esc(o.immeuble)}</p>`:""}${o.ref?`<p class="cv-a">Code travaux : ${esc(o.ref)}</p>`:""}${dts?`<p class="cv-d">${esc(dts)}</p>`:""}
+    ${o.photo?`<img class="cv-ph" src="${o.photo}" alt="Photo de l'opération">`:""}
+    <div class="cv-cols">${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
+    <div class="cv-arch"><small>ARCHITECTE – MAÎTRISE D'ŒUVRE</small><div class="n">${esc(C.arch.nom)}</div><span>${esc(C.arch.tel)}</span><span>${esc(C.arch.adresse)}</span><br><span>${esc(C.arch.web)}</span><span>${esc(C.arch.email)}</span></div></div>`;
 }
 const prevSeg=()=>`<div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${state.prev===k}">${l}</button>`).join("")}</div>`;
 function renderLibPanel(force){
@@ -2060,7 +2102,7 @@ async function exportCctp(){
 }
 function buildCctpPdf(J){
   const o=state.op||{};
-  const BLUE=[25,97,172], INK=[51,51,51], MUTED=[95,107,118], PALE=[229,241,252], LINE=[182,221,247];
+  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255];
   const wa=t=>String(t==null?"":t).replace(/[ -​  ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
   const doc=new J({unit:"mm",format:"a4",orientation:"portrait",compress:true});
   const PW=210,PH=297,L=18,R=PW-18,T=26,B=PH-20, LH=4.9;
@@ -2068,32 +2110,41 @@ function buildCctpPdf(J){
   const font=(st,sz,c)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);col(c||INK);};
   const ref=[o.ref,o.immeuble].filter(Boolean).join(" - ")||"Affaire";
   const dims=src=>{try{const p=doc.getImageProperties(src);return{type:(p.fileType||"JPEG"),r:p.height/p.width};}catch(e){return null;}};
-  /* ---- page de garde ---- */
-  doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(0,0,PW,10,"F");
-  font("bold",11,BLUE); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES".replace(/È/g,"È"),L,30);
-  doc.setDrawColor(LINE[0],LINE[1],LINE[2]); doc.setLineWidth(0.4); doc.line(L,33,R,33);
-  let cy=46; font("bold",24,INK);
-  wa(o.objet||"Objet des travaux").toUpperCase().length;
-  doc.splitTextToSize(wa(o.objet||"Objet des travaux").toUpperCase(),R-L).slice(0,4).forEach(l=>{doc.text(l,L,cy);cy+=10.5;});
-  cy+=2; font("normal",13,BLUE);
-  if(o.immeuble){doc.text(wa(o.immeuble),L,cy);cy+=7;}
-  font("normal",11,MUTED);
-  const adr=[o.adresse,[o.cp,o.ville].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-  if(adr){doc.splitTextToSize(wa(adr),R-L).forEach(l=>{doc.text(l,L,cy);cy+=5.5;});}
-  if(o.ref){cy+=2;doc.text("Code travaux : "+wa(o.ref),L,cy);cy+=6;}
+  /* ---- page de garde (charte de l'agence) ---- */
+  const cut=(x,y,w,h,c)=>{doc.setFillColor(RED[0],RED[1],RED[2]);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,y,[1,1],"F",true);};
+  const C=coverInfo(o);
+  cut(L,16,R-L,26,9);
+  { let fs=27; const nm=wa(AGENCE.marque).toUpperCase(); font("bold",fs,WHITE); while(doc.getTextWidth(nm)>R-L-18&&fs>12){fs-=1;doc.setFontSize(fs);}
+    doc.text(nm,L+(R-L)/2,16+13+fs*0.3528*0.36,{align:"center"}); }
+  let cy=60; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
+  doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.7); doc.line(L,cy+3,R,cy+3);
+  cy+=15; font("bold",21,INK);
+  doc.splitTextToSize(wa(o.objet||"Objet des travaux").toUpperCase(),R-L).slice(0,3).forEach(l=>{doc.text(l,L,cy);cy+=9.2;});
+  cy+=1; font("normal",13,RED);
+  if(o.immeuble){doc.text(wa(o.immeuble),L,cy);cy+=6.4;}
+  font("normal",10.5,MUTED);
+  if(o.ref){doc.text("Code travaux : "+wa(o.ref),L,cy);cy+=5.2;}
+  const dts=[o.dateEdition&&"Édition : "+o.dateEdition,o.dateRemise&&"Remise des offres : "+o.dateRemise].filter(Boolean).join("   ·   ");
+  if(dts){doc.text(wa(dts),L,cy);cy+=5.2;}
+  const ROW=198;
   if(o.photo){
     const d=dims(o.photo);
-    if(d){const top=Math.max(cy+8,92), maxW=R-L, maxH=Math.min(125,232-top);let w=maxW,h=w*d.r;if(h>maxH){h=maxH;w=h/d.r;}
+    if(d){const top=cy+4, maxW=R-L, maxH=ROW-8-top; if(maxH>25){let w=maxW,h=w*d.r;if(h>maxH){h=maxH;w=h/d.r;}
       const x=L+(maxW-w)/2; try{doc.addImage(o.photo,d.type,x,top,w,h,undefined,"FAST");}catch(e){console.error(e);}
-      doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.rect(x,top,w,h);}
+      doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.rect(x,top,w,h);}}
   }
-  const info=[["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Maîtrise d'œuvre",o.moe],["Remise des offres",o.dateRemise],["Édition",o.dateEdition]].filter(x=>x[1]);
-  if(info.length){
-    let iy=238; doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]); doc.setLineWidth(0.5); doc.line(L,iy-6,R,iy-6);
-    info.forEach((x,k)=>{const cx=L+(k%2)*((R-L)/2), yy=iy+Math.floor(k/2)*14;
-      font("bold",8,BLUE); doc.text(wa(x[0]).toUpperCase(),cx,yy); font("normal",10,INK);
-      doc.splitTextToSize(wa(x[1]),(R-L)/2-6).slice(0,2).forEach((l,j)=>doc.text(l,cx,yy+4.6+j*4.4));});
-  }
+  const cw=(R-L-8)/2;
+  const card=(x,title,lines)=>{ if(!lines.length)return;
+    cut(x,ROW,cw,6.6,2.6); font("bold",8.5,WHITE); doc.text(title,x+3.2,ROW+4.6);
+    let yy=ROW+12; lines.slice(0,8).forEach(l=>{font(l.b?"bold":"normal",l.b?10.5:9.5,INK);
+      doc.splitTextToSize(wa(l.t),cw-6).slice(0,2).forEach(t=>{doc.text(t,x+3.2,yy);yy+=4.7;}); yy+=l.b?0.6:0.3;});
+    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.rect(x,ROW,cw,Math.max(yy-ROW-1.5,20));};
+  card(L,"SYNDIC",C.syndic); card(L+cw+8,"IMMEUBLE",C.immeuble);
+  { const y0=247,h=36; cut(L,y0,R-L,h,9);
+    font("normal",7.8,[255,214,214]); doc.text("ARCHITECTE – MAÎTRISE D'ŒUVRE",L+8,y0+8);
+    font("bold",14,WHITE); doc.text(wa(C.arch.nom),L+8,y0+15.5);
+    font("bold",11,WHITE); doc.text(wa(C.arch.tel),L+8,y0+22.5); doc.text(wa(C.arch.adresse),R-6,y0+22.5,{align:"right"});
+    font("bold",10,WHITE); doc.text(wa(C.arch.web),L+8,y0+30.5); doc.text(wa(C.arch.email),R-6,y0+30.5,{align:"right"}); }
   /* ---- corps ---- */
   doc.addPage();
   let y=T, rightBottom=T, placed=false, queue=[], colW=0; const GAP=5, toc=[];
@@ -2187,19 +2238,19 @@ function buildCctpPdf(J){
     queue=[]; colW=0; rightBottom=y; placed=false;
     y+=cont?4:2.5; ovChips(ar);
     if(cont){ // sous-titre : carré + intitulé bleu + filet
-      doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(L+off,y+1.7,1.8,1.8,"F");
-      para(`${ar.code}  ${ar.titre}`.toUpperCase(),"bold",10.6,BLUE,{lh:5.4,indent:4.2});
+      doc.setFillColor(RED[0],RED[1],RED[2]); doc.rect(L+off,y+1.7,1.8,1.8,"F");
+      para(`${ar.code}  ${ar.titre}`.toUpperCase(),"bold",10.6,RED,{lh:5.4,indent:4.2});
       doc.setDrawColor(LINE[0],LINE[1],LINE[2]); doc.setLineWidth(0.3); doc.line(L+off,y+0.4,R,y+0.4); y+=1.4;
     }else{ // article : pastille du numéro + intitulé sombre
-      const y0=y; font("bold",8,BLUE); const cw=doc.getTextWidth(wa(ar.code))+4.2;
+      const y0=y; font("bold",8,RED); const cw=doc.getTextWidth(wa(ar.code))+4.2;
       doc.setFillColor(PALE[0],PALE[1],PALE[2]); doc.roundedRect(L+off,y0+0.3,cw,4.7,1.2,1.2,"F");
-      font("bold",8,BLUE); doc.text(wa(ar.code),L+off+2.1,y0+3.6);
+      font("bold",8,RED); doc.text(wa(ar.code),L+off+2.1,y0+3.6);
       para(String(ar.titre).toUpperCase(),"bold",9.6,INK,{lh:5.1,indent:cw+2.2}); y+=0.9;
     }
     (ar.imgs||[]).forEach(i=>{const dd=dims(i.src);if(!dd)return;const w=clampW(i.w)*10,h=w*dd.r;queue.push({src:i.src,type:dd.type,w,h,r:dd.r});colW=Math.max(colW,w);});
     rightBottom=y; placed=false; placeQ();
     if(ar.texte) txt(ar.texte); else if(!isTitle(ar)) para("Description à rédiger.","italic",9.5,MUTED);
-    if(ar.loc){y+=0.8;para(ar.loc,"italic",9.5,BLUE,{right:true});}
+    if(ar.loc){y+=0.8;para(ar.loc,"italic",9.5,RED,{right:true});}
     while(queue.length){np();} // images restantes
     if(y<rightBottom) y=Math.min(rightBottom,B);
     queue=[]; colW=0; y+=2.2;
@@ -2212,12 +2263,12 @@ function buildCctpPdf(J){
     toc.push({lvl,text:`${n.code}  ${n.titre}`,page:pageNo()});
     ovChips(n);
     if(lvl===2){ // chapitre : bandeau pâle + barre bleue
-      font("bold",12.5,BLUE); const ls=doc.splitTextToSize(wa(`${n.code}  ${n.titre}`).toUpperCase(),R-L-9), hh=ls.length*6+3.6;
+      font("bold",12.5,RED); const ls=doc.splitTextToSize(wa(`${n.code}  ${n.titre}`).toUpperCase(),R-L-9), hh=ls.length*6+3.6;
       if(y+hh>B)np();
-      doc.setFillColor(PALE[0],PALE[1],PALE[2]); doc.rect(L,y,R-L,hh,"F"); doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(L,y,1.8,hh,"F");
-      font("bold",12.5,BLUE); ls.forEach((l,k)=>doc.text(l,L+5,y+4.9+k*6)); y+=hh+3.5;
+      doc.setFillColor(PALE[0],PALE[1],PALE[2]); doc.rect(L,y,R-L,hh,"F"); doc.setFillColor(RED[0],RED[1],RED[2]); doc.rect(L,y,1.8,hh,"F");
+      font("bold",12.5,RED); ls.forEach((l,k)=>doc.text(l,L+5,y+4.9+k*6)); y+=hh+3.5;
     }else{
-      para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",10.5,BLUE,{lh:5.4}); y+=1.5;
+      para(`${n.code}- ${n.titre}`.toUpperCase(),"bold",10.5,RED,{lh:5.4}); y+=1.5;
     }
     if(n.texte) txt(n.texte);
     if((n.imgs||[]).length){
@@ -2236,7 +2287,7 @@ function buildCctpPdf(J){
     if(i>0) np();
     toc.push({lvl:1,text:`LOT ${lot.code}  ${lot.titre}`,page:pageNo()});
     off=0; font("bold",16,[255,255,255]); const tl=doc.splitTextToSize(wa(`LOT ${lot.code} - ${lot.titre}`).toUpperCase(),R-L-10), hh=tl.length*8+5;
-    doc.setFillColor(BLUE[0],BLUE[1],BLUE[2]); doc.rect(L,y,R-L,hh,"F");
+    cut(L,y,R-L,hh,5);
     font("bold",16,[255,255,255]); tl.forEach((l,k)=>doc.text(l,L+5,y+8.6+k*8)); y+=hh+6;
     if(lot.texte) txt(lot.texte);
     lot.children.forEach(c=>node(c,2));
@@ -2246,10 +2297,10 @@ function buildCctpPdf(J){
   for(let k=0;k<tp;k++) doc.insertPage(2);
   for(let k=0;k<tp;k++){
     doc.setPage(2+k); let ty=T;
-    if(k===0){font("bold",17,BLUE);doc.text("SOMMAIRE",L,ty+6);doc.setDrawColor(BLUE[0],BLUE[1],BLUE[2]);doc.setLineWidth(0.7);doc.line(L,ty+9,R,ty+9);ty+=20;}
+    if(k===0){font("bold",17,RED);doc.text("SOMMAIRE",L,ty+6);doc.setDrawColor(RED[0],RED[1],RED[2]);doc.setLineWidth(0.7);doc.line(L,ty+9,R,ty+9);ty+=20;}
     toc.slice(k*PER,(k+1)*PER).forEach(e=>{
       const ind=e.lvl===1?0:e.lvl===2?4:8, pg=String(e.page+tp);
-      font(e.lvl===1?"bold":"normal",e.lvl===1?10.5:9.5,e.lvl===1?BLUE:INK);
+      font(e.lvl===1?"bold":"normal",e.lvl===1?10.5:9.5,e.lvl===1?RED:INK);
       if(e.lvl===1) ty+=2;
       const txt=doc.splitTextToSize(wa(e.text).toUpperCase(),R-L-ind-14)[0];
       doc.text(txt,L+ind,ty); doc.text(pg,R,ty,{align:"right"});
@@ -2264,9 +2315,10 @@ function buildCctpPdf(J){
   for(let p=2;p<=N;p++){
     doc.setPage(p); font("normal",8,MUTED);
     doc.text(wa("CCTP - "+(o.objet||"")).slice(0,95),L,13);
-    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,15.5,R,15.5);
-    doc.line(L,PH-14,R,PH-14);
+    doc.setFillColor(RED[0],RED[1],RED[2]); doc.rect(L,15.3,R-L,0.7,"F");
+    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.3);doc.line(L,PH-14,R,PH-14);
     doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
+    font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),L+(R-L)/2,PH-5.6,{align:"center"});
   }
   doc.setProperties({title:"CCTP - "+wa(ref),subject:wa(o.objet||""),creator:"AGOA CCTP"});
   return doc.output("arraybuffer");
@@ -2281,7 +2333,7 @@ function renderOptions(){
     <div class="rg-row"><input type="text" id="rgQ" placeholder="Code travaux, ex. DAMREMONT70-B" value="${esc(o.ref)}" autocomplete="off"><button class="btn primary" id="rgGo">Rechercher</button></div>
     <div id="rgOut"><p class="rg-msg hint">${o.ragicId?`Opération liée à la fiche Ragic n° ${esc(o.ragicId)}.`:"Recherchez le code travaux pour pré-remplir les champs ci-dessous."}</p></div>
   </div>
-  <div class="ogrid">${OP_FIELDS.map(([k,l])=>`<div class="field"><label for="op-${k}">${l}</label><input type="text" id="op-${k}" data-op="${k}" value="${esc(o[k])}"></div>`).join("")}</div>
+  <div class="ogrid">${OP_FIELDS.map(([k,l])=>`<div class="field"><label for="op-${k}">${l}</label><input type="text" id="op-${k}" data-op="${k}" value="${esc(o[k])}" placeholder="${esc(OP_DEF[k]||"")}"></div>`).join("")}</div>
   <h4>Photo de l'opération</h4>
   <p class="hint">Affichée sur la page de garde du CCTP exporté en PDF.</p>
   <div class="op-photo">${o.photo?`<img src="${o.photo}" alt="Photo de l'opération">`:""}
