@@ -339,6 +339,12 @@ mark{background:#fff176;color:inherit;padding:0}
 
 /* consultation / analyse / synthèse */
 .consult{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+#optBtn{display:inline-flex;align-items:center;gap:7px}
+.dev-imp{margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.dev-tree{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:6px 0;font-size:13px}
+.dv-r{display:block;padding:3px 12px}.dv-l{font-weight:700;color:var(--accent);background:var(--accent-soft);margin-top:6px;cursor:pointer}.dv-l input{margin-right:6px}
+.dv-c{font-weight:600}.dv-t{color:var(--accent)}.dv-a{color:var(--ink)}.dv-n{float:right;color:var(--muted);font-size:12px}
+.dev-opts{display:grid;gap:6px;margin:12px 0 0;font-size:13.5px}
 .docs-grid{display:grid;gap:12px;margin:8px 16px 16px}
 .doc-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;font:inherit}
 .doc-card b{font-size:15.5px}.doc-card span{font-size:12.5px;color:var(--muted)}
@@ -642,7 +648,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   </nav>
   <button class="btn" id="saveBtn" title="Enregistrer le fichier de l'affaire (.cctp)">Enregistrer</button>
   <button class="btn" id="libBtn">Bibliothèque</button>
-  <button class="btn" id="optBtn">Options de l'opération</button>
+  <button class="btn" id="optBtn" title="Options de l'opération et import d'un devis"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span></button>
   <button class="btn" id="ovBtn" title="Définir les options et variantes de l'opération">Options / variantes</button>
   <div class="total">
     <small>Montant des travaux HT</small>
@@ -744,7 +750,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 </dialog>
 
 <dialog id="optDlg" class="wide" aria-labelledby="optTitle">
-  <div class="opt-h"><h3 id="optTitle">Options de l'opération</h3><button class="btn" id="closeOpt">Fermer</button></div>
+  <div class="opt-h"><h3 id="optTitle">Options</h3><button class="btn" id="closeOpt">Fermer</button></div>
   <div id="optBody"></div>
 </dialog>
 
@@ -793,6 +799,18 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <h3 id="chkTitle">Vérification des quantités</h3>
   <div id="chkBody"></div>
   <div class="dlg-act"><button class="btn" id="closeChk">Fermer</button></div>
+</dialog>
+
+<dialog id="devDlg" aria-labelledby="devT" style="width:min(780px,94vw);padding:22px 24px">
+  <h3 id="devT">Importer un devis existant</h3>
+  <p id="devInfo" class="hint" style="margin:0 0 10px"></p>
+  <div id="devTree" class="dev-tree"></div>
+  <div class="dev-opts">
+    <label><input type="radio" name="devMode" value="add"> Ajouter à la suite des lots existants</label>
+    <label><input type="radio" name="devMode" value="replace"> Remplacer l'arborescence actuelle (les lots actuels vont dans la corbeille)</label>
+    <label><input type="checkbox" id="devPrix" checked> Reprendre les prix du devis comme chiffrage estimatif</label>
+  </div>
+  <div class="dlg-act"><button class="btn" id="devCancel">Annuler</button><button class="btn primary" id="devOk">Importer</button></div>
 </dialog>
 
 <dialog id="expDlg" aria-labelledby="expT">
@@ -906,7 +924,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.28.0", deploiement: 28};
+const APP = {version: "0.29.0", deploiement: 29};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2349,6 +2367,9 @@ function buildCctpPdf(J,info){
 function renderOptions(){
   const o=state.op, tvSel=v=>state.tvas.map(t=>`<option value="${t.id}" ${t.id===v?"selected":""}>${pct(t.taux)}</option>`).join("");
   $("#optBody").innerHTML=`
+  <div class="dev-imp"><h4 style="margin-top:0">Importer un devis existant</h4>
+    <p class="hint">Importez le devis d'une entreprise (PDF ou Excel) : l'application reconstitue les lots, chapitres et articles, pour le transformer en CCTP et en BPU selon notre arborescence.</p>
+    <button class="btn" id="devBtn">Importer un PDF ou un Excel…</button><input type="file" id="devFile" accept=".pdf,.xlsx,.xls,.ods,.csv" hidden></div>
   <h4>Opération</h4>
   <div class="ragic">
     <label for="rgQ">Importer depuis Ragic (feuille OPERATIONS)</label>
@@ -3574,6 +3595,195 @@ $("#entTable").addEventListener("click",e=>{
 });
 
 $("#logoHome").addEventListener("click",()=>$("#homeBtn").click());
+/* ---------- Import d'un devis existant (PDF ou Excel) : reconstitution de l'arborescence ---------- */
+let pdfP=null;
+function loadPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return pdfP||(pdfP=loadScripts(["vendor/pdf.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"]).then(()=>{
+    const L=window.pdfjsLib; if(!L) throw new Error("pdfjs");
+    try{L.GlobalWorkerOptions.workerSrc=new URL("vendor/pdf.worker.min.js",document.baseURI).href;}catch(e){}
+    return L;}).catch(e=>{pdfP=null;throw e;}));
+}
+const DV_CODE=/^[A-Za-z]?\d{1,3}(?:[.\-]\d{1,3}){0,5}[.)]?$/;
+const dvNum=v=>{if(typeof v==="number")return Number.isFinite(v)?v:null;if(v==null)return null;
+  let s=String(v).replace(/[\s  €]|eur/gi,"").replace(/%$/,"");if(!/^-?[\d.,]+$/.test(s))return null;
+  if(s.includes(",")&&s.includes("."))s=s.replace(/\./g,"");s=s.replace(",",".");const n=parseFloat(s);return Number.isFinite(n)?n:null;};
+const DV_UNITS={"m2":"m²","m²":"m²","ml":"ml","m":"ml","ml.":"ml","m3":"m³","m³":"m³","u":"u","un":"u","unité":"u","unite":"u","ens":"ens","ens.":"ens","ensemble":"ens","ft":"ft","fft":"ft","fg":"ft","forfait":"ft","f":"ft","mois":"mois","kg":"kg"};
+const dvUnit=u=>{const k=String(u||"").trim().toLowerCase();return k?(DV_UNITS[k]||(k.length<=5?k:"")):"";};
+const dvIsUnit=s=>/^(u|un|unité|ens\.?|ensemble|ft|fft|fg|f|forfait|ml\.?|m|m2|m²|m3|m³|mois|kg|h|j)$/i.test(String(s).trim());
+const dvTitleCase=s=>{s=String(s||"").replace(/\s+/g," ").trim();const l=s.replace(/[^A-Za-zÀ-ÿ]/g,"");
+  if(l.length>3&&l===l.toUpperCase()){s=s.toLowerCase();return s.charAt(0).toUpperCase()+s.slice(1);}return s;};
+const dvSkip=l=>/^(sous[-\s]?total|total|tva\b|montant\s+(total|ht|ttc)|net\s+à\s+payer|report|à\s+reporter|récapitulatif|recapitulatif|acompte|conditions|validité|bon\s+pour\s+accord)/i.test(String(l).trim());
+function dvCodeSplit(label){const m=String(label).match(/^\s*([A-Za-z]?\d{1,3}(?:[.\-]\d{1,3}){0,5})([.)\-–]?)\s+(\S.*)$/);
+  if(!m)return null; if(m[1].includes(".")||m[2]||/^[A-ZÀ-Ý]/.test(m[3]))return{code:m[1],label:m[3].trim()}; return null;}
+/* --- lignes d'un PDF --- */
+async function pdfEntries(file){
+  const L=await loadPdfJs(); const doc=await L.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const pages=[];
+  for(let p=1;p<=doc.numPages;p++){
+    const tc=await (await doc.getPage(p)).getTextContent();
+    const its=tc.items.filter(i=>i.str&&i.str.trim()!=="").map(i=>({x:i.transform[4],y:i.transform[5],w:i.width,h:i.height||8,s:i.str}));
+    its.sort((a,b)=>b.y-a.y||a.x-b.x); const lines=[];
+    its.forEach(it=>{const l=lines.find(l=>Math.abs(l.y-it.y)<=Math.max(2,it.h*0.35));if(l)l.its.push(it);else lines.push({y:it.y,its:[it]});});
+    lines.sort((a,b)=>b.y-a.y);
+    lines.forEach(l=>{l.its.sort((a,b)=>a.x-b.x);const ch=[];
+      l.its.forEach(it=>{const c=ch[ch.length-1];if(c&&it.x-c.x2<6){c.s+=(it.x-c.x2>1.2&&!/\s$/.test(c.s)&&!/^\s/.test(it.s)?" ":"")+it.s;c.x2=it.x+it.w;}else ch.push({x:it.x,x2:it.x+it.w,s:it.s});});
+      ch.forEach(c=>{c.s=c.s.replace(/\s+/g," ").trim();c.m=(c.x+c.x2)/2;});l.ch=ch.filter(c=>c.s);l.txt=l.ch.map(c=>c.s).join(" ");});
+    pages.push(lines.filter(l=>l.ch.length));
+  }
+  if(!pages.some(p=>p.length)) throw new Error("Ce PDF ne contient pas de texte (document scanné) : l'import n'est pas possible.");
+  // lignes répétées sur chaque page (en-têtes, pieds de page) : ignorées
+  const cnt={}; pages.forEach(p=>new Set(p.map(l=>l.txt.replace(/\d+/g,"#"))).forEach(t=>cnt[t]=(cnt[t]||0)+1));
+  const rep=t=>pages.length>=3&&cnt[t]>=pages.length-1;
+  let hdr=null; const out=[];
+  const isHdr=l=>{const hq=l.ch.find(c=>/^qt[ée]\.?$|^quantit/i.test(c.s));return !!(hq&&(/d[ée]signation|libell|description|prestation/i.test(l.txt)||l.ch.some(c=>/^(p\.?\s?u|prix\s*unit)/i.test(c.s))));};
+  pages.forEach(p=>{const hi=p.findIndex(isHdr); if(hi>0)p.splice(0,hi);}); // en-tête de société avant le tableau : ignoré
+  pages.forEach(p=>p.forEach(l=>{
+    const key=l.txt.replace(/\d+/g,"#");
+    if(isHdr(l)){ // ligne d'en-tête de colonnes
+      const find=re=>l.ch.find(c=>re.test(c.s)), cols=[];
+      const q=find(/^qt[ée]|^quantit/i),u=find(/^(u|unit[ée]s?)\.?$/i),pu=find(/^(p\.?\s?u|prix\s*unit)/i),to=[...l.ch].reverse().find(c=>/total|montant/i.test(c.s)&&!/tva/i.test(c.s));
+      [["q",q],["u",u],["pu",pu],["tot",to]].forEach(([k,c])=>{if(c)cols.push({k,m:c.m,x:c.x});});
+      hdr={cols,x0:Math.min(...cols.map(c=>c.x))};return;}
+    if(rep(key)||/^page\s*\d+/i.test(l.txt)||/^\d+\s*\/\s*\d+$/.test(l.txt)||dvSkip(l.txt)&&!l.ch.some(c=>DV_CODE.test(c.s)&&c.x<(hdr?hdr.x0:200)*0.5)) return;
+    let code="",label="",q=null,u="",pu=null,tot=null;
+    if(hdr){
+      const lab=l.ch.filter(c=>c.x2<=hdr.x0+4||c.m<hdr.x0-2), rest=l.ch.filter(c=>!lab.includes(c));
+      rest.forEach(c=>{const col=hdr.cols.reduce((b,k)=>Math.abs(k.m-c.m)<Math.abs(b.m-c.m)?k:b,hdr.cols[0]);
+        if(col.k==="u")u=c.s;else if(/%$/.test(c.s))return;else{const n=dvNum(c.s);if(n!=null)({q:()=>q=n,pu:()=>pu=n,tot:()=>tot=n}[col.k]||(()=>{}))();else if(col.k==="q"&&dvIsUnit(c.s))u=c.s;}});
+      let parts=lab.map(c=>c.s); if(parts.length&&DV_CODE.test(parts[0])&&parts.length>1){code=parts.shift().replace(/[.)]$/,"");}
+      label=parts.join(" ");
+    }else{
+      const ch=[...l.ch]; const tail=[];
+      while(ch.length>1){const s=ch[ch.length-1].s;if(/^[\d\s.,]+(€|eur)?$/i.test(s)||/^-?[\d\s.,]+\s*€$/.test(s)||dvIsUnit(s)||/^\d+(?:[.,]\d+)?\s*%$/.test(s))tail.unshift(ch.pop().s);else break;}
+      const nums=tail.filter(s=>!/%$/.test(s)&&!dvIsUnit(s)).map(dvNum).filter(n=>n!=null), un=tail.find(dvIsUnit)||"";
+      if(nums.length>=3){q=nums[nums.length-3];pu=nums[nums.length-2];tot=nums[nums.length-1];u=un;}
+      else if(nums.length===2){pu=nums[0];tot=nums[1];q=pu?Math.round(tot/pu*1000)/1000:null;u=un;}
+      else if(nums.length===1&&tail.length){tot=nums[0];}
+      let parts=ch.map(c=>c.s); if(parts.length>1&&DV_CODE.test(parts[0])){code=parts.shift().replace(/[.)]$/,"");}
+      label=parts.join(" ");
+    }
+    if(!code){const s=dvCodeSplit(label);if(s){code=s.code;label=s.label;}}
+    if(!label&&!code) return;
+    out.push({code,label,u,q,pu,tot,num:q!=null||pu!=null||tot!=null});}));
+  return [{name:"",rows:out}];
+}
+/* --- lignes d'un classeur Excel --- */
+async function xlsxEntries(file){
+  const X=await loadXLSX(); const wb=X.read(await file.arrayBuffer(),{type:"array"}), sheets=[];
+  wb.SheetNames.forEach(sn=>{
+    const rows=X.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null,blankrows:false}); if(!rows.length) return;
+    let hi=-1,c={};
+    for(let i=0;i<Math.min(rows.length,40);i++){const r=rows[i]||[];const ix=re=>r.findIndex(v=>v!=null&&re.test(String(v).trim()));const lb=ix(/^(d[ée]signation|libell[ée]|description|intitul[ée]|prestations?|ouvrages?)/i);
+      if(lb>=0){hi=i;c={lb,code:ix(/^(n[°o]\.?|r[ée]f\.?|r[ée]f[ée]rence|code|art\.?|poste|item)$/i),q:ix(/^qt[ée]|^quantit/i),u:ix(/^(u|unit[ée]s?)\.?$/i),pu:ix(/(p\.?\s?u\b|prix\s*unit)/i),tot:(()=>{let k=-1;r.forEach((v,j)=>{if(v!=null&&/(montant|total)/i.test(String(v))&&!/tva/i.test(String(v)))k=j;});return k;})()};break;}}
+    if(hi<0){ // pas d'en-tête : colonne de texte la plus longue = désignation
+      const w=Math.max(...rows.slice(0,200).map(r=>(r||[]).length),1),sc=Array(w).fill(0);
+      rows.slice(0,200).forEach(r=>(r||[]).forEach((v,j)=>{if(typeof v==="string")sc[j]+=v.length;}));
+      const lb=sc.indexOf(Math.max(...sc)); const nc=[];for(let j=lb+1;j<w;j++)nc.push(j);
+      c={lb,code:lb>0?lb-1:-1,q:nc[0]??-1,u:-1,pu:nc[1]??-1,tot:nc[2]??-1}; hi=-1;
+    }
+    const out=[];
+    rows.slice(hi+1).forEach(r=>{r=r||[];
+      const sv=j=>j>=0&&r[j]!=null?String(r[j]).trim():""; let label=sv(c.lb).replace(/\s*\n\s*/g," ").trim(), code=sv(c.code);
+      if(code&&!DV_CODE.test(code)){if(!label)label=code;code="";}
+      if(!label) return;
+      if(!code){const s=dvCodeSplit(label);if(s){code=s.code;label=s.label;}}
+      let u=sv(c.u),q=dvNum(r[c.q]),pu=dvNum(r[c.pu]),tot=dvNum(r[c.tot]);
+      if(q==null&&u&&dvNum(u)!=null){q=dvNum(u);u="";}
+      out.push({code:code.replace(/[.)]$/,""),label,u,q,pu,tot,num:q!=null||pu!=null||tot!=null});});
+    if(out.length) sheets.push({name:sn,rows:out});
+  });
+  return sheets;
+}
+/* --- arbre : lots > chapitres > articles / sous-titres --- */
+function dvBuild(sheets,objet){
+  const lots=[]; const isCaps=s=>{const l=s.replace(/[^A-Za-zÀ-ÿ]/g,"");return l.length>2&&l===l.toUpperCase();};
+  const treeOf=rows=>{
+    const root={kids:[],d:0}, stack=[root]; let last=null, hasCodes=rows.filter(r=>r.code).length>=Math.max(2,rows.length*0.3);
+    rows.forEach(r=>{
+      if(dvSkip(r.label)&&!r.code) return;
+      const item=r.num&&!(r.q==null&&r.pu==null&&r.tot==null);
+      if(!r.code&&!item){ // texte seul : titre en majuscules, sinon suite de description
+        if(isCaps(r.label)&&r.label.length<80&&!hasCodes){const n={titre:r.label,texte:"",kids:[],d:1,priced:false};root.kids.push(n);stack.length=1;stack.push(n);last=n;return;}
+        if(last){last.texte=(last.texte?last.texte+"\n":"")+r.label;}return;}
+      let d=r.code?r.code.split(/[.\-]/).length:null;
+      if(d==null){const top=stack[stack.length-1];d=(top.priced?top.d:top.d+1);}
+      while(stack.length>1&&stack[stack.length-1].d>=d)stack.pop();
+      const parent=stack[stack.length-1], n={titre:r.label,texte:"",kids:[],d,priced:!!item,u:r.u,q:r.q,pu:r.pu,tot:r.tot};
+      parent.kids.push(n); stack.push(n); last=n;});
+    return root;};
+  const conv=(n,prix)=>{
+    if(n.priced&&!n.kids.length){
+      let q=n.q,pu=n.pu,u=dvUnit(n.u);
+      if(q==null){q=1;if(!u)u="ft";}
+      if(pu==null&&n.tot!=null&&q)pu=Math.round(n.tot/q*100)/100;
+      return {id:nid(),code:"",titre:dvTitleCase(n.titre),texte:n.texte||"",loc:"",lignes:[],sub:[],u:u||"u",pu:prix&&pu!=null?Math.round(pu*100)/100:0,tva:null,qman:q};}
+    return {id:nid(),code:"",titre:dvTitleCase(n.titre),type:"titre",texte:n.texte||"",loc:"",lignes:[],sub:n.kids.map(k=>conv(k,prix)),u:"ens",pu:0,tva:null,qman:null};};
+  return {tree:sheets.map(s=>({name:s.name,root:treeOf(s.rows)})),conv,objet};
+}
+function dvLots(B,prix){
+  const out=[]; const mkCh=(n,list)=>({titre:dvTitleCase(n.titre),texte:n.texte||"",art:list.length?list:[blank()]});
+  const mkLot=(titre,texte,chs)=>({code:"",titre:dvTitleCase(titre),texte:texte||"",charge:"Commune",children:chs.length?chs:[{titre:"Prestations",texte:"",art:[blank()]}]});
+  const chaptersOf=(parents,prix)=>{const chs=[]; let loose=[];
+    const flush=()=>{if(loose.length){chs.push({titre:"Prestations",texte:"",art:loose});loose=[];}};
+    parents.forEach(k=>{
+      if(k.priced&&!k.kids.length){loose.push(B.conv(k,prix));return;}
+      flush(); chs.push(mkCh(k,k.kids.map(x=>B.conv(x,prix))));});
+    flush(); return chs;};
+  B.tree.forEach(sh=>{const roots=sh.root.kids; if(!roots.length) return;
+    if(B.tree.length>1){out.push(mkLot(sh.name||B.objet||"Travaux","",chaptersOf(roots,prix)));return;}
+    const hasSubTitles=roots.some(r=>r.kids.some(k=>!k.priced||k.kids.length));
+    const rootsAreChapters=roots.every(r=>r.kids.length===0||r.kids.every(k=>k.priced&&!k.kids.length));
+    if(hasSubTitles&&!rootsAreChapters){roots.forEach(r=>{if(r.priced&&!r.kids.length){out.push(mkLot(B.objet||"Travaux","",[{titre:"Prestations",texte:"",art:[B.conv(r,prix)]}]));return;}
+        out.push(mkLot(r.titre,r.texte,chaptersOf(r.kids,prix)));});}
+    else out.push(mkLot(B.objet||"Travaux","",chaptersOf(roots,prix)));});
+  return out;
+}
+let devLots=null, devSrc="";
+const dvCount=lots=>{let c=0,a=0;const va=l=>l.forEach(x=>{if(x.sub.length||isTitle(x))va(x.sub);else a++;});lots.forEach(l=>l.children.forEach(ch=>{c++;va(ch.art);}));return{lots:lots.length,ch:c,arts:a};};
+function dvTreeHtml(lots){
+  let n=0,html=""; const MAX=500;
+  const art=(x,d)=>{if(n++>=MAX)return;const t=x.sub.length||isTitle(x);
+    html+=`<div class="dv-r ${t?"dv-t":"dv-a"}" style="padding-left:${22+d*16}px">${t?"▸ ":""}${esc(x.titre)}${t?"":`<span class="dv-n">${x.qman!=null?fmt(x.qman,x.qman%1?2:0)+" "+esc(x.u):""}${x.pu?" · "+money(x.pu):""}</span>`}</div>`;x.sub.forEach(s=>art(s,d+1));};
+  lots.forEach((l,i)=>{html+=`<label class="dv-r dv-l"><input type="checkbox" data-devlot="${i}" checked> Lot ${i+1} – ${esc(l.titre)}</label>`;
+    l.children.forEach(ch=>{html+=`<div class="dv-r dv-c" style="padding-left:22px">${esc(ch.titre)}</div>`;ch.art.forEach(a=>art(a,2));});});
+  const tot=dvCount(lots).arts; if(n>=MAX) html+=`<div class="dv-r hint" style="padding-left:22px">… et d'autres lignes (aperçu limité)</div>`;
+  return html;
+}
+async function devAnalyse(file){
+  const name=file.name, ext=(name.split(".").pop()||"").toLowerCase();
+  toast("Analyse du devis…");
+  let sheets;
+  try{sheets=ext==="pdf"?await pdfEntries(file):await xlsxEntries(file);}
+  catch(e){console.error(e);toast(e&&e.message&&!/^(pdfjs|xlsx)$/.test(e.message)?e.message:"Ce fichier n'a pas pu être lu.");return;}
+  const B=dvBuild(sheets,(state.op&&state.op.objet)||"");
+  const prix=true, lots=dvLots(B,prix); const c=dvCount(lots);
+  if(!c.arts){toast("Aucune ligne de devis n'a été reconnue dans ce fichier.");return;}
+  devSrc=name; devLots={B,lots};
+  $("#devInfo").innerHTML=`<b>${esc(name)}</b> : ${c.lots} lot${c.lots>1?"s":""}, ${c.ch} chapitre${c.ch>1?"s":""}, ${c.arts} article${c.arts>1?"s":""} reconnus. Vérifiez la structure avant d'importer ; vous pourrez tout retoucher ensuite dans la rédaction.`;
+  $("#devPrix").checked=true; $("#devTree").innerHTML=dvTreeHtml(lots);
+  const empty=state.data.length===1&&countArts(state.data[0])<=1&&/^Nouvel article$/i.test((firstList()||[{}])[0].titre||"");
+  document.querySelector(`input[name="devMode"][value="${empty?"replace":"add"}"]`).checked=true;
+  $("#devDlg").showModal();
+}
+function devRefreshTree(){ if(!devLots) return; devLots.lots=dvLots(devLots.B,$("#devPrix").checked); $("#devTree").innerHTML=dvTreeHtml(devLots.lots); }
+$("#devPrix").addEventListener("change",devRefreshTree);
+$("#devCancel").onclick=()=>{$("#devDlg").close();devLots=null;};
+$("#devOk").onclick=async()=>{
+  if(!devLots) return;
+  const keep=[...document.querySelectorAll("[data-devlot]")].filter(x=>x.checked).map(x=>+x.dataset.devlot), lots=keep.map(i=>devLots.lots[i]).filter(Boolean);
+  if(!lots.length){toast("Cochez au moins un lot à importer.");return;}
+  const replace=document.querySelector('input[name="devMode"]:checked').value==="replace";
+  if(replace&&!await ask("Remplacer l'arborescence actuelle par celle du devis ? Les lots actuels seront placés dans la corbeille, d'où vous pourrez les restaurer.","Remplacer",true)) return;
+  if(replace){state.data.forEach((lot,i)=>state.trash.unshift({type:"lot",lot,index:i,code:lot.code,n:countArts(lot),date:new Date().toISOString()}));state.data=lots;}
+  else state.data.push(...lots);
+  ensureNodeIds(); renumberAll(); const f=firstId(); const first=lots[0]; state.sel=first.nid||f; state.view="redaction";
+  $("#devDlg").close(); $("#optDlg").open&&$("#optDlg").close(); devLots=null; save(); refresh(); show("redaction"); selectNode(first.nid);
+  toast(`Devis importé : ${lots.length} lot${lots.length>1?"s":""} ajouté${lots.length>1?"s":""} à l'arborescence`);
+};
+$("#optBody").addEventListener("click",e=>{if(e.target.closest("#devBtn"))$("#devFile").click();});
+$("#optBody").addEventListener("change",e=>{if(e.target.id==="devFile"&&e.target.files[0]){const f=e.target.files[0];e.target.value="";devAnalyse(f);}});
+
 /* ---------- Navigation ---------- */
 function show(view){
   if(view==="home"||!state){
