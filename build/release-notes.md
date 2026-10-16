@@ -1,1 +1,1 @@
-Déploiement n°27 — CCTP : suppression du bandeau Remi Thollet Architecte, filets d'en-tête et de pied plus fins
+Déploiement n°28 — Enregistrement plus robuste (Dropbox), date et version à l'export CCTP/BPU, nom de l'entreprise saisissable dans le BPU

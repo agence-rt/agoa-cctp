@@ -22,11 +22,18 @@ const dataPath = () => path.join(userDir(), "agoa-cctp-donnees.json");
 const configPath = () => path.join(userDir(), "agoa-cctp-config.json");
 
 function readJson(p, def) { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return def; } }
+const sleepSync = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 function writeAtomic(p, text, bak = true) {
   const tmp = p + ".tmp";
   fs.writeFileSync(tmp, text, "utf8");
-  if (bak && fs.existsSync(p)) fs.copyFileSync(p, p + ".bak"); // copie de secours de la version précédente
-  fs.renameSync(tmp, p);
+  if (bak && fs.existsSync(p)) { try { fs.copyFileSync(p, p + ".bak"); } catch {} } // copie de secours de la version précédente
+  let err = null;
+  for (let i = 0; i < 6; i++) {   // Dropbox ou l'antivirus verrouillent parfois le fichier un court instant
+    try { fs.renameSync(tmp, p); return; }
+    catch (e) { err = e; if (!/^(EPERM|EBUSY|EACCES)$/.test(e.code || "")) break; sleepSync(100 * (i + 1)); }
+  }
+  try { fs.writeFileSync(p, text, "utf8"); try { fs.unlinkSync(tmp); } catch {} }   // repli : écriture directe
+  catch (e) { throw err || e; }
 }
 
 /* ---------- ouverture d'un .cctp passé en argument (double-clic) ---------- */

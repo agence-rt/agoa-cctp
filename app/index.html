@@ -795,6 +795,16 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <div class="dlg-act"><button class="btn" id="closeChk">Fermer</button></div>
 </dialog>
 
+<dialog id="expDlg" aria-labelledby="expT">
+  <form method="dialog">
+    <h3 id="expT">Exporter</h3>
+    <p class="hint" style="margin:0 0 12px">La date et la version sont inscrites dans l'en-tête du document.</p>
+    <div class="field"><label for="expDate">Date du document</label><input type="date" id="expDate"></div>
+    <div class="field" style="margin-top:10px"><label for="expVer">Numéro de version</label><input type="number" id="expVer" min="1" step="1" inputmode="numeric"></div>
+    <div class="dlg-act"><button class="btn" value="cancel">Annuler</button><button class="btn primary" value="ok" id="expOk">Exporter</button></div>
+  </form>
+</dialog>
+
 <dialog id="impDlg" aria-labelledby="impTitle">
   <h3 id="impTitle">Importer un BPU complété</h3>
   <div class="field"><label for="impEnt">Entreprise</label><select id="impEnt"></select></div>
@@ -896,7 +906,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.27.0", deploiement: 27};
+const APP = {version: "0.28.0", deploiement: 28};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1041,7 +1051,10 @@ function autoSaveFile(){
   clearTimeout(autoT);
   autoT=setTimeout(async()=>{const s=state; if(!s||!s.filePath)return;
     try{await AG.writeFile(s.filePath,serializeAffaire(s)); s.fileSaved=Date.now()+1; markDirty();}
-    catch(e){toast("Enregistrement automatique impossible : "+(e&&e.message||"erreur"));}},1200);
+    catch(e){ // verrou temporaire (Dropbox, antivirus) : on réessaie sans déranger, et on n'alerte qu'en cas d'échec répété
+      autoT=setTimeout(async()=>{const s2=state; if(!s2||!s2.filePath)return;
+        try{await AG.writeFile(s2.filePath,serializeAffaire(s2)); s2.fileSaved=Date.now()+1; markDirty();}
+        catch(e2){toast("Enregistrement automatique impossible : "+(e2&&e2.message||"erreur")+". Utilisez le bouton Enregistrer.");}},4000);}},1200);
 }
 async function importAffaireText(text,fname,fpath){
   const a=parseCctp(text);
@@ -2094,16 +2107,29 @@ async function saveFile(buf,name,what){
   try{await dl.save({filename:name,data:buf});toast(`${what} enregistré : ${name}`);}
   catch(e){const c=e&&e.code;if(c==="declined")toast("Téléchargement annulé.");else if(c==="rate_limited")toast("Une demande de téléchargement est déjà ouverte.");else toast("Le téléchargement a échoué ("+(c||"erreur")+").");}
 }
+const frDate=iso=>{const d=new Date(String(iso||"")+"T12:00:00");return isNaN(d)?String(iso||""):d.toLocaleDateString("fr-FR");};
+const docInfoDefault=()=>({ver:(state&&state.docVer)||1,date:new Date().toISOString().slice(0,10)});
+const docTag=i=>i?`Version ${i.ver} - ${frDate(i.date)}`:"";
+function askDocInfo(what){
+  const d=$("#expDlg"), di=docInfoDefault(); if(!d.showModal) return Promise.resolve(di);
+  $("#expT").textContent="Exporter "+what; $("#expDate").value=di.date; $("#expVer").value=di.ver;
+  return new Promise(res=>{d.returnValue="";
+    d.onclose=()=>{if(d.returnValue!=="ok"){res(null);return;}
+      const ver=Math.max(1,parseInt($("#expVer").value,10)||1), date=$("#expDate").value||di.date; state.docVer=ver; save(); res({ver,date});};
+    d.showModal(); $("#expVer").focus(); $("#expVer").select();});
+}
+$("#expDlg").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.tagName==="INPUT"){e.preventDefault();$("#expDlg").close("ok");}});
 async function exportCctp(){
   if(!state) return;
   let J; try{J=await loadJsPDF();}catch(e){toast("Le module PDF n'a pas pu être chargé : vérifiez la connexion.");return;}
   try{
+    const info=await askDocInfo("le CCTP"); if(!info) return;
     toast("Préparation du CCTP…");
-    const buf=buildCctpPdf(J);
+    const buf=buildCctpPdf(J,info);
     await saveFile(buf,safeName(fileBase(state)+" - CCTP")+".pdf","CCTP");
   }catch(err){console.error(err);toast("L'export du CCTP a échoué.");}
 }
-function buildCctpPdf(J){
+function buildCctpPdf(J,info){
   const o=state.op||{};
   const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255];
   const wa=t=>String(t==null?"":t).replace(/[ -​  ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
@@ -2124,7 +2150,7 @@ function buildCctpPdf(J){
   if(o.immeuble){doc.text(wa(o.immeuble),L,cy);cy+=6.4;}
   font("normal",10.5,MUTED);
   if(o.ref){doc.text("Code travaux : "+wa(o.ref),L,cy);cy+=5.2;}
-  const dts=[o.dateEdition&&"Édition : "+o.dateEdition,o.dateRemise&&"Remise des offres : "+o.dateRemise].filter(Boolean).join("   ·   ");
+  const dts=[info?docTag(info):(o.dateEdition&&"Édition : "+o.dateEdition),o.dateRemise&&"Remise des offres : "+o.dateRemise].filter(Boolean).join("   ·   ");
   if(dts){doc.text(wa(dts),L,cy);cy+=5.2;}
   const ROW=206;
   if(o.photo){
@@ -2310,7 +2336,7 @@ function buildCctpPdf(J){
   const N=doc.getNumberOfPages();
   for(let p=2;p<=N;p++){
     doc.setPage(p); font("normal",8,MUTED);
-    doc.text(wa("CCTP - "+(o.objet||"")).slice(0,95),L,13);
+    doc.text(wa("CCTP - "+(o.objet||"")).slice(0,80),L,13); if(info){font("bold",8,RED);doc.text(wa(docTag(info)),R,13,{align:"right"});font("normal",8,MUTED);}
     doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,R,15.5);
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PH-14,R,PH-14);
     doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
@@ -2480,8 +2506,8 @@ async function depositFiles(en,files){
 }
 async function bpuBytes(en){
   let E=null; try{E=await loadExcelJS();}catch(e){}
-  if(E){try{const b=await buildBpuStyled(E,en);return new Uint8Array(b.buffer?b.buffer:b);}catch(err){console.error(err);}}
-  const X=await loadXLSX(); const b=buildBpuBasic(X,en); return new Uint8Array(b.buffer?b.buffer:b);
+  if(E){try{const b=await buildBpuStyled(E,en,docInfoDefault());return new Uint8Array(b.buffer?b.buffer:b);}catch(err){console.error(err);}}
+  const X=await loadXLSX(); const b=buildBpuBasic(X,en,docInfoDefault()); return new Uint8Array(b.buffer?b.buffer:b);
 }
 function renderConsult(){
   const M=missingQty();
@@ -3155,23 +3181,24 @@ function lotItems(lot){
     it.push({k:"otot",ovb:true,o,hasDed:b.bas.length>0});it.push({k:"otva",ovb:true,o});it.push({k:"ottc",ovb:true,o});});
   return it;
 }
-async function exportBpu(entId){
+async function exportBpu(entId,info){
   const en=entId?ents().find(e=>e.id===entId):null;
+  if(info===undefined){info=await askDocInfo("le BPU"); if(!info) return;}
   const name=safeName(fileBase(state)+" - BPU"+(en?" - "+en.nom:""))+".xlsx";
   let E=null; try{E=await loadExcelJS();}catch(e){}
-  if(E){ try{ const buf=await buildBpuStyled(E,en); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué : export simplifié."); } }
+  if(E){ try{ const buf=await buildBpuStyled(E,en,info); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué : export simplifié."); } }
   else toast("Mise en page détaillée indisponible (module non chargé) : export simplifié.");
   let X; try{X=await loadXLSX();}catch(e){toast("Le module Excel n'a pas pu être chargé : vérifiez la connexion.");return;}
-  await saveXlsx(buildBpuBasic(X,en),name);
+  await saveXlsx(buildBpuBasic(X,en,info),name);
 }
-async function buildBpuStyled(E,en){
+async function buildBpuStyled(E,en,info){
   const o=state.op||{}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{};
   const BLUE="FF1961AC", INK="FF333333", PALE="FFE5F1FC", LINE="FFB6DDF7", GREY="FFEEF3F8", MUTED="FF6B7A8C";
   const F=(sz,o2={})=>({name:"Arial",size:sz,color:{argb:INK},...o2});
   const EUR='#,##0.00\\ "€";\\-#,##0.00\\ "€";;', EUR0='#,##0.00\\ "€";\\-#,##0.00\\ "€"';
   const thin=c=>({style:"thin",color:{argb:c}}), box={top:thin(LINE),left:thin(LINE),bottom:thin(LINE),right:thin(LINE)};
   const wb=new E.Workbook(); wb.creator="AGOA CCTP"; wb.created=new Date(); wb.calcProperties={fullCalcOnLoad:true};
-  const used=new Set(); const sheetName=l=>{let n=`LOT ${l.code}  ${l.titre}`.replace(/[\\/?*\[\]:]/g,"-").slice(0,31);while(used.has(n.toLowerCase()))n=n.slice(0,28)+" "+(used.size+1);used.add(n.toLowerCase());return n;};
+  const used=new Set(), snMap=new Map(); const sheetName=l=>{if(snMap.has(l))return snMap.get(l);let n=`LOT ${l.code}  ${l.titre}`.replace(/[\\/?*\[\]:]/g,"-").slice(0,31);while(used.has(n.toLowerCase()))n=n.slice(0,28)+" "+(used.size+1);used.add(n.toLowerCase());snMap.set(l,n);return n;};
   const ref=[o.ref,o.immeuble].filter(Boolean).join("-")||"AFFAIRE", oper=[o.objet,o.adresse,[o.cp,o.ville].filter(Boolean).join(" ")].filter(Boolean).join(" ").toUpperCase();
   const pct=r=>String(Number(r).toFixed(1)).replace(".",",")+"%";
   const runs=rows=>{rows=[...rows].sort((a,b)=>a-b);const out=[];let a=null,b=null;rows.forEach(r=>{if(a===null){a=b=r;}else if(r===b+1){b=r;}else{out.push(a===b?`I${a}`:`I${a}:I${b}`);a=b=r;}});if(a!==null)out.push(a===b?`I${a}`:`I${a}:I${b}`);return out.join(",");};
@@ -3182,11 +3209,20 @@ async function buildBpuStyled(E,en){
       headerFooter:{oddFooter:'&L&"Arial,Regular"&8AGOA CCTP&C&"Arial,Regular"&8&A&R&"Arial,Regular"&8Page &P / &N'}});
     ws.columns=[{width:14},{width:11,hidden:true},{width:62},{width:11},{width:8},{width:11},{width:8},{width:15},{width:18},{width:38},{width:3,hidden:true},{width:3,hidden:true}];
     const mrg=(r1,r2,text,font,al,h)=>{ws.mergeCells(r1,1,r2,10);const c=ws.getCell(r1,1);c.value=text;c.font=font;c.alignment={vertical:"middle",wrapText:true,...al};};
-    mrg(1,2,"Bordereau des prix unitaires (BPU) - "+ref,F(12,{bold:true}),{horizontal:"center"}); ws.getRow(1).height=20; ws.getRow(2).height=4;
+    mrg(1,1,"Bordereau des prix unitaires (BPU) - "+ref,F(12,{bold:true}),{horizontal:"center"}); ws.getRow(1).height=20;
+    mrg(2,2,info?docTag(info):"",F(9,{bold:true,color:{argb:BLUE}}),{horizontal:"center"}); ws.getRow(2).height=info?15:4;
     mrg(3,4,oper,F(10,{bold:true}),{horizontal:"center"}); ws.getRow(3).height=4; ws.getRow(4).height=34;
     mrg(5,5,`LOT n°${lot.code}. ${lot.titre.toUpperCase()}`,F(11,{bold:true,color:{argb:BLUE}}),{horizontal:"center"}); ws.getRow(5).height=22;
     ws.getRow(6).height=6;
-    mrg(7,7,"Entreprise : "+(en?en.nom:"……………………………………………………")+(o.dateRemise?`      Remise des offres avant le ${o.dateRemise}`:""),F(10,{bold:true}),{horizontal:"left"}); ws.getRow(7).height=20;
+    { // nom de l'entreprise : cellule libre (première feuille) ; les autres feuilles la reprennent
+      const l7=ws.getCell(7,1); l7.value="Entreprise :"; l7.font=F(10,{bold:true}); l7.alignment={vertical:"middle"};
+      ws.mergeCells(7,3,7,6); const n7=ws.getCell(7,3);
+      if(lot===state.data[0]){ n7.value=en?en.nom:null; n7.protection={locked:false}; n7.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}}; n7.font=F(11,{bold:true,color:{argb:BLUE}}); }
+      else { const f0=sheetName(state.data[0]).replace(/'/g,"''"); n7.value={formula:`IF('${f0}'!C7="","",'${f0}'!C7)`,result:en?en.nom:""}; n7.font=F(11,{bold:true,color:{argb:BLUE}}); }
+      n7.alignment={vertical:"middle",horizontal:"left"};
+      for(let k=3;k<=6;k++){const c=ws.getCell(7,k);try{delete c._mergeStyle;}catch(e){}c.border={top:thin(BLUE),bottom:thin(BLUE),left:k===3?thin(BLUE):undefined,right:k===6?thin(BLUE):undefined};if(lot===state.data[0]){c.protection={locked:false};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};}}
+      ws.mergeCells(7,7,7,10); const r7=ws.getCell(7,7); r7.value=o.dateRemise?`Remise des offres avant le ${o.dateRemise}`:""; r7.font=F(10,{bold:true}); r7.alignment={vertical:"middle",horizontal:"right"};
+      ws.getRow(7).height=22; }
     {const du=depotUrl(en); if(du){ws.mergeCells(6,1,6,10);const lc=ws.getCell(6,1);lc.value={text:"Dépôt de l'offre (BPU rempli + devis PDF) : "+du,hyperlink:du};lc.font=F(10,{underline:true,color:{argb:BLUE}});lc.alignment={vertical:"middle",horizontal:"left"};ws.getRow(6).height=20;}}
     const H=["N°","Ref.","Désignation","Qté","U","Qté ent.","TVA","Prix Unitaire","Montant HT","Observations entreprise"];
     H.forEach((t,k)=>{const c=ws.getCell(8,k+1);c.value=t;c.font=F(10,{bold:true,color:{argb:BLUE}});c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true};c.border={top:thin(BLUE),bottom:thin(BLUE)};});
@@ -3281,7 +3317,8 @@ async function buildBpuStyled(E,en){
   const rs=wb.addWorksheet("Total de l'affaire",{views:[{showGridLines:false}],pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
   rs.columns=[{width:10},{width:58},{width:18},{width:18},{width:18}];
   rs.mergeCells(1,1,1,5); const t1=rs.getCell(1,1); t1.value="Bordereau des prix unitaires (BPU) - "+ref; t1.font=F(12,{bold:true}); t1.alignment={horizontal:"center"}; rs.getRow(1).height=24;
-  rs.mergeCells(2,1,2,5); const t2=rs.getCell(2,1); t2.value="Total de l'affaire"+(en?" - "+en.nom:""); t2.font=F(11,{bold:true,color:{argb:BLUE}}); t2.alignment={horizontal:"center"}; rs.getRow(2).height=22;
+  rs.mergeCells(2,1,2,5); const t2=rs.getCell(2,1); {const f0=sheetName(state.data[0]).replace(/'/g,"''"); t2.value={formula:`"Total de l'affaire"&IF('${f0}'!C7=""," "," - "&'${f0}'!C7)`,result:"Total de l'affaire"+(en?" - "+en.nom:"")};} t2.font=F(11,{bold:true,color:{argb:BLUE}}); t2.alignment={horizontal:"center"}; rs.getRow(2).height=22;
+  if(info){rs.mergeCells(3,1,3,5); const t3=rs.getCell(3,1); t3.value=docTag(info); t3.font=F(9,{bold:true,color:{argb:BLUE}}); t3.alignment={horizontal:"center"};}
   ["Lot","Désignation","Montant HT","Montant TVA","Montant TTC"].forEach((t,k)=>{const c=rs.getCell(4,k+1);c.value=t;c.font=F(10,{bold:true,color:{argb:BLUE}});c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};c.alignment={horizontal:k>1?"center":"left",vertical:"middle"};c.border={top:thin(BLUE),bottom:thin(BLUE)};}); rs.getRow(4).height=26;
   let q=5; const q0=q; let sH=0,sT=0,sC=0;
   rec.forEach(x=>{const ref2=`'${x.sn.replace(/'/g,"''")}'`;rs.getCell(q,1).value=x.code;rs.getCell(q,1).font=F(10,{italic:true});rs.getCell(q,2).value=x.titre.toUpperCase();rs.getCell(q,2).font=F(10);
@@ -3301,9 +3338,10 @@ async function buildBpuStyled(E,en){
   await rs.protect("",{selectLockedCells:true,selectUnlockedCells:true});
   return await wb.xlsx.writeBuffer();
 }
-function buildBpuBasic(X,en){
+function buildBpuBasic(X,en,info){
   const o=state.op||{}, aoa=[], A=(...r)=>{aoa.push(r);return aoa.length;}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{};
   A("Bordereau des prix unitaires (BPU) - "+[o.ref,o.immeuble,o.objet].filter(Boolean).join(" - "));
+  if(info) A(docTag(info));
   A("Entreprise : "+(en?en.nom:"…………………………………"));
   A(o.dateRemise?"Remise des offres avant le "+o.dateRemise:"");
   if(en&&depotUrl(en)) A("Dépôt de l'offre (BPU rempli + devis PDF) : "+depotUrl(en));
@@ -3360,9 +3398,14 @@ async function parseBpuFile(file){
   const X=await loadXLSX();
   const wb=X.read(await file.arrayBuffer(),{type:"array"});
   const byId={},byCd={}; let total=0; leaves(ar=>{byId[ar.id]=ar;byCd[ar.code]=ar;total++;});
-  const pus={},notes={},qents={}; let unknown=0, found=0;
+  const pus={},notes={},qents={}; let unknown=0, found=0, entreprise="";
   wb.SheetNames.forEach(sn=>{
     const rows=X.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});
+    if(!entreprise) for(let i=0;i<Math.min(rows.length,12)&&!entreprise;i++){const r=rows[i]||[];
+      r.forEach((v,k)=>{if(entreprise||typeof v!=="string")return;const m=v.trim().match(/^Entreprise\s*:\s*(.*)$/i);if(!m)return;
+        let n=m[1].replace(/\s{2,}Remise.*$/i,"").replace(/[….\s]+$/,"").trim();
+        if(!n)n=String(r.slice(k+1).find(x=>typeof x==="string"&&x.trim()&&!/^Remise/i.test(x.trim()))||"").trim();
+        if(n&&!/^[….]+$/.test(n))entreprise=n;});}
     let hi=-1,c={};
     for(let i=0;i<Math.min(rows.length,40);i++){const r=rows[i]||[];const ix=re=>r.findIndex(v=>v!=null&&re.test(String(v).trim()));
       const p=ix(/^prix\s*unitaire/i);
@@ -3382,7 +3425,7 @@ async function parseBpuFile(file){
   });
   if(!found) throw new Error("Colonne « Prix unitaire » introuvable : ce fichier ne ressemble pas à un BPU de l'application.");
   let missing=0; leaves(ar=>{if(qty(ar)>0&&pus[ar.id]==null)missing++;});
-  return {pus,notes,qents,total,read:Object.keys(pus).length,missing,unknown,qdiff:Object.keys(qents).length};
+  return {entreprise,pus,notes,qents,total,read:Object.keys(pus).length,missing,unknown,qdiff:Object.keys(qents).length};
 }
 /* import d'un BPU complété (analyse ou consultation) */
 let impData=null, impFile=null;
@@ -3398,6 +3441,9 @@ $("#impFile").addEventListener("change",async e=>{
   const f=e.target.files[0], sum=$("#impSum"); impData=null; impFile=f||null; $("#impOk").disabled=true; if(!f){sum.hidden=true;return;}
   sum.hidden=false; sum.className="imp-sum"; sum.textContent="Lecture du fichier…";
   try{const d=await parseBpuFile(f); impData=d.read>0?d:null;
+    if(d.entreprise){const sel=$("#impEnt"),hit=ents().find(e=>e.nom.trim().toLowerCase()===d.entreprise.toLowerCase());
+      if(hit&&sel.value!==hit.id){sel.value=hit.id;$("#impNameF").hidden=true;}
+      else if(!hit&&sel.value==="__new"&&!$("#impName").value.trim()){$("#impName").value=d.entreprise;}}
     sum.innerHTML=`<b>${d.read}</b> prix lus sur <b>${d.total}</b> articles chiffrés.${d.missing?` <span style="color:var(--ochre)">${d.missing} prix manquant${d.missing>1?"s":""} (quantité renseignée, prix absent).</span>`:" Tous les prix sont renseignés."}${d.qdiff?` <span style="color:var(--ochre)">${d.qdiff} quantité${d.qdiff>1?"s":""} modifiée${d.qdiff>1?"s":""} par l'entreprise (colonne « Qté ent. ») : l'analyse reste calculée sur vos quantités.</span>`:""}${d.unknown?` ${d.unknown} ligne${d.unknown>1?"s":""} ne correspond${d.unknown>1?"ent":""} à aucun article actuel.`:""}`;
     $("#impOk").disabled=d.read===0;
     if(d.read===0){sum.className="imp-sum err";sum.textContent="Aucun prix n'a pu être lu dans ce fichier.";}
@@ -3506,7 +3552,7 @@ $("#ptBody").addEventListener("change",async e=>{
 $("#ptBody").addEventListener("click",async e=>{
   if(!PD) return;
   if(e.target.closest("[data-pclose]")){$("#portalDlg").close();return;}
-  if(e.target.closest("[data-pxl]")){exportBpu(PD.id);return;}
+  if(e.target.closest("[data-pxl]")){exportBpu(PD.id,docInfoDefault());return;}
   if(e.target.closest("#pSubmit")){
     const en=ents().find(x=>x.id===PD.id), t=portalTotals(); if(!en||!PD.devis) return;
     if(t.miss&&!await ask(`Il manque <b>${t.miss}</b> prix unitaire${t.miss>1?"s":""} sur des articles chiffrés. Soumettre l'offre en l'état ?`,"Soumettre quand même")) return;

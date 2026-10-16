@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°28** — v0.28.0 — 2026-10-16 — Enregistrement plus robuste (Dropbox), date et version à l'export CCTP/BPU, nom de l'entreprise saisissable dans le BPU
 - **n°27** — v0.27.0 — 2026-10-15 — CCTP : suppression du bandeau Remi Thollet Architecte, filets d'en-tête et de pied plus fins
 - **n°26** — v0.26.0 — 2026-10-15 — CCTP : bandeau d'en-tête affiné, architecte présenté comme syndic et immeuble sur la page de garde
 - **n°25** — v0.25.0 — 2026-10-15 — Consultation : plus de tableau BPU, exports CCTP/BPU, dépôt des offres dans Dropbox 03 - RETOUR ENTREPRISES
