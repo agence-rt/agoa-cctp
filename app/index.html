@@ -74,6 +74,12 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 
 /* ---------- Rédaction ---------- */
 .redac{display:grid;grid-template-columns:var(--treeW,320px) minmax(470px,1.1fr) var(--prevW,minmax(0,.8fr));gap:16px;align-items:start}
+.redac.prev-off{grid-template-columns:var(--treeW,320px) minmax(470px,1fr)}
+.redac.prev-off #preview{display:none}
+.prev-ctl{display:flex;gap:8px;align-items:center}
+.prev-show{position:fixed;right:0;top:170px;z-index:30;writing-mode:vertical-rl;padding:14px 7px;border:1px solid var(--line);border-right:0;border-radius:8px 0 0 8px;background:var(--surface);color:var(--accent);font:inherit;font-weight:600;font-size:13px;cursor:pointer;box-shadow:-2px 2px 8px rgba(0,0,0,.08)}
+.prev-show:hover{background:var(--accent-soft)}
+.redac:not(.prev-off) .prev-show{display:none}
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:6px}
 .tree{max-height:calc(100vh - 120px);overflow:auto;position:sticky;top:12px;display:flex;flex-direction:column}
 .tree-body{padding:8px 0;flex:1}
@@ -123,6 +129,8 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .tree .art.drop-in{outline:1.5px dashed var(--accent);outline-offset:-2px}
 .tree .art.drop-in::after{content:"en sous-article";margin-left:auto;font-size:11px;color:var(--accent);flex:none}
 .tree .art:hover{background:var(--paper)}
+.ms-bar{margin:0 10px 8px;padding:7px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ms-bar b{color:var(--accent)}
+.tree .art.msel{background:var(--accent-soft);border-left-color:var(--accent)}
 .tree .art.cur,.tree summary.cur,.tree .sub.cur{background:var(--accent-soft);border-left-color:var(--accent)}
 .tree .sub{border-left:2px solid transparent}
 .tree .art.is-title .t{font-weight:650}
@@ -670,11 +678,13 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <section class="view redac" id="v-redaction">
     <aside class="pane tree" aria-label="Arborescence du CCTP"><div class="tree-grip" id="treeGrip" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne de gauche" title="Glisser pour élargir ou réduire (double-clic : largeur d'origine)"></div>
       <div class="tree-top" id="treeTop"></div>
+      <div class="ms-bar" id="msBar" hidden></div>
       <div class="tree-body" id="tree"></div>
       <div class="tree-foot"><button class="btn sm" id="addLotBtn">Ajouter un lot</button><button class="btn sm" id="trashBtn">Corbeille</button></div>
     </aside>
     <div class="pane editor" id="editor"></div>
     <aside class="pane preview" id="preview"></aside>
+    <button class="prev-show" id="prevShow" title="Afficher le volet Aperçu">‹ Aperçu</button>
   </section>
 
   <section class="view consult" id="v-consultation" hidden>
@@ -924,7 +934,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.29.0", deploiement: 29};
+const APP = {version: "0.30.0", deploiement: 30};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1323,11 +1333,40 @@ const ovTreeTag=it=>{const h=[];const o=it.ovIn&&ovById(it.ovIn);if(o){const c=o
 const noUnit=ar=>!ar.sub.length&&!isTitle(ar)&&!String(ar.u||"").trim();
 const dotsOf=(ar,noq)=>(noq?`<span class="pdot o" title="Quantité non renseignée"></span>`:"")+(noUnit(ar)?`<span class="pdot r" title="Unité non renseignée"></span>`:"");
 const hlBar=it=>`<div class="hl-bar" role="group" aria-label="Surligner dans la liste de gauche"><span class="flabel">Surlignage dans la liste</span>${HLC.map(([k,n,c])=>`<button type="button" class="hl-sw" data-hl="${k}" style="background:${c}" aria-pressed="${it.hl===k}" title="${n}" aria-label="${n}"></button>`).join("")}<button type="button" class="hl-sw none" data-hl="" aria-pressed="${!it.hl}" title="Aucun surlignage" aria-label="Aucun surlignage">×</button></div>`;
+const msel=new Set(); let msAnchor=null;
+function msBar(){
+  const b=$("#msBar"); if(!b) return;
+  b.hidden=msel.size<2; if(msel.size>=2) b.innerHTML=`<b>${msel.size} articles sélectionnés</b> : glissez l'un d'eux pour les déplacer ensemble <button class="btn sm" id="msClear">Désélectionner</button>`;
+}
+function msClear(){if(!msel.size)return;msel.clear();renderTree();}
+function msRange(toId){
+  const ids=[...tree.querySelectorAll(".art")].map(x=>x.dataset.id), a=ids.indexOf(msAnchor||state.sel), b=ids.indexOf(toId);
+  if(a<0||b<0){msel.clear();msel.add(toId);return;}
+  msel.clear(); ids.slice(Math.min(a,b),Math.max(a,b)+1).forEach(i=>msel.add(i));
+}
+function msTop(){ // articles sélectionnés dans l'ordre d'affichage, sans ceux dont un parent est déjà sélectionné
+  const ids=[...tree.querySelectorAll(".art")].map(x=>x.dataset.id).filter(i=>msel.has(i));
+  return ids.filter(i=>{const f=locate(i);let o=f&&f.owner;while(o&&o.id){if(msel.has(o.id))return false;const g=locate(o.id);o=g&&g.owner;}return true;});
+}
+function moveMany(ids,targetId,pos,nodeCode){
+  const srcs=ids.map(locate).filter(Boolean); if(!srcs.length) return;
+  if(targetId){
+    if(ids.includes(targetId)) return;
+    if(srcs.some(s=>isInside(s.art,targetId))){toast("Un article ne peut pas être déplacé dans ses propres sous-articles");return;}}
+  srcs.forEach(s=>{const k=s.list.indexOf(s.art);if(k>=0)s.list.splice(k,1);});
+  const arts=srcs.map(s=>s.art); let warn=false;
+  if(targetId){const tg=locate(targetId);
+    if(pos==="inside"){warn=lostCost(tg.art);tg.art.sub.push(...arts);}
+    else tg.list.splice(tg.i+(pos==="after"?1:0),0,...arts);}
+  else{const n=findNode(nodeCode); if(!n){return;} n.art.push(...arts);}
+  state.sel=ids[0]; msel.clear(); ids.forEach(i=>msel.add(i)); msAnchor=ids[0]; refresh();
+  toast(`${arts.length} articles déplacés${warn?". Le chiffrage propre de l'article parent n'est plus compté":""}`);
+}
 function renderTree(){
   const cur=locate(state.sel), nc=cur?null:nodeCtx(state.sel), curCh=cur?cur.ch:nc&&nc.ch, curLot=cur?cur.lot:nc&&nc.lot;
   const noq=new Set(missingQty().map(m=>m.ar.id));
   const rows=(list,b,n)=>list.map(ar=>{const has=ar.sub.length>0, op=openIds.has(ar.id);
-    const row=`<div class="art${ar.id===state.sel?" cur":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span></div>`;
+    const row=`<div class="art${ar.id===state.sel?" cur":""}${msel.has(ar.id)?" msel":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span></div>`;
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
@@ -1339,7 +1378,7 @@ function renderTree(){
     });
     h+=`</div></details>`;
   });
-  $("#tree").innerHTML=h; renderTreeTop();
+  $("#tree").innerHTML=h; renderTreeTop(); msBar();
   $("#trashBtn").textContent=state.trash.length?`Corbeille (${state.trash.length})`:"Corbeille";
   const c=$("#tree .cur"); if(c) c.scrollIntoView({block:"nearest"});
 }
@@ -1543,7 +1582,7 @@ function coverHtml(){
     <div class="cv-cols">${card("ARCHITECTE",[{t:C.arch.nom,b:1},{t:C.arch.adresse},{t:C.arch.tel&&"Tél. : "+C.arch.tel},{t:C.arch.web},{t:C.arch.email}].filter(x=>x.t))}${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
 </div>`;
 }
-const prevSeg=()=>`<div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${state.prev===k}">${l}</button>`).join("")}</div>`;
+const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${state.prev===k}">${l}</button>`).join("")}</div><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
 function renderLibPanel(force){
   const el=$("#preview");
   if(!force&&el.querySelector("#plQ")){$("#plTarget").textContent=libTargetText();return;}
@@ -2001,7 +2040,12 @@ $("#preview").addEventListener("click",e=>{
 })();
 
 /* Arborescence : clic, clavier, glisser-déposer */
-const tree=$("#tree"); let dragId=null;
+function setPrevHidden(v,quiet){
+  $("#v-redaction").classList.toggle("prev-off",!!v); try{localStorage.setItem("agoa-prevHidden",v?"1":"");}catch(e){}
+}
+try{setPrevHidden(localStorage.getItem("agoa-prevHidden")==="1");}catch(e){}
+document.addEventListener("click",e=>{if(e.target.closest("#prevHide"))setPrevHidden(true);else if(e.target.closest("#prevShow"))setPrevHidden(false);});
+const tree=$("#tree"); let dragId=null, dragIds=[];
 const focusCur=()=>tree.querySelector(".art.cur")?.focus();
 function setLotTitle(lot,v){const c=lot.children.length===1&&lot.children[0].art?lot.children[0]:null;if(c&&c.titre===lot.titre)c.titre=v;lot.titre=v;}
 function renameNode(k){
@@ -2034,9 +2078,14 @@ $("#treeTop").addEventListener("change",e=>{const c=e.target.closest("[data-lv]"
 $("#treeTop").addEventListener("click",e=>{if(e.target.closest("#chkQty"))openQtyCheck();});
 $("#chkBody").addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(!g)return;$("#chkDlg").close();show("redaction");select(g.dataset.goto);});
 $("#closeChk").onclick=()=>$("#chkDlg").close();
-tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(at){e.stopPropagation();const k=at.dataset.arttg;openIds.has(k)?openIds.delete(k):openIds.add(k);renderTree();return;}const ln=e.target.closest(".lot-name[data-lotnid]");if(ln){e.preventDefault();const k=ln.dataset.lotnid;ln.closest("details").open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const dn=e.target.closest("[data-delnode]");if(dn){e.preventDefault();delNode(dn.dataset.delnode);return;}const nn=e.target.closest(".node-name[data-rennode]");if(nn){e.preventDefault();const k=nn.dataset.rennode;const det=nn.closest("details");if(det)det.open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const nb=e.target.closest("[data-renbtnnode]");if(nb){e.preventDefault();renameNode(nb.dataset.renbtnnode);return;}const rb=e.target.closest("[data-renbtn]");if(rb){renameLot(+rb.dataset.renbtn);return;}const dl=e.target.closest("[data-dellot]");if(dl){delLot(+dl.dataset.dellot);return;}const a=e.target.closest(".art");if(a)select(a.dataset.id);});
+tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(at){e.stopPropagation();const k=at.dataset.arttg;openIds.has(k)?openIds.delete(k):openIds.add(k);renderTree();return;}const ln=e.target.closest(".lot-name[data-lotnid]");if(ln){e.preventDefault();const k=ln.dataset.lotnid;ln.closest("details").open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const dn=e.target.closest("[data-delnode]");if(dn){e.preventDefault();delNode(dn.dataset.delnode);return;}const nn=e.target.closest(".node-name[data-rennode]");if(nn){e.preventDefault();const k=nn.dataset.rennode;const det=nn.closest("details");if(det)det.open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const nb=e.target.closest("[data-renbtnnode]");if(nb){e.preventDefault();renameNode(nb.dataset.renbtnnode);return;}const rb=e.target.closest("[data-renbtn]");if(rb){renameLot(+rb.dataset.renbtn);return;}const dl=e.target.closest("[data-dellot]");if(dl){delLot(+dl.dataset.dellot);return;}const a=e.target.closest(".art");if(a){const id=a.dataset.id;
+  if(e.shiftKey){e.preventDefault();msRange(id);state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
+  if(e.ctrlKey||e.metaKey){e.preventDefault();if(!msel.size&&state.sel&&locate(state.sel))msel.add(state.sel);msel.has(id)?msel.delete(id):msel.add(id);msAnchor=id;state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
+  msel.clear();msAnchor=id;select(id);}});
+document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();});
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&msel.size){msClear();return;}
   const a=e.target.closest(".art"); if(!a) return;
   if(e.key==="Enter"||e.key===" "){e.preventDefault();select(a.dataset.id);focusCur();return;}
   if(!e.altKey) return;
@@ -2045,16 +2094,19 @@ tree.addEventListener("keydown",e=>{
 });
 const clearDrop=()=>tree.querySelectorAll(".drop-before,.drop-after,.drop-in").forEach(x=>x.classList.remove("drop-before","drop-after","drop-in"));
 function zone(t,e){const r=t.getBoundingClientRect(),y=(e.clientY-r.top)/r.height;return y<.28?"before":y>.72?"after":"inside";}
-tree.addEventListener("dragstart",e=>{const a=e.target.closest(".art");if(!a)return;dragId=a.dataset.id;a.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",dragId);});
+tree.addEventListener("dragstart",e=>{const a=e.target.closest(".art");if(!a)return;dragId=a.dataset.id;
+  if(msel.size>1&&msel.has(dragId)){dragIds=msTop();tree.querySelectorAll(".art").forEach(x=>{if(msel.has(x.dataset.id))x.classList.add("dragging");});}
+  else{dragIds=[dragId];if(msel.size){msel.clear();tree.querySelectorAll(".art.msel").forEach(x=>x.classList.remove("msel"));msBar();}}
+  a.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",dragId);});
 tree.addEventListener("dragleave",e=>{if(libDragId&&!tree.contains(e.relatedTarget))clearDrop();});
-tree.addEventListener("dragend",()=>{dragId=null;clearDrop();tree.querySelectorAll(".dragging").forEach(x=>x.classList.remove("dragging"));});
+tree.addEventListener("dragend",()=>{dragId=null;dragIds=[];clearDrop();tree.querySelectorAll(".dragging").forEach(x=>x.classList.remove("dragging"));});
 tree.addEventListener("dragover",e=>{
   if(libDragId){const t=e.target.closest(".art,[data-node],summary.lot");if(!t)return;e.preventDefault();e.dataTransfer.dropEffect="copy";clearDrop();
     if(t.classList.contains("art")&&libFind(libDragId)?.kind==="article")t.classList.add("drop-"+({before:"before",after:"after",inside:"in"})[zone(t,e)]);
     else t.classList.add("drop-in");return;}
   if(!dragId) return; const t=e.target.closest(".art,[data-node]"); if(!t) return; e.preventDefault(); clearDrop();
   if(t.dataset.node){t.classList.add("drop-in");return;}
-  if(t.dataset.id===dragId) return;
+  if(dragIds.includes(t.dataset.id)) return;
   t.classList.add("drop-"+({before:"before",after:"after",inside:"in"})[zone(t,e)]);
 });
 tree.addEventListener("drop",e=>{
@@ -2064,7 +2116,8 @@ tree.addEventListener("drop",e=>{
     else libDropAt(id,{lotNid:t.closest("details").dataset.oid});
     return;}
   if(!dragId) return; const t=e.target.closest(".art,[data-node]"); if(!t) return; e.preventDefault();
-  const id=dragId; dragId=null; clearDrop();
+  const id=dragId, ids=dragIds.length?dragIds:[dragId]; dragId=null; dragIds=[]; clearDrop();
+  if(ids.length>1){if(t.dataset.node) moveMany(ids,null,null,t.dataset.node); else moveMany(ids,t.dataset.id,zone(t,e));return;}
   if(t.dataset.node) move(id,null,null,t.dataset.node); else move(id,t.dataset.id,zone(t,e));
 });
 

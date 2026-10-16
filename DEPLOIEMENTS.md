@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°30** — v0.30.0 — 2026-10-16 — v0.30: aperçu masquable, correction orthographique clic droit, sélection multiple Maj/Ctrl
 - **n°29** — v0.29.0 — 2026-10-16 — Bouton Options (roue crantée) et import d'un devis PDF ou Excel pour reconstituer l'arborescence
 - **n°28** — v0.28.0 — 2026-10-16 — Enregistrement plus robuste (Dropbox), date et version à l'export CCTP/BPU, nom de l'entreprise saisissable dans le BPU
 - **n°27** — v0.27.0 — 2026-10-15 — CCTP : suppression du bandeau Remi Thollet Architecte, filets d'en-tête et de pied plus fins

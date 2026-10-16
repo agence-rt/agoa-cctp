@@ -443,6 +443,19 @@ function createWindow() {
     autoHideMenuBar: false, backgroundColor: "#EEF0ED", show: false,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false }
   });
+  // correction orthographique en français + menu clic droit (suggestions, ajout au dictionnaire, copier/coller)
+  try { win.webContents.session.setSpellCheckerLanguages(["fr"]); } catch {}
+  win.webContents.on("context-menu", (e, p) => {
+    const wc = win.webContents, items = [];
+    if (p.misspelledWord) {
+      (p.dictionarySuggestions || []).slice(0, 6).forEach(s => items.push({ label: s, click: () => wc.replaceMisspelling(s) }));
+      if (!(p.dictionarySuggestions || []).length) items.push({ label: "Aucune suggestion", enabled: false });
+      items.push({ type: "separator" }, { label: "Ajouter « " + p.misspelledWord + " » au dictionnaire", click: () => wc.session.addWordToSpellCheckerDictionary(p.misspelledWord) }, { type: "separator" });
+    }
+    if (p.isEditable) items.push({ role: "undo", label: "Annuler" }, { role: "redo", label: "Rétablir" }, { type: "separator" }, { role: "cut", label: "Couper" }, { role: "copy", label: "Copier" }, { role: "paste", label: "Coller" }, { role: "selectAll", label: "Tout sélectionner" });
+    else if (p.selectionText) items.push({ role: "copy", label: "Copier" });
+    if (items.length) Menu.buildFromTemplate(items).popup({ window: win });
+  });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto):/i.test(url)) shell.openExternal(url); return { action: "deny" }; });
   win.webContents.on("will-navigate", (e, url) => { if (!url.startsWith("file:")) { e.preventDefault(); if (/^(https?|mailto):/i.test(url)) shell.openExternal(url); } });
   win.webContents.on("did-finish-load", () => { ready = true; if (pendingFile) { win.webContents.send("open-file", pendingFile.name, pendingFile.text, pendingFile.file); pendingFile = null; } });

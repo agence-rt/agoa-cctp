@@ -1,1 +1,1 @@
-Déploiement n°29 — Bouton Options (roue crantée) et import d'un devis PDF ou Excel pour reconstituer l'arborescence
+Déploiement n°30 — v0.30: aperçu masquable, correction orthographique clic droit, sélection multiple Maj/Ctrl
