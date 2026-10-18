@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°37** — v0.37.0 — 2026-10-18 — Mise à jour
 - **n°36** — v0.36.0 — 2026-10-18 — Mise à jour
 - **n°35** — v0.35.0 — 2026-10-18 — Mise à jour
 - **n°34** — v0.34.0 — 2026-10-18 — v0.34: surveillance du dossier retour Dropbox, import automatique des offres et mail à etudes@remithollet.fr

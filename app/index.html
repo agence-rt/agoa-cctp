@@ -602,6 +602,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #cmpTable tr.xc td{color:var(--muted);text-decoration:line-through}
 #cmpTable tr.xc td.c1{text-decoration:none}
 #cmpTable td.n{text-align:right;font-variant-numeric:tabular-nums}
+#cmpTable td.gb,#cmpTable th.gb{background:var(--gband,#f0f0ee)}
+#cmpTable td.cg1,#cmpTable th.cg1,#cmpTable th.ent.cg{border-left:2px solid var(--gline,#c9c9c4)}
+#cmpTable td.cg:last-child,#cmpTable th.cg:last-child{border-right:2px solid var(--gline,#c9c9c4)}
 #cmpTable td.up{background:var(--ochre-soft);color:var(--ochre);font-weight:650}
 #cmpTable td.dn{background:#E6EEF8;color:#1d4f8c;font-weight:650}
 #cmpTable td.miss{color:var(--ochre)}
@@ -954,7 +957,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.36.0", deploiement: 36};
+const APP = {version: "0.37.0", deploiement: 37};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2694,11 +2697,13 @@ function buildSynthPdf(J,info){
   const fixed=cCode+cU+cQ+cMp+cMm, cDes=Math.max(38,W-fixed-n*(cEp+cEm));
   const xs={code:L,des:L+cCode,u:L+cCode+cDes,q:L+cCode+cDes+cU};
   const xm=L+cCode+cDes+cU+cQ; const xe=j=>xm+cMp+cMm+j*(cEp+cEm);
+  const GB=[240,240,238], GL=[190,190,185]; const bandH=(yy,h)=>{E.forEach((e,j)=>{if(j%2){fill(GB);doc.rect(xe(j),yy,cEp+cEm,h,"F");}});};
+  const sepV=(yy,h)=>{doc.setDrawColor(GL[0],GL[1],GL[2]);doc.setLineWidth(0.25);E.forEach((e,j)=>{doc.line(xe(j),yy,xe(j),yy+h);});doc.line(xe(n-1)+cEp+cEm,yy,xe(n-1)+cEp+cEm,yy+h);};
   const gh=()=>{fill(PALE);doc.rect(L,y,W,showPU?11:7,"F");font("bold",7.6,RED);
     const t1=showPU?y+4.3:y+4.6; doc.text("N°",xs.code+1,t1);doc.text("Désignation",xs.des+1,t1);doc.text("U",xs.u+cU-1,t1,{align:"right"});doc.text("Qté",xs.q+cQ-1,t1,{align:"right"});
     E.forEach((e,j)=>{doc.text(wa(doc.splitTextToSize(wa(e.nom),cEp+cEm-1)[0]),xe(j)+(cEp+cEm)/2,t1,{align:"center"});});
     if(showPU){const t2=y+8.8;E.forEach((e,j)=>{doc.text("PU",xe(j)+cEp-1,t2,{align:"right"});doc.text("Montant",xe(j)+cEp+cEm-1,t2,{align:"right"});});}
-    y+=showPU?11:7;};
+    sepV(y,showPU?11:7); y+=showPU?11:7;};
   gh();
   const gneed=h=>{if(y+h>B){np();gh();}};
   M.lots.forEach(({l,li,rows})=>{
@@ -2709,7 +2714,7 @@ function buildSynthPdf(J,info){
       font(w.k==="ch"?"bold":w.k==="par"?"bold":"normal",fs);
       const lines=doc.splitTextToSize(wa(w.o.titre),cDes-ind-2).slice(0,2), h=Math.max(5,lines.length*3.3+1.8);
       gneed(h);
-      if(w.k==="ch"){fill(PALE);doc.rect(L,y,W,h,"F");}
+      if(w.k==="ch"){fill(PALE);doc.rect(L,y,W,h,"F");} else bandH(y,h);
       font(w.k==="art"?"normal":"bold",fs,w.k==="ch"?RED:INK);
       doc.text(wa(w.o.code||""),xs.code+1,y+3.5);
       lines.forEach((t,i)=>doc.text(t,xs.des+1+ind,y+3.5+i*3.3));
@@ -2723,7 +2728,7 @@ function buildSynthPdf(J,info){
       }else if(w.k==="ch"&&w.sub){
         font("bold",fs,RED);
         E.forEach((e,j)=>doc.text(nf(w.sub.e[e.id].ht),xe(j)+cEp+cEm-1,y+3.5,{align:"right"}));}
-      doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.1);doc.line(L,y+h,R,y+h);y+=h;});
+      sepV(y,h);doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.1);doc.line(L,y+h,R,y+h);y+=h;});
   });
   y+=2; gneed(10); font("bold",8.5,RED); doc.text("TOTAL HT du marché de base",xs.des+1,y+4);
   E.forEach((e,j)=>doc.text(nf(T0[e.id]),xe(j)+cEp+cEm-1,y+4,{align:"right"})); y+=7;
@@ -3461,6 +3466,16 @@ function anaMove(li,ri,dli,dri){
   blk.forEach(r=>{r.d=Math.max(0,r.d+delta);});
   D.rows.splice(dri,0,...blk); return true;
 }
+function cmpBands(tbl,n){ // sépare visuellement les entreprises : fond gris léger alterné + trait de séparation
+  if(!n)return;
+  tbl.querySelectorAll("tr").forEach(tr=>{const c=[...tr.children];
+    if(tr.parentElement.tagName==="THEAD"){
+      if(c.length&&c[0].classList.contains("c1")){const L=c.filter(x=>x.classList.contains("ent")&&!x.classList.contains("mo"));L.forEach((x,i)=>{x.classList.add("cg");if(i%2)x.classList.add("gb");});}
+      else{const L=c.slice(-2*n);if(L.length===2*n)L.forEach((x,i)=>{x.classList.add("cg");if(Math.floor(i/2)%2)x.classList.add("gb");if(i%2===0)x.classList.add("cg1");});}
+      return;}
+    const L=c.slice(-2*n); if(L.length<2*n)return;
+    L.forEach((x,i)=>{const g=Math.floor(i/2);x.classList.add("cg");if(g%2)x.classList.add("gb");if(i%2===0)x.classList.add("cg1");});});
+}
 function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
@@ -3530,7 +3545,7 @@ function renderAnalyse(){
   const foot=`<tfoot>${ovFrameRows(frow("Total HT",T,"")+(V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):"")+tvaRows+frow("Total TTC",T,"T","tot"),BLUEC,"bot")}${ovFoot(M,Ev,E)}
     <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
     <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
-  tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${ovFrameRows(body,BLUEC,"top")}</tbody>`+foot;
+  tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${ovFrameRows(body,BLUEC,"top")}</tbody>`+foot; cmpBands(tbl,Ev.length);
   leg.innerHTML=det?`${col?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span>`:""}<span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
     :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
   const sc2=document.querySelector("#v-analyse .scroll"); if(sc2){sc2.scrollTop=st[0];sc2.scrollLeft=st[1];}
