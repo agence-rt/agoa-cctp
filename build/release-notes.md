@@ -1,1 +1,1 @@
-Déploiement n°31 — v0.31: annuler/rétablir, journal des modifications, sauvegardes versionnées, contrôle de l'affaire, recherche bibliothèque
+Déploiement n°32 — v0.32: import de devis par niveaux (lot/chapitre/sous-chapitre), bilan des offres avec alertes

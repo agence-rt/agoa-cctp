@@ -350,6 +350,8 @@ mark{background:#fff176;color:inherit;padding:0}
 #optBtn{display:inline-flex;align-items:center;gap:7px}
 .dev-imp{margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
 .dev-tree{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:6px 0;font-size:13px}
+.ana-sum{margin:0 0 10px}.ana-sum table{border-collapse:collapse;width:100%;font-size:13px}.ana-sum th,.ana-sum td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}.ana-sum th:first-child,.ana-sum td:first-child{text-align:left}.ana-sum th{font-weight:600;color:var(--muted);font-size:12px}
+.ana-sum .rk1 td:first-child{font-weight:700}.ana-sum .al{color:#9a3412;font-size:12px;display:block;text-align:left}.ana-sum .al.low{color:#1d4f8c}.ana-sum .opt{display:block;color:var(--muted);font-size:12px;text-align:left}.ana-sum h4{margin:6px 0}.ana-sum label{font-size:12.5px;color:var(--muted)}.ana-sum input{width:54px}
 .dv-r{display:block;padding:3px 12px}.dv-l{font-weight:700;color:var(--accent);background:var(--accent-soft);margin-top:6px;cursor:pointer}.dv-l input{margin-right:6px}
 .dv-c{font-weight:600}.dv-t{color:var(--accent)}.dv-a{color:var(--ink)}.dv-n{float:right;color:var(--muted);font-size:12px}
 .dev-opts{display:grid;gap:6px;margin:12px 0 0;font-size:13.5px}
@@ -727,6 +729,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
         <button class="btn" id="impBtn">Importer un BPU complété</button>
       </div>
       <div class="ana-bar" id="anaBar"></div>
+      <div class="ana-sum" id="anaSum"></div>
       <div class="scroll"><table id="cmpTable"></table></div>
       <div class="legend" id="anaLegend"></div>
     </div>
@@ -827,6 +830,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
     <label><input type="radio" name="devMode" value="add"> Ajouter à la suite des lots existants</label>
     <label><input type="radio" name="devMode" value="replace"> Remplacer l'arborescence actuelle (les lots actuels vont dans la corbeille)</label>
     <label><input type="checkbox" id="devPrix" checked> Reprendre les prix du devis comme chiffrage estimatif</label>
+    <label>Le premier niveau du devis correspond à : <select id="devLvl"><option value="auto">Détection automatique</option><option value="lot">Des lots (puis chapitres, puis sous-chapitres)</option><option value="chap">Des chapitres (un seul lot)</option><option value="ssch">Des sous-chapitres (un seul lot, un seul chapitre)</option></select></label>
   </div>
   <div class="dlg-act"><button class="btn" id="devCancel">Annuler</button><button class="btn primary" id="devOk">Importer</button></div>
 </dialog>
@@ -942,7 +946,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.31.0", deploiement: 31};
+const APP = {version: "0.32.0", deploiement: 32};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3129,6 +3133,23 @@ function anaModel(){
   });
   return M;
 }
+function bilanData(M){
+  const E=M.E, T=anaSums(M,()=>true), est=T.est, meds=E.map(e=>T[e.id]).filter(v=>v>0), med=meds.length>1?medianOf(meds):null, lim=M.A.seuilOffre||20;
+  const rows=E.map(e=>{const ht=T[e.id], notes=Object.values((e.offre&&e.offre.notes)||{}).filter(x=>String(x).trim()).length;
+    const opts=ovl().map(o=>{const O=M.ov[o.id],x=O&&O.e[e.id];return x&&(x.in||x.base)?{lab:ovShort(o),net:x.in-x.base}:null;}).filter(Boolean);
+    return {e,ht,ttc:T[e.id+"T"],ecart:ht-est,pct:est?(ht/est-1)*100:null,vsMed:med?(ht/med-1)*100:null,miss:M.miss[e.id]||0,flags:M.flags[e.id]||0,notes,opts,alert:[],rank:null};});
+  rows.filter(r=>r.ht>0&&!r.miss).sort((a,b)=>a.ht-b.ht).forEach((r,i)=>r.rank=i+1);
+  rows.forEach(r=>{if(r.pct!=null){if(r.pct<=-lim)r.alert.push(["low","Offre anormalement basse : vérifier la complétude et les prestations"]);else if(r.pct>=lim)r.alert.push(["high","Offre nettement supérieure à l'estimation"]);}
+    if(r.miss)r.alert.push(["high",`${r.miss} prix manquant${r.miss>1?"s":""} : offre incomplète, total sous-évalué`]);});
+  return {rows,est,estT:T.estT,med,lim,T};
+}
+function anaBilanHtml(M){
+  const B=bilanData(M), sg=n=>(n>=0?"+":"−")+eur(Math.abs(n)), pc=n=>n==null?"–":(n>=0?"+":"−")+fmt(Math.abs(n),1)+" %";
+  return `<h4>Bilan des offres <label style="margin-left:12px">Alerte à ± <input type="number" id="anaSeuilO" min="1" max="200" value="${B.lim}"> % de l'estimation</label></h4>
+  <table><thead><tr><th>Entreprise</th><th>Rang</th><th>Total HT</th><th>Total TTC</th><th>Écart / estimation (${eur(B.est)} HT)</th><th>vs médiane</th><th>Prix hors seuil</th><th>Prix manquants</th><th>Annotations</th></tr></thead><tbody>
+  ${B.rows.map(r=>`<tr class="${r.rank===1?"rk1":""}"><td>${esc(r.e.nom)}${state.retenue===r.e.id?" ★":""}${r.opts.length?`<span class="opt">${r.opts.map(o=>`${esc(o.lab)} : ${sg(o.net)}`).join(" · ")}</span>`:""}${r.alert.map(a=>`<span class="al ${a[0]}">⚠ ${esc(a[1])}</span>`).join("")}</td>
+   <td>${r.rank?r.rank+(r.rank===1?"er":"e"):(r.miss?"incomplète":"–")}</td><td>${eur(r.ht)}</td><td>${eur(r.ttc)}</td><td>${sg(r.ecart)} (${pc(r.pct)})</td><td>${pc(r.vsMed)}</td><td>${r.flags||"–"}</td><td>${r.miss||"–"}</td><td>${r.notes||"–"}</td></tr>`).join("")}</tbody></table>`;
+}
 function anaOvOnly(rows,i){ // ligne réservée aux options : à sortir du tableau du marché de base
   const w=rows[i]; if(w.leaf) return !!ovOf(w.o).in;
   let any=false,base=false; for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++){if(rows[j].leaf){any=true;if(!ovOf(rows[j].o).in){base=true;break;}}}
@@ -3173,8 +3194,8 @@ function anaMove(li,ri,dli,dri){
 function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
-  if(!offers().length){bar.innerHTML="";leg.innerHTML="";tbl.innerHTML=`<tbody><tr><td class="hint" style="padding:18px;background:transparent;white-space:normal">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr></tbody>`;return;}
-  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id)); const col=A.colors!==false;
+  if(!offers().length){bar.innerHTML="";leg.innerHTML="";$("#anaSum").innerHTML="";tbl.innerHTML=`<tbody><tr><td class="hint" style="padding:18px;background:transparent;white-space:normal">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr></tbody>`;return;}
+  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; $("#anaSum").innerHTML=anaBilanHtml(M); A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id)); const col=A.colors!==false;
   const sc=document.querySelector("#v-analyse .scroll"), st=sc?[sc.scrollTop,sc.scrollLeft]:[0,0];
   bar.innerHTML=`<div class="seg" role="group" aria-label="Affichage"><button data-anamode="detail" aria-pressed="${det}">Détail du BPU</button><button data-anamode="lot" aria-pressed="${!det}">Par lot et chapitre</button></div>
     <span class="sep"></span>
@@ -3284,6 +3305,7 @@ function renderAnalyse(){
     if(t.dataset.lotch!==undefined){A.lots[+t.dataset.lotch].charge=t.value;redo();return;}
     if(t.dataset.acol){A.hide=A.hide||[];const k=t.dataset.acol;if(k==="moe")A.hideMoe=!t.checked;else{A.hide=A.hide.filter(x=>x!==k);if(!t.checked)A.hide.push(k);}
       const d=document.querySelector(".ana-cols"),op=d&&d.open;save();renderAnalyse();const d2=document.querySelector(".ana-cols");if(d2&&op)d2.open=true;return;}
+    if(t.id==="anaSeuilO"){A.seuilOffre=Math.max(1,parseFloat(t.value)||20);redo();return;}
     if(t.id==="anaCol"){A.colors=t.checked;redo();return;}
     if(t.id==="anaOnly"){A.only=t.checked;redo();return;}
   });
@@ -3915,10 +3937,13 @@ function dvBuild(sheets,objet){
     rows.forEach(r=>{
       if(dvSkip(r.label)&&!r.code) return;
       const item=r.num&&!(r.q==null&&r.pu==null&&r.tot==null);
+      const lm=!item&&String(r.label).match(/^\s*lot\s*(?:n\s*°?\s*)?(\d+)\s*[-–:.)]*\s*(.+)$/i);
+      if(lm&&!(r.code&&r.code.includes("."))){const n={titre:lm[2].trim(),texte:"",kids:[],d:1,priced:false,isLot:true};root.kids.push(n);stack.length=1;stack.push(n);last=n;return;}
       if(!r.code&&!item){ // texte seul : titre en majuscules, sinon suite de description
         if(isCaps(r.label)&&r.label.length<80&&!hasCodes){const n={titre:r.label,texte:"",kids:[],d:1,priced:false};root.kids.push(n);stack.length=1;stack.push(n);last=n;return;}
         if(last){last.texte=(last.texte?last.texte+"\n":"")+r.label;}return;}
-      let d=r.code?r.code.split(/[.\-]/).length:null;
+      const off=stack[1]&&stack[1].isLot?1:0;
+      let d=r.code?r.code.split(/[.\-]/).length+off:null;
       if(d==null){const top=stack[stack.length-1];d=(top.priced?top.d:top.d+1);}
       while(stack.length>1&&stack[stack.length-1].d>=d)stack.pop();
       const parent=stack[stack.length-1], n={titre:r.label,texte:"",kids:[],d,priced:!!item,u:r.u,q:r.q,pu:r.pu,tot:r.tot};
@@ -3933,7 +3958,7 @@ function dvBuild(sheets,objet){
     return {id:nid(),code:"",titre:dvTitleCase(n.titre),type:"titre",texte:n.texte||"",loc:"",lignes:[],sub:n.kids.map(k=>conv(k,prix)),u:"ens",pu:0,tva:null,qman:null};};
   return {tree:sheets.map(s=>({name:s.name,root:treeOf(s.rows)})),conv,objet};
 }
-function dvLots(B,prix){
+function dvLots(B,prix,mode){
   const out=[]; const mkCh=(n,list)=>({titre:dvTitleCase(n.titre),texte:n.texte||"",art:list.length?list:[blank()]});
   const mkLot=(titre,texte,chs)=>({code:"",titre:dvTitleCase(titre),texte:texte||"",charge:"Commune",children:chs.length?chs:[{titre:"Prestations",texte:"",art:[blank()]}]});
   const chaptersOf=(parents,prix)=>{const chs=[]; let loose=[];
@@ -3944,9 +3969,11 @@ function dvLots(B,prix){
     flush(); return chs;};
   B.tree.forEach(sh=>{const roots=sh.root.kids; if(!roots.length) return;
     if(B.tree.length>1){out.push(mkLot(sh.name||B.objet||"Travaux","",chaptersOf(roots,prix)));return;}
+    if(mode==="chap"){out.push(mkLot(B.objet||"Travaux","",chaptersOf(roots,prix)));return;}
+    if(mode==="ssch"){out.push(mkLot(B.objet||"Travaux","",[{titre:"Prestations",texte:"",art:roots.map(r=>B.conv(r,prix))}]));return;}
     const hasSubTitles=roots.some(r=>r.kids.some(k=>!k.priced||k.kids.length));
     const rootsAreChapters=roots.every(r=>r.kids.length===0||r.kids.every(k=>k.priced&&!k.kids.length));
-    if(hasSubTitles&&!rootsAreChapters){roots.forEach(r=>{if(r.priced&&!r.kids.length){out.push(mkLot(B.objet||"Travaux","",[{titre:"Prestations",texte:"",art:[B.conv(r,prix)]}]));return;}
+    if(mode==="lot"||(mode!=="chap"&&hasSubTitles&&!rootsAreChapters)){roots.forEach(r=>{if(r.priced&&!r.kids.length){out.push(mkLot(B.objet||"Travaux","",[{titre:"Prestations",texte:"",art:[B.conv(r,prix)]}]));return;}
         out.push(mkLot(r.titre,r.texte,chaptersOf(r.kids,prix)));});}
     else out.push(mkLot(B.objet||"Travaux","",chaptersOf(roots,prix)));});
   return out;
@@ -3956,9 +3983,9 @@ const dvCount=lots=>{let c=0,a=0;const va=l=>l.forEach(x=>{if(x.sub.length||isTi
 function dvTreeHtml(lots){
   let n=0,html=""; const MAX=500;
   const art=(x,d)=>{if(n++>=MAX)return;const t=x.sub.length||isTitle(x);
-    html+=`<div class="dv-r ${t?"dv-t":"dv-a"}" style="padding-left:${22+d*16}px">${t?"▸ ":""}${esc(x.titre)}${t?"":`<span class="dv-n">${x.qman!=null?fmt(x.qman,x.qman%1?2:0)+" "+esc(x.u):""}${x.pu?" · "+money(x.pu):""}</span>`}</div>`;x.sub.forEach(s=>art(s,d+1));};
+    html+=`<div class="dv-r ${t?"dv-t":"dv-a"}" style="padding-left:${22+d*16}px">${t?(d===2?"▸ Sous-chapitre – ":"▸ "):""}${esc(x.titre)}${t?"":`<span class="dv-n">${x.qman!=null?fmt(x.qman,x.qman%1?2:0)+" "+esc(x.u):""}${x.pu?" · "+money(x.pu):""}</span>`}</div>`;x.sub.forEach(s=>art(s,d+1));};
   lots.forEach((l,i)=>{html+=`<label class="dv-r dv-l"><input type="checkbox" data-devlot="${i}" checked> Lot ${i+1} – ${esc(l.titre)}</label>`;
-    l.children.forEach(ch=>{html+=`<div class="dv-r dv-c" style="padding-left:22px">${esc(ch.titre)}</div>`;ch.art.forEach(a=>art(a,2));});});
+    l.children.forEach((ch,ci)=>{html+=`<div class="dv-r dv-c" style="padding-left:22px">Chapitre ${i+1}.${ci+1} – ${esc(ch.titre)}</div>`;ch.art.forEach(a=>art(a,2));});});
   const tot=dvCount(lots).arts; if(n>=MAX) html+=`<div class="dv-r hint" style="padding-left:22px">… et d'autres lignes (aperçu limité)</div>`;
   return html;
 }
@@ -3969,17 +3996,18 @@ async function devAnalyse(file){
   try{sheets=ext==="pdf"?await pdfEntries(file):await xlsxEntries(file);}
   catch(e){console.error(e);toast(e&&e.message&&!/^(pdfjs|xlsx)$/.test(e.message)?e.message:"Ce fichier n'a pas pu être lu.");return;}
   const B=dvBuild(sheets,(state.op&&state.op.objet)||"");
-  const prix=true, lots=dvLots(B,prix); const c=dvCount(lots);
+  const prix=true, lots=dvLots(B,prix,"auto"); const c=dvCount(lots);
   if(!c.arts){toast("Aucune ligne de devis n'a été reconnue dans ce fichier.");return;}
   devSrc=name; devLots={B,lots};
   $("#devInfo").innerHTML=`<b>${esc(name)}</b> : ${c.lots} lot${c.lots>1?"s":""}, ${c.ch} chapitre${c.ch>1?"s":""}, ${c.arts} article${c.arts>1?"s":""} reconnus. Vérifiez la structure avant d'importer ; vous pourrez tout retoucher ensuite dans la rédaction.`;
-  $("#devPrix").checked=true; $("#devTree").innerHTML=dvTreeHtml(lots);
+  $("#devPrix").checked=true; $("#devLvl").value="auto"; $("#devTree").innerHTML=dvTreeHtml(lots);
   const empty=state.data.length===1&&countArts(state.data[0])<=1&&/^Nouvel article$/i.test((firstList()||[{}])[0].titre||"");
   document.querySelector(`input[name="devMode"][value="${empty?"replace":"add"}"]`).checked=true;
   $("#devDlg").showModal();
 }
-function devRefreshTree(){ if(!devLots) return; devLots.lots=dvLots(devLots.B,$("#devPrix").checked); $("#devTree").innerHTML=dvTreeHtml(devLots.lots); }
+function devRefreshTree(){ if(!devLots) return; devLots.lots=dvLots(devLots.B,$("#devPrix").checked,$("#devLvl").value); $("#devTree").innerHTML=dvTreeHtml(devLots.lots); }
 $("#devPrix").addEventListener("change",devRefreshTree);
+$("#devLvl").addEventListener("change",devRefreshTree);
 $("#devCancel").onclick=()=>{$("#devDlg").close();devLots=null;};
 $("#devOk").onclick=async()=>{
   if(!devLots) return;

@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°32** — v0.32.0 — 2026-10-18 — v0.32: import de devis par niveaux (lot/chapitre/sous-chapitre), bilan des offres avec alertes
 - **n°31** — v0.31.0 — 2026-10-18 — v0.31: annuler/rétablir, journal des modifications, sauvegardes versionnées, contrôle de l'affaire, recherche bibliothèque
 - **n°30** — v0.30.0 — 2026-10-16 — v0.30: aperçu masquable, correction orthographique clic droit, sélection multiple Maj/Ctrl
 - **n°29** — v0.29.0 — 2026-10-16 — Bouton Options (roue crantée) et import d'un devis PDF ou Excel pour reconstituer l'arborescence
