@@ -1,1 +1,1 @@
-Déploiement n°32 — v0.32: import de devis par niveaux (lot/chapitre/sous-chapitre), bilan des offres avec alertes
+Déploiement n°33 — v0.33: synthèse PDF pour les copropriétaires (tableau par chapitre, note sur la consultation, comparatif global)
