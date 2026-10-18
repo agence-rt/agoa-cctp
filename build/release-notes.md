@@ -1,1 +1,1 @@
-Déploiement n°30 — v0.30: aperçu masquable, correction orthographique clic droit, sélection multiple Maj/Ctrl
+Déploiement n°31 — v0.31: annuler/rétablir, journal des modifications, sauvegardes versionnées, contrôle de l'affaire, recherche bibliothèque

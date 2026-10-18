@@ -59,7 +59,7 @@ nav.steps button[aria-current="page"] i{background:var(--accent);border-color:va
 .total strong{font-size:18px;font-weight:650}
 
 main{padding:16px 18px 40px}
-body.is-home nav.steps,body.is-home #optBtn,body.is-home #saveBtn,body.is-home .total,body.is-home #homeBtn{display:none}
+body.is-home .undo-grp,body.is-home nav.steps,body.is-home #optBtn,body.is-home #saveBtn,body.is-home .total,body.is-home #homeBtn{display:none}
 .home{max-width:1180px;margin:0 auto}
 .home-tools{display:flex;gap:8px;flex-wrap:wrap}
 .home-tools input{width:min(340px,70vw);background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:8px 10px}
@@ -441,6 +441,8 @@ dialog.lib{width:min(1100px,96vw)}
 .lib-2 input#lbQ{text-align:right}
 .lib-detail input.money{text-align:right}
 @media (max-width:820px){.lib-body{grid-template-columns:1fr;height:auto}}
+.jr{padding:8px 0;border-bottom:1px solid var(--line)}.jr ul{margin:4px 0 0 18px;padding:0;font-size:13px}.jr-list{max-height:60vh;overflow:auto}.chk-row .btn{margin-left:auto}
+.undo-grp{display:inline-flex;gap:2px}.undo-grp .btn{padding:6px 10px;font-size:16px;line-height:1}.undo-grp .btn:disabled{opacity:.35;cursor:default}
 #saveBtn.dirty{border-color:var(--ochre);color:var(--ochre)}
 #saveBtn.dirty::after{content:" •"}
 .pl-top{padding:10px 14px;border-bottom:1px solid var(--line);display:grid;gap:4px}
@@ -654,6 +656,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
     <button data-view="analyse"><i>3</i><span>Analyse des offres</span></button>
     <button data-view="synthese"><i>4</i><span>Synthèse</span></button>
   </nav>
+  <span class="undo-grp"><button class="btn" id="undoBtn" title="Annuler (Ctrl+Z)" aria-label="Annuler" disabled>↶</button><button class="btn" id="redoBtn" title="Rétablir (Ctrl+Y)" aria-label="Rétablir" disabled>↷</button></span>
   <button class="btn" id="saveBtn" title="Enregistrer le fichier de l'affaire (.cctp)">Enregistrer</button>
   <button class="btn" id="libBtn">Bibliothèque</button>
   <button class="btn" id="optBtn" title="Options de l'opération et import d'un devis"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span></button>
@@ -805,10 +808,15 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <div class="dlg-act" style="justify-content:space-between"><span style="display:flex;gap:8px"><button class="btn sm" data-ovadd="option">Ajouter une option</button><button class="btn sm" data-ovadd="variante">Ajouter une variante</button></span><button class="btn primary" id="ovClose">Fermer</button></div>
 </dialog>
 
-<dialog id="chkDlg" aria-labelledby="chkTitle">
-  <h3 id="chkTitle">Vérification des quantités</h3>
+<dialog id="chkDlg" aria-labelledby="chkTitle" style="width:min(720px,94vw)">
+  <h3 id="chkTitle">Contrôle de l'affaire</h3>
   <div id="chkBody"></div>
-  <div class="dlg-act"><button class="btn" id="closeChk">Fermer</button></div>
+  <div class="dlg-act"><button class="btn primary" id="chkGo" hidden>Exporter quand même</button><button class="btn" id="closeChk">Fermer</button></div>
+</dialog>
+<dialog id="hisDlg" aria-labelledby="hisTitle" style="width:min(720px,94vw);padding:22px 24px">
+  <h3 id="hisTitle">Historique</h3>
+  <div id="hisBody"></div>
+  <div class="dlg-act"><button class="btn" id="hisClose">Fermer</button></div>
 </dialog>
 
 <dialog id="devDlg" aria-labelledby="devT" style="width:min(780px,94vw);padding:22px 24px">
@@ -934,7 +942,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.30.0", deploiement: 30};
+const APP = {version: "0.31.0", deploiement: 31};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1042,7 +1050,126 @@ function ovSumsOver(arts){const r={};ovl().forEach(o=>r[o.id]={in:0,base:0});
   v(arts);return r;}
 function ovSums(){const all=[];state.data.forEach(l=>{const w=n=>{all.push(...(n.art||[]));(n.children||[]).forEach(w);};w(l);});return ovSumsOver(all);}
 function ovUnder(n){const all=[];const w=x=>{all.push(...(x.art||[]));(x.children||[]).forEach(w);};w(n);return ovSumsOver(all);}
-const save=()=>{OVV++;if(state){state.updated=Date.now();markDirty();autoSaveFile();}try{libSchedule();}catch(e){}try{LS.setItem(KEY,JSON.stringify(store))}catch(e){if(!quotaWarned){quotaWarned=true;setTimeout(()=>toast("Stockage du navigateur saturé : enregistrez le fichier de l'affaire pour ne rien perdre."),0);}}};
+const save=()=>{OVV++;if(state){state.updated=Date.now();markDirty();autoSaveFile();try{hOnSave();}catch(e){}}try{libSchedule();}catch(e){}try{LS.setItem(KEY,JSON.stringify(store))}catch(e){if(!quotaWarned){quotaWarned=true;setTimeout(()=>toast("Stockage du navigateur saturé : enregistrez le fichier de l'affaire pour ne rien perdre."),0);}}};
+/* ---------- Historique : annuler / rétablir, journal des modifications, sauvegardes versionnées ---------- */
+const H={undo:[],redo:[],cur:null,base:null,t:null,busy:false,id:null};
+const H_SKIP=["view","filePath","fileSaved","fileName","updated","sel","prev","journal","tvas","trash"];
+function hSnap(){if(!state)return null;const o={};for(const k in state){if(!H_SKIP.includes(k))o[k]=state[k];}return JSON.stringify(o);}
+function hReset(){clearTimeout(H.t);H.t=null;H.undo=[];H.redo=[];H.id=state&&state.id;H.cur=hSnap();H.base=null;hBtns();}
+function hBtns(){const u=$("#undoBtn"),r=$("#redoBtn");if(u)u.disabled=!H.undo.length&&!H.t;if(r)r.disabled=!H.redo.length;}
+function hOnSave(){
+  if(H.busy||!state) return;
+  if(H.id!==state.id){hReset();return;}
+  const cur=hSnap(); if(cur===H.cur) return;
+  if(!H.t){H.base=H.cur;H.undo.push(H.cur);if(H.undo.length>40)H.undo.shift();H.redo=[];}
+  H.cur=cur; clearTimeout(H.t); H.t=setTimeout(hFlush,800); hBtns();
+}
+function hFlush(){
+  if(!H.t) return; clearTimeout(H.t); H.t=null;
+  try{const L=hDiff(H.base,H.cur); if(L.length)jPush(L);}catch(e){}
+  H.base=null; hBtns();
+}
+const plainArt=a=>{try{return plainTxt(a.texte).trim();}catch(e){return String(a.texte||"");}};
+function hIndex(o){
+  const A=new Map(),N=new Map();
+  const wa=(a,ch)=>{A.set(a.id,{t:a.titre||"",x:plainArt(a),u:a.u||"",pu:Number(a.pu)||0,q:(a.lignes||[]).length?JSON.stringify(a.lignes):(a.qman==null?"":a.qman),ty:a.type||"",ch});(a.sub||[]).forEach(s=>wa(s,ch));};
+  const wn=n=>{N.set(n.nid,{t:n.titre||"",c:n.code||""});(n.art||[]).forEach(a=>wa(a,n.titre||n.code||""));(n.children||[]).forEach(wn);};
+  (o.data||[]).forEach(wn); return {A,N};
+}
+function hDiff(a,b){
+  const L=[]; if(!a||!b) return L;
+  const A=JSON.parse(a),B=JSON.parse(b), ia=hIndex(A), ib=hIndex(B), nm=x=>`« ${(x.t||"sans titre").slice(0,50)} »`;
+  ib.A.forEach((v,id)=>{const o=ia.A.get(id);
+    if(!o){L.push(`Article ajouté : ${nm(v)}`);return;}
+    if(o.t!==v.t)L.push(`Article renommé : ${nm(o)} → ${nm(v)}`);
+    if(o.x!==v.x)L.push(`Description modifiée : ${nm(v)}`);
+    if(o.pu!==v.pu)L.push(`Prix ${nm(v)} : ${fmt(o.pu)} → ${fmt(v.pu)} €`);
+    if(o.u!==v.u)L.push(`Unité ${nm(v)} : ${o.u||"–"} → ${v.u||"–"}`);
+    if(String(o.q)!==String(v.q))L.push(`Quantité modifiée : ${nm(v)}`);});
+  ia.A.forEach((v,id)=>{if(!ib.A.has(id))L.push(`Article supprimé : ${nm(v)}`);});
+  ib.N.forEach((v,id)=>{const o=ia.N.get(id);if(!o)L.push(`Chapitre ajouté : ${nm(v)}`);else if(o.t!==v.t)L.push(`Chapitre renommé : ${nm(o)} → ${nm(v)}`);});
+  ia.N.forEach((v,id)=>{if(!ib.N.has(id))L.push(`Chapitre supprimé : ${nm(v)}`);});
+  if(JSON.stringify(A.op)!==JSON.stringify(B.op))L.push("Informations de l'opération modifiées");
+  const ea=new Map((A.ents||[]).map(e=>[e.id,e])),eb=new Map((B.ents||[]).map(e=>[e.id,e]));
+  eb.forEach((e,id)=>{const o=ea.get(id);if(!o)L.push(`Entreprise ajoutée : ${e.nom||"?"}`);else if(JSON.stringify(o.offre)!==JSON.stringify(e.offre))L.push(`Offre de ${e.nom||"?"} mise à jour`);else if(JSON.stringify(o)!==JSON.stringify(e))L.push(`Entreprise ${e.nom||"?"} modifiée`);});
+  ea.forEach((e,id)=>{if(!eb.has(id))L.push(`Entreprise retirée : ${e.nom||"?"}`);});
+  if(!L.length&&JSON.stringify(A.data)!==JSON.stringify(B.data))L.push("Réorganisation de l'arborescence");
+  return L;
+}
+let hUser=null; const whoami=()=>{if(hUser)return hUser;try{hUser=(AG&&AG.whoami&&AG.whoami())||"";}catch(e){hUser="";}return hUser||"Utilisateur";};
+function jPush(L){
+  if(!state) return; state.journal=state.journal||[];
+  const more=L.length>8?[`… et ${L.length-8} autre${L.length-8>1?"s":""} modification${L.length-8>1?"s":""}`]:[];
+  const e={t:Date.now(),u:whoami(),l:L.slice(0,8).concat(more)}, last=state.journal[state.journal.length-1];
+  if(last&&last.u===e.u&&e.t-last.t<120000&&last.l.length+e.l.length<=12){last.t=e.t;e.l.forEach(x=>{if(!last.l.includes(x))last.l.push(x);});}
+  else state.journal.push(e);
+  if(state.journal.length>300)state.journal.splice(0,state.journal.length-300);
+  H.busy=true;try{save();}finally{H.busy=false;}
+}
+function jNote(txt){hFlush();jPush([txt]);}
+function hApply(obj){ // remplace le contenu de l'affaire (même objet) en gardant les éléments propres au poste
+  const keep={};["view","filePath","fileSaved","fileName","sel","prev","journal","trash"].forEach(k=>{if(state[k]!==undefined)keep[k]=state[k];});
+  Object.keys(state).forEach(k=>delete state[k]); Object.assign(state,obj,keep);
+  state.tvas=DEF_TVAS(); ensureNodeIds(); renumberAll();
+  if(!state.sel||!(locate(state.sel)||nodeCtx(state.sel))) state.sel=firstId();
+  openPath(state.sel); H.busy=true; try{save();}finally{H.busy=false;}
+  renderHeader(); renderTree(); renderEditor(); renderTotal(); show(state.view||"redaction");
+}
+function hUndo(){
+  if(!state) return; hFlush(); if(!H.undo.length){toast("Rien à annuler.");return;}
+  H.redo.push(H.cur); const snap=H.undo.pop(); H.cur=snap; hApply(JSON.parse(snap)); jPush(["Modification annulée"]); hBtns();
+}
+function hRedo(){
+  if(!state) return; hFlush(); if(!H.redo.length){toast("Rien à rétablir.");return;}
+  H.undo.push(H.cur); const snap=H.redo.pop(); H.cur=snap; hApply(JSON.parse(snap)); jPush(["Modification rétablie"]); hBtns();
+}
+document.addEventListener("click",e=>{if(e.target.closest("#undoBtn"))hUndo();else if(e.target.closest("#redoBtn"))hRedo();});
+document.addEventListener("keydown",e=>{
+  if(!(e.ctrlKey||e.metaKey)||e.altKey||!state) return;
+  const k=e.key.toLowerCase(), t=e.target;
+  if(t&&(/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)||t.isContentEditable)) return; // l'annulation de saisie reste celle du champ
+  if(document.querySelector("dialog[open]")) return;
+  if(k==="z"&&!e.shiftKey){e.preventDefault();hUndo();}
+  else if(k==="y"||(k==="z"&&e.shiftKey)){e.preventDefault();hRedo();}
+});
+/* sauvegardes versionnées (copies locales, hors Dropbox) */
+let bkLast=0;
+async function bkMaybe(force){
+  if(!AG||!AG.bkWrite||!state||!state.id) return;
+  const now=Date.now(); if(!force&&now-bkLast<600000) return; bkLast=now;
+  try{await AG.bkWrite(state.id,serializeAffaire(state));}catch(e){}
+}
+function hisDate(t){return new Date(t).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});}
+async function openBackups(){
+  if(!state) return;
+  $("#hisTitle").textContent="Restaurer une version antérieure";
+  if(!AG||!AG.bkList){$("#hisBody").innerHTML='<p class="hint">Les sauvegardes versionnées sont disponibles dans l\'application Windows.</p>';$("#hisDlg").showModal();return;}
+  await bkMaybe(true);
+  let L=[]; try{L=await AG.bkList(state.id);}catch(e){}
+  $("#hisBody").innerHTML=(L.length?`<p class="hint">Une copie est conservée automatiquement toutes les 10 minutes de travail et à chaque enregistrement (les 20 dernières). Restaurer remplace l'affaire actuelle ; l'opération reste annulable avec « ↶ ».</p>
+    <div class="trash-list">${L.map(x=>`<div class="chk-row"><span class="t">${hisDate(x.t)}</span><span class="hint">${Math.round(x.size/1024)} Ko</span><button class="btn sm" data-bkrest="${esc(x.file)}">Restaurer</button></div>`).join("")}</div>`
+    :'<p class="hint">Aucune sauvegarde pour le moment.</p>');
+  $("#hisDlg").showModal();
+}
+function openJournal(){
+  if(!state) return; hFlush();
+  $("#hisTitle").textContent="Journal des modifications";
+  const J=(state.journal||[]).slice().reverse();
+  $("#hisBody").innerHTML=J.length?`<div class="jr-list">${J.map(e=>`<div class="jr"><div class="jr-h"><b>${esc(e.u||"")}</b> <span class="hint">${hisDate(e.t)}</span></div><ul>${e.l.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>`:'<p class="hint">Aucune modification enregistrée pour le moment.</p>';
+  $("#hisDlg").showModal();
+}
+document.addEventListener("click",async e=>{
+  if(e.target.closest("#chkBtn")){$("#optDlg").open&&$("#optDlg").close();openQtyCheck();return;}
+  if(e.target.closest("#hisClose")){$("#hisDlg").close();return;}
+  if(e.target.closest("#bkBtn")){openBackups();return;}
+  if(e.target.closest("#jrBtn")){openJournal();return;}
+  const r=e.target.closest("[data-bkrest]"); if(!r) return;
+  let text; try{text=await AG.bkRead(state.id,r.dataset.bkrest);}catch(err){toast("Lecture de la sauvegarde impossible.");return;}
+  const a=parseCctp(text); if(!a){toast("Sauvegarde illisible.");return;}
+  if(!await ask("Remplacer l'affaire actuelle par cette version ?","Restaurer",true)) return;
+  hFlush(); H.undo.push(H.cur); H.redo=[]; const d=r.closest(".chk-row").querySelector(".t").textContent;
+  const {view,filePath,fileSaved,fileName,...rest}=a; hApply(rest); H.cur=hSnap(); jPush([`Version du ${d} restaurée`]); hBtns(); $("#hisDlg").close(); toast("Version restaurée.");
+});
 /* Fichier d'affaire .cctp : JSON {format,version,application,enregistre_le,affaire}.
    L'application Windows l'écrira directement en .dce ; une page web n'a droit qu'à une liste
    d'extensions fixe, la maquette l'enregistre donc en .dce.json (même contenu). */
@@ -1058,7 +1185,7 @@ async function saveAffaireFile(quiet){
       let p=state.filePath;
       if(p){await AG.writeFile(p,text);}
       else{p=await AG.saveAs(name,text); if(!p){if(!quiet)toast("Enregistrement annulé.");return;}}
-      state.filePath=p; state.fileName=p.split(/[\\/]/).pop(); state.fileSaved=Date.now()+1;
+      state.filePath=p; state.fileName=p.split(/[\\/]/).pop(); state.fileSaved=Date.now()+1; bkMaybe(true);
       try{LS.setItem(KEY,JSON.stringify(store))}catch(e){} markDirty(); toast(`Fichier enregistré : ${state.fileName}`);
     }catch(e){toast("L'enregistrement du fichier a échoué : "+(e&&e.message||"erreur"));}
     return;
@@ -1078,7 +1205,7 @@ function autoSaveFile(){
   if(!AG||!state||!state.filePath) return;
   clearTimeout(autoT);
   autoT=setTimeout(async()=>{const s=state; if(!s||!s.filePath)return;
-    try{await AG.writeFile(s.filePath,serializeAffaire(s)); s.fileSaved=Date.now()+1; markDirty();}
+    try{await AG.writeFile(s.filePath,serializeAffaire(s)); s.fileSaved=Date.now()+1; markDirty(); bkMaybe(false);}
     catch(e){ // verrou temporaire (Dropbox, antivirus) : on réessaie sans déranger, et on n'alerte qu'en cas d'échec répété
       autoT=setTimeout(async()=>{const s2=state; if(!s2||!s2.filePath)return;
         try{await AG.writeFile(s2.filePath,serializeAffaire(s2)); s2.fileSaved=Date.now()+1; markDirty();}
@@ -1318,12 +1445,37 @@ function missingQty(){
     if(qty(ar)<=0||badLine) r.push({ar,lot,ch,why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});});
   return r;
 }
+function allIssues(){
+  const r=[]; if(!state) return r;
+  leaves((ar,lot,ch)=>{if(!ar.id)return;
+    const badLine=(ar.lignes||[]).some(x=>x.expr.trim()&&!Number.isFinite(evalMetre(x.expr)));
+    if(qty(ar)<=0||badLine) r.push({ar,sev:"err",why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});
+    if(!String(ar.u||"").trim()) r.push({ar,sev:"err",why:"Unité manquante"});
+    if(!String(ar.titre||"").trim()||/^nouvel article$/i.test(String(ar.titre).trim())) r.push({ar,sev:"err",why:"Titre à renseigner"});
+    if(!(Number(ar.pu)>0)) r.push({ar,sev:"warn",why:"Prix estimatif non renseigné"});
+    if(!plainTxt(ar.texte).trim()) r.push({ar,sev:"warn",why:"Description vide"});});
+  const empty=(n,lot)=>{if(!(n.art||[]).length&&!(n.children||[]).length&&n.level!=="lot")r.push({node:n,sev:"warn",why:"Chapitre vide"});(n.children||[]).forEach(c=>empty(c,lot));};
+  state.data.forEach(l=>(l.children||[]).forEach(c=>empty(c,l)));
+  return r;
+}
+function chkHtml(I,n){
+  const E=I.filter(x=>x.sev==="err"),W=I.filter(x=>x.sev==="warn");
+  const row=m=>`<button class="chk-row" ${m.ar?`data-goto="${m.ar.id}"`:`data-gotonode="${m.node.nid}"`}><span class="code">${esc((m.ar||m.node).code||"")}</span><span class="t">${esc((m.ar||m.node).titre||"")}</span><span class="hint">${m.why}</span></button>`;
+  if(!I.length) return `<p class="ok-msg">Aucune anomalie sur ${n} article${n>1?"s":""} chiffré${n>1?"s":""}. L'affaire est prête.</p>`;
+  return `<p><b>${E.length}</b> point${E.length>1?"s":""} à corriger, <b>${W.length}</b> à vérifier, sur ${n} article${n>1?"s":""} chiffré${n>1?"s":""}.</p>
+    ${E.length?`<h4>À corriger</h4><div class="trash-list">${E.map(row).join("")}</div>`:""}
+    ${W.length?`<h4>À vérifier</h4><div class="trash-list">${W.map(row).join("")}</div>`:""}`;
+}
+let chkResolve=null;
 function openQtyCheck(){
-  const M=missingQty(); let n=0; leaves(()=>n++);
-  $("#chkBody").innerHTML=M.length?`<p>${M.length} article${M.length>1?"s":""} chiffré${M.length>1?"s":""} sur ${n} ${M.length>1?"n'ont":"n'a"} pas de quantité valable. Les quantités doivent être remplies avant la consultation.</p>
-    <div class="trash-list">${M.map(m=>`<button class="chk-row" data-goto="${m.ar.id}"><span class="code">${m.ar.code}</span><span class="t">${esc(m.ar.titre)}</span><span class="hint">${m.why}</span></button>`).join("")}</div>`
-    :`<p class="ok-msg">Toutes les quantités sont renseignées (${n} article${n>1?"s":""} chiffré${n>1?"s":""}). L'affaire est prête pour la consultation.</p>`;
-  $("#chkDlg").showModal();
+  const I=allIssues(); let n=0; leaves(()=>n++);
+  $("#chkTitle").textContent="Contrôle de l'affaire"; $("#chkGo").hidden=true; $("#chkBody").innerHTML=chkHtml(I,n); $("#chkDlg").showModal();
+}
+function confirmExport(label){ // contrôle avant export : résout true si l'export peut continuer
+  const I=allIssues(); if(!I.length) return Promise.resolve(true);
+  let n=0; leaves(()=>n++);
+  $("#chkTitle").textContent="Avant d'exporter "+label; $("#chkGo").hidden=false; $("#chkBody").innerHTML=chkHtml(I,n);
+  return new Promise(res=>{chkResolve=res;$("#chkDlg").showModal();});
 }
 const HLC=[["j","Jaune","#FFF176"],["o","Orange","#FFCC80"],["r","Rose","#F8BBD9"],["v","Vert","#C5E8B7"],["b","Bleu","#BBDEFB"],["m","Mauve","#D7C4F0"]];
 const hlCol=k=>{const c=HLC.find(x=>x[0]===k);return c?c[2]:"";};
@@ -2076,8 +2228,11 @@ tree.addEventListener("toggle",e=>{const d=e.target;if(!d.dataset||!d.dataset.oi
 $("#treeTop").addEventListener("change",e=>{const c=e.target.closest("[data-lv]");if(!c)return;const L=levelIds(),k=+c.dataset.lv;
   Object.keys(L).forEach(j=>L[j].forEach(id=>(c.checked&&+j<=k)?openIds.add(id):openIds.delete(id)));renderTree();});
 $("#treeTop").addEventListener("click",e=>{if(e.target.closest("#chkQty"))openQtyCheck();});
-$("#chkBody").addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(!g)return;$("#chkDlg").close();show("redaction");select(g.dataset.goto);});
+$("#chkBody").addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(g){$("#chkDlg").close();show("redaction");select(g.dataset.goto);return;}
+  const gn=e.target.closest("[data-gotonode]");if(gn){$("#chkDlg").close();show("redaction");selectNode(gn.dataset.gotonode);}});
 $("#closeChk").onclick=()=>$("#chkDlg").close();
+$("#chkGo").onclick=()=>{const r=chkResolve;chkResolve=null;$("#chkDlg").close();if(r)r(true);};
+$("#chkDlg").addEventListener("close",()=>{if($("#chkDlg").open)return;const r=chkResolve;chkResolve=null;if(r)r(false);});
 tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(at){e.stopPropagation();const k=at.dataset.arttg;openIds.has(k)?openIds.delete(k):openIds.add(k);renderTree();return;}const ln=e.target.closest(".lot-name[data-lotnid]");if(ln){e.preventDefault();const k=ln.dataset.lotnid;ln.closest("details").open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const dn=e.target.closest("[data-delnode]");if(dn){e.preventDefault();delNode(dn.dataset.delnode);return;}const nn=e.target.closest(".node-name[data-rennode]");if(nn){e.preventDefault();const k=nn.dataset.rennode;const det=nn.closest("details");if(det)det.open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const nb=e.target.closest("[data-renbtnnode]");if(nb){e.preventDefault();renameNode(nb.dataset.renbtnnode);return;}const rb=e.target.closest("[data-renbtn]");if(rb){renameLot(+rb.dataset.renbtn);return;}const dl=e.target.closest("[data-dellot]");if(dl){delLot(+dl.dataset.dellot);return;}const a=e.target.closest(".art");if(a){const id=a.dataset.id;
   if(e.shiftKey){e.preventDefault();msRange(id);state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
   if(e.ctrlKey||e.metaKey){e.preventDefault();if(!msel.size&&state.sel&&locate(state.sel))msel.add(state.sel);msel.has(id)?msel.delete(id):msel.add(id);msAnchor=id;state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
@@ -2194,6 +2349,7 @@ async function exportCctp(){
   if(!state) return;
   let J; try{J=await loadJsPDF();}catch(e){toast("Le module PDF n'a pas pu être chargé : vérifiez la connexion.");return;}
   try{
+    if(!await confirmExport("le CCTP")) return;
     const info=await askDocInfo("le CCTP"); if(!info) return;
     toast("Préparation du CCTP…");
     const buf=buildCctpPdf(J,info);
@@ -2423,6 +2579,9 @@ function renderOptions(){
   <div class="dev-imp"><h4 style="margin-top:0">Importer un devis existant</h4>
     <p class="hint">Importez le devis d'une entreprise (PDF ou Excel) : l'application reconstitue les lots, chapitres et articles, pour le transformer en CCTP et en BPU selon notre arborescence.</p>
     <button class="btn" id="devBtn">Importer un PDF ou un Excel…</button><input type="file" id="devFile" accept=".pdf,.xlsx,.xls,.ods,.csv" hidden></div>
+  <div class="dev-imp"><h4 style="margin-top:0">Historique de l'affaire</h4>
+    <p class="hint">Journal des modifications (qui, quand, quoi) et sauvegardes automatiques pour revenir à une version antérieure.</p>
+    <button class="btn" id="jrBtn">Journal des modifications</button> <button class="btn" id="bkBtn">Restaurer une version…</button> <button class="btn" id="chkBtn">Contrôler l'affaire</button></div>
   <h4>Opération</h4>
   <div class="ragic">
     <label for="rgQ">Importer depuis Ragic (feuille OPERATIONS)</label>
@@ -2720,7 +2879,7 @@ const toLibSub=ch=>({id:"l"+nid(),titre:ch.titre,texte:ch.texte||"",art:(ch.art|
 function libFind(id){
   const inArts=(list,t,s,parent)=>{for(const a of list){if(a.id===id)return{kind:"article",it:a,t,s,parent,list};const r=inArts(a.sub||[],t,s,a);if(r)return r;}return null;};
   for(const t of lib()){if(t.id===id)return{kind:"titre",it:t,list:lib()};for(const s of t.children){if(s.id===id)return{kind:"sous-titre",it:s,t,list:t.children};const r=inArts(s.art,t,s,null);if(r)return r;}}return null;}
-const norm=x=>String(x||"").toLowerCase().trim();
+const norm=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
 function libTitreFor(name){let t=lib().find(x=>norm(x.titre)===norm(name));if(!t){t={id:"l"+nid(),titre:name||"Sans titre",texte:"",children:[]};lib().push(t);}return t;}
 let libSel=null; const libClosed=new Set(); let libSeeded=false;
 function libLevelIds(){
@@ -2749,7 +2908,7 @@ function libGuides(R,i){
   return h?`<span class="gds">${h}</span>`:"";}
 function libRows(qv){
   if(!libSeeded&&lib().length){libSeeded=true;const L=libLevelIds();Object.keys(L).forEach(j=>L[j].forEach(id=>libClosed.add(id)));}
-  const q=norm(qv===undefined?$("#libQ").value:qv), rows=[], hit=x=>[x.titre,plainTxt(x.texte)].join(" ").toLowerCase().includes(q);
+  const q=norm(qv===undefined?$("#libQ").value:qv), rows=[], hit=x=>{if(!q)return true;const h=norm([x.titre,plainTxt(x.texte)].join(" "));return q.split(/\s+/).every(w=>h.includes(w));};
   const deep=a=>hit(a)||(a.sub||[]).some(deep);
   const arts=(list,d,all)=>list.forEach(a=>{if(!all&&!deep(a))return;rows.push({k:"article",it:a,d});
     if((a.sub||[]).length&&(q||!libClosed.has(a.id)))arts(a.sub,d+1,all||(q&&hit(a)));});
@@ -3257,7 +3416,7 @@ function lotItems(lot){
 }
 async function exportBpu(entId,info){
   const en=entId?ents().find(e=>e.id===entId):null;
-  if(info===undefined){info=await askDocInfo("le BPU"); if(!info) return;}
+  if(info===undefined){if(!await confirmExport("le BPU")) return; info=await askDocInfo("le BPU"); if(!info) return;}
   const name=safeName(fileBase(state)+" - BPU"+(en?" - "+en.nom:""))+".xlsx";
   let E=null; try{E=await loadExcelJS();}catch(e){}
   if(E){ try{ const buf=await buildBpuStyled(E,en,info); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué : export simplifié."); } }
@@ -3865,7 +4024,7 @@ function openAffaire(id){
   if(!state.ents) state.ents=a.id==="aff-364"?ENTS.map(e=>({...e,statut:e.base==null?"Consultée":"Offre reçue"})):[];
   if(!state.sel||!(locate(state.sel)||nodeCtx(state.sel))) state.sel=byCode("01.2.1.6")||firstId();
   state.data.forEach(x=>openIds.add(x.nid)); openPath(state.sel);
-  markDirty();
+  markDirty(); hReset();
   renderHeader(); renderTree(); renderEditor(); show(!state.view||state.view==="home"?"redaction":state.view);
 }
 function affTotal(a){const p=state;state=a;let t=0;try{leaves(ar=>{if(!ovOf(ar).in)t+=qty(ar)*ar.pu;});}finally{state=p;}return t;}

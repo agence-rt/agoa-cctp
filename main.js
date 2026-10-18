@@ -642,6 +642,24 @@ ipcMain.handle("dbx-write", (e, dir, sub, files) => {
   for (const f of files || []) { const n = clean(f.name); if (!n) continue; fs.writeFileSync(path.join(d, n), Buffer.from(f.bytes)); out.push(n); }
   return { dir: d, files: out };
 });
+/* sauvegardes versionnées locales (dans le profil de l'application, hors Dropbox) */
+const bkDir = id => path.join(app.getPath("userData"), "sauvegardes", String(id).replace(/[^\w.-]+/g, "_"));
+const bkStrip = t => String(t).replace(/"enregistre_le":\s*"[^"]*"/, "");
+ipcMain.on("whoami", e => { try { e.returnValue = require("os").userInfo().username; } catch { e.returnValue = ""; } });
+ipcMain.handle("bk-write", (e, id, text) => {
+  const d = bkDir(id); fs.mkdirSync(d, { recursive: true });
+  const files = fs.readdirSync(d).filter(f => f.endsWith(".cctp")).sort();
+  if (files.length && bkStrip(fs.readFileSync(path.join(d, files[files.length - 1]), "utf8")) === bkStrip(text)) return false;
+  fs.writeFileSync(path.join(d, new Date().toISOString().replace(/[:.]/g, "-") + ".cctp"), text);
+  const all = fs.readdirSync(d).filter(f => f.endsWith(".cctp")).sort();
+  while (all.length > 20) { try { fs.unlinkSync(path.join(d, all.shift())); } catch { break; } }
+  return true;
+});
+ipcMain.handle("bk-list", (e, id) => {
+  const d = bkDir(id); if (!fs.existsSync(d)) return [];
+  return fs.readdirSync(d).filter(f => f.endsWith(".cctp")).sort().reverse().map(f => { const st = fs.statSync(path.join(d, f)); return { file: f, t: st.mtimeMs, size: st.size }; });
+});
+ipcMain.handle("bk-read", (e, id, file) => fs.readFileSync(path.join(bkDir(id), path.basename(file)), "utf8"));
 ipcMain.on("get-config", e => { e.returnValue = readJson(configPath(), {}); });
 ipcMain.on("set-config", (e, patch) => { writeAtomic(configPath(), JSON.stringify({ ...readJson(configPath(), {}), ...patch }, null, 2)); e.returnValue = true; });
 ipcMain.handle("ragic", (e, tool, input) => ragic(tool, input));

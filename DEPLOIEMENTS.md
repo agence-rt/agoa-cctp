@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°31** — v0.31.0 — 2026-10-18 — v0.31: annuler/rétablir, journal des modifications, sauvegardes versionnées, contrôle de l'affaire, recherche bibliothèque
 - **n°30** — v0.30.0 — 2026-10-16 — v0.30: aperçu masquable, correction orthographique clic droit, sélection multiple Maj/Ctrl
 - **n°29** — v0.29.0 — 2026-10-16 — Bouton Options (roue crantée) et import d'un devis PDF ou Excel pour reconstituer l'arborescence
 - **n°28** — v0.28.0 — 2026-10-16 — Enregistrement plus robuste (Dropbox), date et version à l'export CCTP/BPU, nom de l'entreprise saisissable dans le BPU
