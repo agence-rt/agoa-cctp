@@ -642,6 +642,43 @@ ipcMain.handle("dbx-write", (e, dir, sub, files) => {
   for (const f of files || []) { const n = clean(f.name); if (!n) continue; fs.writeFileSync(path.join(d, n), Buffer.from(f.bytes)); out.push(n); }
   return { dir: d, files: out };
 });
+/* ---------- surveillance du dossier retour + messagerie ---------- */
+const { smtpSend } = require("./mail");
+ipcMain.handle("dbx-scan", (e, dir) => {
+  if (!dir || !isDirP(dir)) return [];
+  const out = [];
+  const walk = (d, rel, depth) => {
+    let es; try { es = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const x of es) {
+      if (x.name.startsWith("~$") || x.name.startsWith(".")) continue;
+      const p = path.join(d, x.name);
+      if (x.isDirectory()) { if (depth < 2) walk(p, rel + x.name + "/", depth + 1); }
+      else if (/\.(xlsx|xlsm|xls|ods)$/i.test(x.name)) { try { const st = fs.statSync(p); out.push({ rel: rel + x.name, name: x.name, sub: rel.replace(/\/$/, ""), size: st.size, mtime: st.mtimeMs }); } catch {} }
+    }
+  };
+  walk(dir, "", 0); return out;
+});
+ipcMain.handle("dbx-read", (e, dir, rel) => {
+  const base = path.resolve(dir), p = path.resolve(base, ...String(rel).split("/"));
+  if (!p.toLowerCase().startsWith(base.toLowerCase() + path.sep)) throw new Error("Chemin refusé");
+  return fs.readFileSync(p);
+});
+const mailCfg = () => { const c = readJson(configPath(), {}); return { host: c.mailHost || "", port: Number(c.mailPort) || 465, user: c.mailUser || "", from: c.mailFrom || c.mailUser || "", to: c.mailTo || "etudes@remithollet.fr", auto: c.mailAuto !== false, pass: getSecret("mailPass") }; };
+ipcMain.handle("mail-get", () => { const m = mailCfg(); return { host: m.host, port: m.port, user: m.user, from: m.from, to: m.to, auto: m.auto, hasPass: !!m.pass, configured: !!(m.host && m.user && m.pass) }; });
+ipcMain.handle("mail-set", (e, o, pass) => {
+  const c = readJson(configPath(), {});
+  c.mailHost = String(o.host || "").trim(); c.mailPort = Number(o.port) || 465; c.mailUser = String(o.user || "").trim();
+  c.mailFrom = String(o.from || "").trim(); c.mailTo = String(o.to || "").trim() || "etudes@remithollet.fr"; c.mailAuto = !!o.auto;
+  writeAtomic(configPath(), JSON.stringify(c, null, 2));
+  if (pass) setSecret("mailPass", pass);
+  return true;
+});
+ipcMain.handle("mail-send", async (e, msg) => {
+  const m = mailCfg(); if (!(m.host && m.user && m.pass)) return { ok: false, reason: "config" };
+  try { await smtpSend({ host: m.host, port: m.port, user: m.user, pass: m.pass }, { from: m.from || m.user, to: (msg.to || m.to).split(/[;,\s]+/).filter(Boolean), subject: msg.subject, text: msg.text, attachments: (msg.attachments || []).map(a => ({ name: a.name, bytes: Buffer.from(a.bytes) })) }); return { ok: true, to: msg.to || m.to }; }
+  catch (err) { return { ok: false, reason: "error", message: err && err.message || "erreur" }; }
+});
+ipcMain.handle("mail-draft", (e, to, subject, body) => { shell.openExternal("mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(String(body).slice(0, 1800))); return true; });
 /* sauvegardes versionnées locales (dans le profil de l'application, hors Dropbox) */
 const bkDir = id => path.join(app.getPath("userData"), "sauvegardes", String(id).replace(/[^\w.-]+/g, "_"));
 const bkStrip = t => String(t).replace(/"enregistre_le":\s*"[^"]*"/, "");

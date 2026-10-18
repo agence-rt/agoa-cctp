@@ -76,7 +76,7 @@ tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .redac{display:grid;grid-template-columns:var(--treeW,320px) minmax(470px,1.1fr) var(--prevW,minmax(0,.8fr));gap:16px;align-items:start}
 .redac.prev-off{grid-template-columns:var(--treeW,320px) minmax(470px,1fr)}
 .redac.prev-off #preview{display:none}
-.prev-ctl{display:flex;gap:8px;align-items:center}
+.prev-ctl{display:flex;gap:8px;align-items:center}.prev-ctl .btn{white-space:nowrap}
 .prev-show{position:fixed;right:0;top:170px;z-index:30;writing-mode:vertical-rl;padding:14px 7px;border:1px solid var(--line);border-right:0;border-radius:8px 0 0 8px;background:var(--surface);color:var(--accent);font:inherit;font-weight:600;font-size:13px;cursor:pointer;box-shadow:-2px 2px 8px rgba(0,0,0,.08)}
 .prev-show:hover{background:var(--accent-soft)}
 .redac:not(.prev-off) .prev-show{display:none}
@@ -708,7 +708,8 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
         <input type="text" id="dbxPath" placeholder="Retrouvé automatiquement à partir du code travaux" autocomplete="off">
         <p class="dbx-st" id="dbxSt"></p>
         <p class="hint" style="margin:6px 0 0">Les offres déposées par la page de saisie ou importées sont rangées dans ce dossier, dans un sous-dossier par entreprise : BPU rempli (<span id="dbxEx1"></span>) et devis sous en-tête (<span id="dbxEx2"></span>).</p>
-        <div class="rb-act"><button class="btn sm" id="dbxSuggest">Retrouver le dossier</button> <button class="btn sm" id="dbxChoose">Choisir le dossier…</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
+        <p class="dbx-st" id="dbxWatch"></p>
+        <div class="rb-act"><button class="btn sm" id="dbxScanBtn" title="Lit les nouveaux fichiers du dossier retour, importe les offres et prévient par mail">Vérifier les retours maintenant</button> <button class="btn sm" id="dbxAllBtn" title="Relit tous les BPU du dossier, y compris ceux déjà vus">Tout relire</button> <button class="btn sm" id="dbxSuggest">Retrouver le dossier</button> <button class="btn sm" id="dbxChoose">Choisir le dossier…</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
       </div>
       <table id="entTable"></table>
     </div>
@@ -946,7 +947,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.33.0", deploiement: 33};
+const APP = {version: "0.34.0", deploiement: 34};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2739,6 +2740,13 @@ function renderOptions(){
   <div class="dev-imp"><h4 style="margin-top:0">Importer un devis existant</h4>
     <p class="hint">Importez le devis d'une entreprise (PDF ou Excel) : l'application reconstitue les lots, chapitres et articles, pour le transformer en CCTP et en BPU selon notre arborescence.</p>
     <button class="btn" id="devBtn">Importer un PDF ou un Excel…</button><input type="file" id="devFile" accept=".pdf,.xlsx,.xls,.ods,.csv" hidden></div>
+  ${AG&&AG.mailGet?`<div class="dev-imp"><h4 style="margin-top:0">Messagerie (notifications de retour d'offre)</h4>
+    <p class="hint">Quand une entreprise dépose son BPU dans le dossier retour, un mail récapitulatif part automatiquement. Avec Gmail / Google Workspace, utilisez un « mot de passe d'application ».</p>
+    <div class="ogrid"><div class="field"><label for="mlHost">Serveur SMTP</label><input type="text" id="mlHost"></div><div class="field"><label for="mlPort">Port</label><input type="text" id="mlPort" style="max-width:90px"></div>
+    <div class="field"><label for="mlUser">Identifiant (adresse d'envoi)</label><input type="text" id="mlUser" autocomplete="off"></div><div class="field"><label for="mlPass">Mot de passe</label><input type="password" id="mlPass" autocomplete="new-password"></div>
+    <div class="field"><label for="mlFrom">Expéditeur affiché</label><input type="text" id="mlFrom" placeholder="AGOA CCTP &lt;agence@remithollet.fr&gt;"></div><div class="field"><label for="mlTo">Destinataire des notifications</label><input type="text" id="mlTo"></div></div>
+    <label><input type="checkbox" id="mlAuto"> Envoyer automatiquement</label>
+    <p class="hint" id="mlSt"></p><button class="btn" id="mlSave">Enregistrer</button> <button class="btn" id="mlTest">Enregistrer et envoyer un test</button></div>`:""}
   <div class="dev-imp"><h4 style="margin-top:0">Historique de l'affaire</h4>
     <p class="hint">Journal des modifications (qui, quand, quoi) et sauvegardes automatiques pour revenir à une version antérieure.</p>
     <button class="btn" id="jrBtn">Journal des modifications</button> <button class="btn" id="bkBtn">Restaurer une version…</button> <button class="btn" id="chkBtn">Contrôler l'affaire</button></div>
@@ -2763,6 +2771,7 @@ function renderOptions(){
   <h4>TVA</h4>
   <div class="field" style="max-width:260px"><label for="optTva">Taux de TVA par défaut</label><select id="optTva" data-opt="tvaDef">${tvSel(defTva())}</select></div>
   <p class="hint">Chaque article applique ce taux, sauf s'il a son propre taux choisi dans sa ligne de chiffrage.</p>`;
+  mlLoad();
 }
 $("#optBtn").onclick=()=>{renderOptions();$("#optDlg").showModal();};
 $("#closeOpt").onclick=()=>$("#optDlg").close();
@@ -2902,6 +2911,98 @@ async function bpuBytes(en){
   if(E){try{const b=await buildBpuStyled(E,en,docInfoDefault());return new Uint8Array(b.buffer?b.buffer:b);}catch(err){console.error(err);}}
   const X=await loadXLSX(); const b=buildBpuBasic(X,en,docInfoDefault()); return new Uint8Array(b.buffer?b.buffer:b);
 }
+/* ---------- Surveillance du dossier « 03 - RETOUR ENTREPRISES » : import automatique + courriel ---------- */
+let dbxBusy=false, dbxLast=null;
+const dbxSig=f=>f.rel+"|"+f.size+"|"+Math.round(f.mtime);
+const nrmN=s=>norm(s).replace(/[^a-z0-9]/g,"");
+async function dbxProcess(dir,f){
+  const bytes=await AG.dbxRead(dir,f.rel); const u8=new Uint8Array(bytes);
+  let d; try{d=await parseBpuFile(new File([u8],f.name));}catch(e){return {st:"ignore"};}
+  if(!d.read) return {st:"ignore"};
+  let en=null;
+  for(const c of [d.entreprise,f.sub].filter(Boolean)){const k=nrmN(c); if(!k)continue; en=ents().find(e=>nrmN(e.nom)===k||nrmN(dbxSub(e))===k); if(en)break;}
+  if(!en){const nm=d.entreprise||f.sub; if(!nm) return {st:"unknown"}; en={id:"e"+nid(),nom:nm,statut:"À consulter",base:null,travaux:[]}; ents().push(en);}
+  registerOffer(en,d); return {st:"ok",en,d,bytes:u8,f};
+}
+async function mailOffer(r){
+  const {en,d,f,bytes}=r, o=state.op||{}, M=anaModel(), B=bilanData(M), row=B.rows.find(x=>x.e.id===en.id);
+  const now=new Date(), when=now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  const L=[]; L.push("Bonjour,","","Une nouvelle offre a été déposée dans le dossier « 03 - RETOUR ENTREPRISES » et importée dans AGOA CCTP.","",
+    `Opération : ${[o.ref,o.immeuble].filter(Boolean).join(" - ")||"–"}`);
+  if(o.objet)L.push(`Objet : ${o.objet}`);
+  const adr=[o.adresse,o.ville].filter(Boolean).join(", "); if(adr)L.push(`Adresse : ${adr}`);
+  if(o.syndic)L.push(`Syndic : ${o.syndic}`);
+  L.push("",`Entreprise : ${en.nom}`,`Fichier : ${f.rel}`,`Reçue le : ${when}`);
+  if(row){L.push(`Montant du marché de base : ${eur(row.ht)} HT (${eur(row.ttc)} TTC)`);
+    if(row.pct!=null)L.push(`Écart par rapport à l'estimation (${eur(B.est)} HT) : ${row.ecart>=0?"+":"-"}${eur(Math.abs(row.ecart))} (${row.pct>=0?"+":"-"}${fmt(Math.abs(row.pct),1)} %)`);
+    if(row.rank)L.push(`Rang actuel : ${row.rank} sur ${B.rows.filter(x=>x.rank).length} offre(s) complète(s)`);
+    row.opts.forEach(x=>L.push(`Option / variante ${x.lab} : ${x.net>=0?"+":"-"}${eur(Math.abs(x.net))} HT`));
+    row.alert.forEach(a=>L.push("Attention : "+a[1]));}
+  L.push(`Prix lus : ${d.read} sur ${d.total} articles chiffrés${d.missing?` (${d.missing} manquant${d.missing>1?"s":""})`:""}${Object.keys(d.notes||{}).length?` ; ${Object.keys(d.notes).length} annotation(s) de l'entreprise`:""}`);
+  const offs=offers().length, cons=ents().length; L.push(`Offres reçues : ${offs} sur ${cons} entreprise(s) consultée(s)`);
+  L.push("","Message généré automatiquement par AGOA CCTP.");
+  const subject=`[AGOA] Offre reçue - ${[o.ref,o.immeuble].filter(Boolean).join(" ")} - ${en.nom}`, text=L.join("\n");
+  let cfg=null; try{cfg=await AG.mailGet();}catch(e){}
+  if(cfg&&cfg.configured&&cfg.auto){
+    const r=await AG.mailSend({subject,text,attachments:[{name:f.name,bytes}]});
+    if(r.ok){toast(`Mail envoyé à ${r.to||cfg.to} : offre de ${en.nom}`);jPush([`Mail de réception envoyé (${en.nom})`]);return true;}
+    toast("Envoi du mail impossible ("+(r.message||"erreur")+") : un brouillon est ouvert à la place.");}
+  await AG.mailDraft((cfg&&cfg.to)||"etudes@remithollet.fr",subject,text); return false;
+}
+async function dbxScanNew(mode){ // mode : "auto" (surveillance), "new" (bouton), "all" (tout relire)
+  if(!AG||!AG.dbxScan||!state||dbxBusy) return;
+  if(mode==="auto"&&(state.dbxWatchOff||document.querySelector("dialog[open]"))) return;
+  dbxBusy=true;
+  try{
+    const dir=await dbxResolveDir(false); if(!dir){if(mode!=="auto")toast("Dossier de dépôt introuvable : retrouvez-le d'abord.");return;}
+    const files=await AG.dbxScan(dir); dbxLast=new Date();
+    if(state.dbxSeen==null&&mode==="auto"){state.dbxSeen=files.map(dbxSig);save();dbxWatchSt();return;} // première lecture : base de référence, sans import
+    const seen=new Set(state.dbxSeen||[]), news=(mode==="all"?files:files.filter(f=>!seen.has(dbxSig(f)))).sort((a,b)=>a.mtime-b.mtime);
+    if(!news.length){if(mode!=="auto")toast("Aucun nouveau retour dans le dossier.");dbxWatchSt();return;}
+    const done=[], unknown=[];
+    for(const f of news){
+      try{const r=await dbxProcess(dir,f); if(r.st==="ok")done.push(r); else if(r.st==="unknown")unknown.push(f.name);}catch(e){console.error(e);}
+    }
+    state.dbxSeen=files.map(dbxSig); save();
+    if(done.length){
+      if(state.view==="analyse")renderAnalyse(); else if(state.view==="consultation")renderConsult();
+      toast(done.length>1?`${done.length} offres importées automatiquement`:`Offre de ${done[0].en.nom} importée automatiquement`);
+      jPush(done.map(r=>`Offre importée depuis le dossier retour : ${r.en.nom}`));
+      if(mode!=="all"){for(const r of done){try{await mailOffer(r);}catch(e){console.error(e);toast("Le mail n'a pas pu être préparé.");}}}
+    }
+    if(unknown.length)toast(`${unknown.length} fichier${unknown.length>1?"s":""} à importer manuellement (entreprise non reconnue)`);
+    dbxWatchSt();
+  }catch(e){console.error(e);if(mode!=="auto")toast("Lecture du dossier impossible : "+(e&&e.message||"erreur"));}
+  finally{dbxBusy=false;}
+}
+function dbxWatchSt(){
+  const el=$("#dbxWatch"); if(!el) return;
+  if(!AG||!AG.dbxScan){el.textContent="";return;}
+  el.className="dbx-st"+(state&&state.dbxWatchOff?"":" ok");
+  el.innerHTML=`<label style="font-weight:400"><input type="checkbox" id="dbxWatchOn" ${state&&state.dbxWatchOff?"":"checked"}> Surveiller ce dossier : importer les nouveaux BPU et prévenir par mail</label>${dbxLast&&!(state&&state.dbxWatchOff)?` <span class="hint">Dernière vérification : ${dbxLast.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</span>`:""}`;
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("#dbxScanBtn"))dbxScanNew("new");
+  else if(e.target.closest("#dbxAllBtn")){ask("Relire tous les BPU du dossier et importer les offres ? Les offres déjà importées des mêmes entreprises seront remplacées par le contenu des fichiers. Aucun mail n'est envoyé.","Tout relire").then(ok=>{if(ok)dbxScanNew("all");});}
+});
+document.addEventListener("change",e=>{if(e.target.id==="dbxWatchOn"&&state){state.dbxWatchOff=!e.target.checked;save();dbxWatchSt();if(e.target.checked){state.dbxSeen=null;dbxScanNew("auto");}}});
+if(AG&&AG.dbxScan){setInterval(()=>{if(state&&state.view!=="home")dbxScanNew("auto");},120000);}
+
+/* ---------- Messagerie (notifications) ---------- */
+async function mlLoad(){
+  if(!AG||!AG.mailGet||!$("#mlHost")) return;
+  try{const c=await AG.mailGet(); $("#mlHost").value=c.host||"smtp.gmail.com"; $("#mlPort").value=c.port||465; $("#mlUser").value=c.user||""; $("#mlFrom").value=c.from||""; $("#mlTo").value=c.to||"etudes@remithollet.fr"; $("#mlAuto").checked=c.auto!==false; $("#mlPass").placeholder=c.hasPass?"•••••••• (enregistré)":"Mot de passe d'application";
+    $("#mlSt").textContent=c.configured?"✓ Messagerie configurée : les mails partent automatiquement.":"Non configurée : un brouillon s'ouvrira dans votre messagerie à la place.";}catch(e){}
+}
+const mlVals=()=>({host:$("#mlHost").value,port:$("#mlPort").value,user:$("#mlUser").value,from:$("#mlFrom").value,to:$("#mlTo").value,auto:$("#mlAuto").checked});
+document.addEventListener("click",async e=>{
+  if(e.target.closest("#mlSave")){await AG.mailSet(mlVals(),$("#mlPass").value);$("#mlPass").value="";await mlLoad();toast("Messagerie enregistrée");}
+  else if(e.target.closest("#mlTest")){await AG.mailSet(mlVals(),$("#mlPass").value);$("#mlPass").value="";await mlLoad();
+    const c=await AG.mailGet(); if(!c.configured){toast("Renseignez le serveur, l'identifiant et le mot de passe.");return;}
+    toast("Envoi du mail de test…"); const r=await AG.mailSend({subject:"[AGOA] Test de la messagerie",text:"Ce message confirme que l'envoi automatique depuis AGOA CCTP fonctionne.",attachments:[]});
+    toast(r.ok?"Mail de test envoyé à "+(r.to||c.to):"Échec de l'envoi : "+(r.message||"erreur"));}
+});
+
 function renderConsult(){
   const M=missingQty();
   $("#qtyWarn").innerHTML=M.length?`<div class="qwarn"><span>${M.length} article${M.length>1?"s":""} chiffré${M.length>1?"s":""} sans quantité. Les quantités doivent être remplies avant la consultation.</span><button class="btn sm" id="qwGo">Voir la liste</button></div>`
@@ -2913,7 +3014,7 @@ function renderConsult(){
     <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${hasOffer(e)?`<span class="hint ent-sub offer-ok">✓ ${esc(offerInfo(e))}</span>`:""}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
-  dbxStatus();
+  dbxStatus(); dbxWatchSt(); dbxScanNew("auto");
 }
 
 $("#qtyWarn").addEventListener("click",e=>{if(e.target.id==="qwGo")openQtyCheck();});

@@ -1,1 +1,1 @@
-Déploiement n°33 — v0.33: synthèse PDF pour les copropriétaires (tableau par chapitre, note sur la consultation, comparatif global)
+Déploiement n°34 — v0.34: surveillance du dossier retour Dropbox, import automatique des offres et mail à etudes@remithollet.fr
