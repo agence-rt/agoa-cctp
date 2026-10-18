@@ -530,6 +530,13 @@ table.prev-bpu,#cmpTable,#entTable,.pt-tbl,.synth table{font-family:var(--tbl)}
 td.best{background:var(--green-soft)}
 td.best .val{color:var(--green-ink)}
 .synth h3{color:var(--accent)}
+.syn-ed{border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:0 0 16px;background:var(--surface)}
+.syn-ed>summary{cursor:pointer;font-weight:650;color:var(--accent)}
+.syn-b{margin:12px 0}.syn-b>label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+.syn-b textarea{width:100%;box-sizing:border-box;font:inherit;font-family:var(--doc);font-size:15px;line-height:1.5;padding:8px 10px;border:1px solid var(--line);border-radius:4px;resize:vertical;background:var(--bg,#fff);color:inherit}
+.syn-b input[type=text]{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:4px}
+.syn-a{margin-top:4px;display:flex;gap:8px;align-items:center}.syn-dv{display:flex;flex-wrap:wrap;gap:10px}
+
 .sheet .h{color:var(--accent)}
 dialog h3{margin:0 0 12px;font-size:17px}
 .dlg-act{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
@@ -947,7 +954,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.34.0", deploiement: 34};
+const APP = {version: "0.35.0", deploiement: 35};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2595,19 +2602,41 @@ function buildSynthPdf(J,info){
   const o=state.op||{}, M=anaModel(), A=M.A, E=M.E, n=E.length, BD=bilanData(M);
   const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90];
   const wa=t=>String(t==null?"":t).replace(/[  -​ ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/−/g,"-").replace(/★/g,"*").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
-  const doc=new J({unit:"mm",format:"a4",orientation:"landscape",compress:true});
+  const doc=new J({unit:"mm",format:"a4",orientation:"portrait",compress:true});
   const PW=297,PH=210,L=12,R=PW-12,T=24,B=PH-17,W=R-L;
   const font=(st,sz,c)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);const k=c||INK;doc.setTextColor(k[0],k[1],k[2]);};
   const fill=c=>doc.setFillColor(c[0],c[1],c[2]);
   const ref=[o.ref,o.immeuble].filter(Boolean).join(" - ")||"Affaire";
   const nf=v=>wa(fmt(v,2)), sgn2=v=>wa((v>=0?"+":"-")+fmt(Math.abs(v),2)), pc=v=>v==null?"-":wa((v>=0?"+":"-")+fmt(Math.abs(v),1)+" %");
   let y=T;
-  const np=()=>{doc.addPage();y=T;};
+  const np=()=>{doc.addPage("a4","landscape");y=T;};
   const need=h=>{if(y+h>B){np();return true;}return false;};
   const cut=(x,yy,w,h,c)=>{fill(RED);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,yy,[1,1],"F",true);};
   const h2=t=>{need(16);y+=3;cut(L,y,W,7,2.6);font("bold",10,WHITE);doc.text(wa(t),L+3.5,y+4.9);y+=11;};
   const para=(t,sz=9.5,st="normal",c)=>{font(st,sz,c);const lh=sz*0.3528*1.45;doc.splitTextToSize(wa(t),W).forEach(l=>{need(lh);doc.text(l,L,y+lh*0.8);y+=lh;});y+=1.2;};
   const bullet=(t,sz=9.2)=>{font("normal",sz);const lh=sz*0.3528*1.45;doc.splitTextToSize(wa(t),W-6).forEach((l,i)=>{need(lh);if(!i){fill(RED);doc.circle(L+1.6,y+lh*0.55,0.6,"F");}doc.text(l,L+5,y+lh*0.8);y+=lh;});y+=0.8;};
+
+  /* page 1 : lettre d'analyse des offres (portrait) */
+  const RET=synthRet(M), SD=synthDefaults(M,BD,RET), SY=synObj(), txt=k=>synText(k,SD);
+  {
+    const lx=20, lw=170; let yy=22;
+    font("bold",10,INK);
+    [["Code travaux",o.ref],["Objet",(o.objet||"").toUpperCase()],["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Gestionnaire",o.gestionnaire]].forEach(([k,v])=>{
+      if(!v)return; font("normal",9.5,MUTED); doc.text(wa(k+" :"),lx,yy); font("bold",10,INK);
+      doc.splitTextToSize(wa(v),lw-36).forEach((l,i)=>{doc.text(l,lx+36,yy);yy+=5;}); yy+=0.6;});
+    yy+=8; font("bold",17,RED); doc.text("ANALYSE DES OFFRES",lx,yy); doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(lx,yy+2.5,lx+lw,yy+2.5); yy+=14;
+    font("normal",10.5,INK); doc.text(wa(((SY.lieu!=null?SY.lieu:"Paris")?(SY.lieu!=null?SY.lieu:"Paris")+" le ":"")+(SY.date||dateFr())),lx,yy); yy+=10;
+    doc.text("Madame, Monsieur,",lx,yy); yy+=8;
+    const blk=(t,st,gap)=>{ if(!String(t||"").trim())return; font(st||"normal",10.5,INK);
+      String(t).split("\n").forEach(raw=>{const bl=/^\s*[-•]\s+/.test(raw), line=raw.replace(/^\s*[-•]\s+/,""); const ind=bl?8:0;
+        const ls=doc.splitTextToSize(wa(line),lw-ind-(bl?0:0)); ls.forEach((l,i)=>{ if(bl&&!i){fill(RED);doc.circle(lx+3,yy-1.2,0.7,"F");} doc.text(l,lx+ind,yy); yy+=5.4;}); });
+      yy+=gap==null?4:gap;};
+    blk(txt("intro")); 
+    font("bold",10.5,RED); doc.text("OBSERVATIONS :",lx,yy); yy+=6; blk(txt("obs"));
+    blk(txt("reco"),"bold",6); blk(txt("pj")); blk(txt("conclu"),"normal",10); blk(txt("sign"),"bold");
+    if(yy>270)console.warn("lettre trop longue");
+  }
+  doc.addPage("a4","landscape"); y=T;
   /* titre */
   font("bold",10.5,RED); doc.text("SYNTHÈSE DE LA CONSULTATION DES ENTREPRISES",L,y+4);
   doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(L,y+7,R,y+7); y+=14;
@@ -2652,25 +2681,11 @@ function buildSynthPdf(J,info){
 
   /* 2. note sur la consultation */
   h2("2. Note sur la consultation");
-  const cons=state.ents||[], names=a=>a.map(e=>e.nom).join(", ");
-  const sans=cons.filter(e=>!hasOffer(e));
-  para(`${nb(cons.length,"entreprise a été consultée","entreprises ont été consultées")} sur la base du CCTP et du bordereau de prix unitaires établis par la maîtrise d'œuvre${cons.length?" : "+names(cons)+".":"."} ${nb(n,"offre a été reçue et analysée","offres ont été reçues et analysées")} poste par poste.${sans.length?` ${sans.length>1?"Les entreprises":"L'entreprise"} ${names(sans)} ${sans.length>1?"n'ont":"n'a"} pas remis d'offre à ce jour.`:""}`);
-  para(`Estimation de la maîtrise d'œuvre (marché de base) : ${eur(BD.est)} HT, ${eur(BD.estT)} TTC.${BD.med?` Médiane des offres : ${eur(BD.med)} HT.`:""}`,9.5,"bold");
-  font("bold",9.5,RED); need(8); doc.text("Retour des entreprises",L,y+3.5); y+=6;
-  BD.rows.forEach(r=>{
-    const bits=[`${r.e.nom} : ${eur(r.ht)} HT (${eur(r.ttc)} TTC), soit ${sgn2(r.ecart).replace(/,00$/,"")} EUR (${pc(r.pct)}) par rapport à l'estimation`];
-    if(r.rank)bits.push(r.rank===1?"offre la moins disante":`${r.rank}e rang`);
-    if(r.miss)bits.push(`offre incomplète (${r.miss} prix manquant${r.miss>1?"s":""})`);
-    if(r.flags)bits.push(`${r.flags} prix unitaire${r.flags>1?"s":""} s'écarte${r.flags>1?"nt":""} d'au moins ${A.seuil} % de la référence`);
-    if(r.notes)bits.push(`${r.notes} annotation${r.notes>1?"s":""} de l'entreprise`);
-    if(r.opts.length)bits.push("options : "+r.opts.map(x=>`${x.lab} ${sgn2(x.net)} EUR`).join(", "));
-    r.alert.forEach(a=>{if(!/prix manquant/.test(a[1]))bits.push(a[1].toLowerCase());});
-    bullet(bits.join(" ; ")+".");});
-  /* principaux écarts poste par poste */
-  const dev=[]; M.lots.forEach(({rows})=>rows.forEach(w=>{if(!w.leaf||w.ex||anaOvOnly(rows,rows.indexOf(w))||!(w.est>0))return;E.forEach((e,j)=>{if(w.a[j]!=null&&!w.miss[j])dev.push({w,e,d:w.a[j]-w.est,p:(w.a[j]/w.est-1)*100});});}));
-  dev.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
-  if(dev.length){y+=1.5;font("bold",9.5,RED);need(8);doc.text("Principaux écarts poste par poste (par rapport à l'estimation)",L,y+3.5);y+=6;
-    dev.slice(0,8).forEach(x=>bullet(`${x.w.o.code||""} ${x.w.o.titre} - ${x.e.nom} : ${sgn2(x.d).replace(/,00$/,"")} EUR (${pc(x.p)}).`,8.8));}
+  String(txt("cons")).split("\n").forEach((l,i,a)=>{if(l.trim())para(l,9.5,/^Estimation de la maîtrise/.test(l)?"bold":"normal");});
+  if(String(txt("retours")).trim()){font("bold",9.5,RED); need(8); doc.text("Retour des entreprises",L,y+3.5); y+=6;
+    String(txt("retours")).split("\n").forEach(l=>{if(l.trim())bullet(l.replace(/^\s*[-•]\s+/,""));});}
+  if(String(txt("ecarts")).trim()){y+=1.5;font("bold",9.5,RED);need(8);doc.text("Principaux écarts poste par poste (par rapport à l'estimation)",L,y+3.5);y+=6;
+    String(txt("ecarts")).split("\n").forEach(l=>{if(l.trim())bullet(l.replace(/^\s*[-•]\s+/,""),8.8);});}
   const ret=E.find(e=>e.id===state.retenue);
   if(ret){y+=1.5;para(`Entreprise proposée par la maîtrise d'œuvre : ${ret.nom}.`,9.5,"bold");}
 
@@ -2724,6 +2739,9 @@ function buildSynthPdf(J,info){
   const N=doc.getNumberOfPages();
   for(let p=1;p<=N;p++){
     doc.setPage(p); font("normal",8,MUTED);
+    if(p===1){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(20,283,190,283);
+      doc.text(wa(ref),20,288); doc.text(`Page ${p} / ${N}`,190,288,{align:"right"});
+      font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),105,293,{align:"center"}); continue;}
     doc.text(wa("SYNTHÈSE - "+(o.objet||"")).slice(0,100),L,13); if(info){font("bold",8,RED);doc.text(wa(docTag(info)),R,13,{align:"right"});font("normal",8,MUTED);}
     doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,R,15.5);
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PH-14,R,PH-14);
@@ -3578,6 +3596,54 @@ function renderAnalyse(){
     if(anaMove(sl,si,dl,at)){redo();} else toast("Une ligne ne peut pas être déposée dans son propre contenu");});
 })();
 
+
+/* ---------- Synthèse : textes rédigeables ---------- */
+const SY_KEYS=[
+ ["intro","Introduction (entreprises ayant répondu)",5],
+ ["obs","Observations",3],
+ ["reco","Entreprise mieux disante / proposée",2],
+ ["pj","Pièces jointes",2],
+ ["conclu","Formule de politesse",3],
+ ["sign","Signature",1],
+ ["copro","Présentation aux copropriétaires (écran)",4],
+ ["cons","Note sur la consultation (PDF, §2)",4],
+ ["retours","Retour des entreprises (PDF, une ligne par puce)",6],
+ ["ecarts","Principaux écarts (PDF, une ligne par puce)",5]];
+const dateFr=()=>new Date().toLocaleDateString("fr-FR");
+function synObj(){if(!state.synth||typeof state.synth!=="object")state.synth={};const S=state.synth;if(!S.txt)S.txt={};if(!S.devis)S.devis={};return S;}
+function synthRet(M){const E=M.E;return E.find(e=>e.id===state.retenue)||E[0];}
+function synthDefaults(M,BD,ret){
+  const o=state.op||{}, E=M.E, n=E.length, S=synObj(), ents=state.ents||[];
+  const T0=anaSums(M,()=>true), com=anaSums(M,l=>l.charge==="Commune");
+  const lst=a=>a.map(e=>"- "+e.nom+(S.devis[e.id]?" (devis n°"+S.devis[e.id]+")":"")).join("\n");
+  const d={};
+  d.intro=`Suite à l'appel d'offres concernant les travaux de ${String(o.objet||"…").toUpperCase()}, ${n>1?n+" entreprises ont répondu favorablement":n+" entreprise a répondu favorablement"} :\n${lst(E)}`;
+  const inc=BD.rows.filter(r=>r.miss);
+  d.obs=inc.length?inc.map(r=>`L'offre de ${r.e.nom} est incomplète (${r.miss} prix manquant${r.miss>1?"s":""}).`).join("\n")+(n-inc.length>0?`\n${n-inc.length>1?"Les "+(n-inc.length)+" autres offres sont conformes":"L'autre offre est conforme"} au CCTP et au BPU transmis.`:""):(n>1?`Les ${n} offres sont conformes au CCTP et au BPU transmis.`:`L'offre est conforme au CCTP et au BPU transmis.`);
+  d.reco=ret?`Sur l'ensemble des offres, l'entreprise la mieux disante est\n${ret.nom}, avec un montant de travaux de ${eur2(T0[ret.id+"T"])} TTC`:"";
+  d.pj="Vous trouverez ci-joint le tableau comparatif global, ainsi que l'ensemble des devis reçus.";
+  d.conclu="Nous restons à votre entière disposition pour tous renseignements complémentaires.\nDans l'attente de vous relire, recevez, Madame, Monsieur, l'expression de nos salutations distinguées.";
+  d.sign="Rémi THOLLET";
+  const ec=ret&&com.est?(com[ret.id]/com.est-1)*100:0;
+  d.copro=`${nb(ents.length,"entreprise a été consultée","entreprises ont été consultées")} sur la base du CCTP et du bordereau de prix établis par la maîtrise d'œuvre. ${nb(n,"offre a été reçue et analysée","offres ont été reçues et analysées")} poste par poste.${ret?` L'offre de ${ret.nom} s'élève à ${eur(com[ret.id+"T"])} TTC pour les parties communes, soit un écart de ${ec>=0?"+":""}${fmt(ec,1)} % par rapport au chiffrage de la maîtrise d'œuvre.`:""}`;
+  const names=a=>a.map(e=>e.nom).join(", "), sans=ents.filter(e=>!hasOffer(e));
+  d.cons=`${nb(ents.length,"entreprise a été consultée","entreprises ont été consultées")} sur la base du CCTP et du bordereau de prix unitaires établis par la maîtrise d'œuvre${ents.length?" : "+names(ents)+".":"."} ${nb(n,"offre a été reçue et analysée","offres ont été reçues et analysées")} poste par poste.${sans.length?` ${sans.length>1?"Les entreprises":"L'entreprise"} ${names(sans)} ${sans.length>1?"n'ont":"n'a"} pas remis d'offre.`:""}\nEstimation de la maîtrise d'œuvre (marché de base) : ${eur(BD.est)} HT, ${eur(BD.estT)} TTC.${BD.med?` Médiane des offres : ${eur(BD.med)} HT.`:""}`;
+  const A=M.A, sg=v=>(v>=0?"+":"-")+fmt(Math.abs(v),2).replace(/,00$/,"");
+  d.retours=BD.rows.map(r=>{const bits=[`${r.e.nom} : ${eur(r.ht)} HT (${eur(r.ttc)} TTC), soit ${sg(r.ecart)} EUR (${r.pct==null?"-":(r.pct>=0?"+":"-")+fmt(Math.abs(r.pct),1)+" %"}) par rapport à l'estimation`];
+    if(r.rank)bits.push(r.rank===1?"offre la moins disante":`${r.rank}e rang`);
+    if(r.miss)bits.push(`offre incomplète (${r.miss} prix manquant${r.miss>1?"s":""})`);
+    if(r.flags)bits.push(`${r.flags} prix unitaire${r.flags>1?"s":""} s'écarte${r.flags>1?"nt":""} d'au moins ${A.seuil} % de la référence`);
+    if(r.notes)bits.push(`${r.notes} annotation${r.notes>1?"s":""} de l'entreprise`);
+    if(r.opts.length)bits.push("options : "+r.opts.map(x=>`${x.lab} ${sg(x.net)} EUR`).join(", "));
+    r.alert.forEach(a=>{if(!/prix manquant/.test(a[1]))bits.push(a[1].toLowerCase());});
+    return bits.join(" ; ")+".";}).join("\n");
+  const dev=[]; M.lots.forEach(({rows})=>rows.forEach(w=>{if(!w.leaf||w.ex||anaOvOnly(rows,rows.indexOf(w))||!(w.est>0))return;E.forEach((e,j)=>{if(w.a[j]!=null&&!w.miss[j])dev.push({w,e,d:w.a[j]-w.est,p:(w.a[j]/w.est-1)*100});});}));
+  dev.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+  d.ecarts=dev.slice(0,8).map(x=>`${x.w.o.code||""} ${x.w.o.titre} - ${x.e.nom} : ${sg(x.d)} EUR (${(x.p>=0?"+":"-")+fmt(Math.abs(x.p),1)} %).`).join("\n");
+  return d;
+}
+function synText(k,D){const S=synObj();return S.txt[k]!=null?S.txt[k]:(D[k]||"");}
+
 /* ---------- Synthèse ---------- */
 function renderSynth(){
   const ents=offers(), o=state.op;
@@ -3589,12 +3655,21 @@ function renderSynth(){
   const max=Math.max(1,com.estT,...ents.map(e=>com[e.id+"T"]))*1.05;
   const bar=(lab,v,cls)=>`<div class="bar ${cls}"><span>${lab}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><span class="val num">${eur(v)}</span></div>`;
   const ec=com.est?(com[ret.id]/com.est-1)*100:0, rT=com[ret.id+"T"];
+  const BD=bilanData(M), D=synthDefaults(M,BD,ret), S=synObj();
+  const edBlock=([k,lab,rows])=>`<div class="syn-b"><label for="sy-${k}">${lab}</label><textarea id="sy-${k}" data-syk="${k}" rows="${rows}" spellcheck="true">${esc(synText(k,D))}</textarea><div class="syn-a">${S.txt[k]!=null?`<span class="hint">Texte modifié</span> `:`<span class="hint">Texte automatique</span> `}<button class="btn sm" data-syreset="${k}"${S.txt[k]!=null?"":" disabled"}>Rétablir le texte automatique</button></div></div>`;
+  const edit=ks=>ks.map(k=>edBlock(SY_KEYS.find(x=>x[0]===k))).join("");
   $("#synth").innerHTML=`
    <h2>${esc(o.objet)}${o.immeuble?`, ${esc(o.immeuble)}`:""}</h2>
    <p class="sub">${esc(o.adresse)}${o.ville?`, ${esc(o.ville)}`:""}. Synthèse de la consultation présentée à l'assemblée générale des copropriétaires</p>
    <div class="pick"><label for="selRet">Entreprise proposée par la maîtrise d'œuvre</label>
      <select id="selRet">${ents.map(e=>`<option value="${e.id}" ${e.id===ret.id?"selected":""}>${e.nom}</option>`).join("")}</select> <button class="btn" id="expSynth" style="margin-left:12px">Exporter la synthèse (PDF)</button></div>
-   <p class="body">${nb((state.ents||[]).length,"entreprise a été consultée","entreprises ont été consultées")} sur la base du CCTP et du bordereau de prix établis par la maîtrise d'œuvre. ${nb(ents.length,"offre a été reçue et analysée","offres ont été reçues et analysées")} poste par poste. L'offre de ${ret.nom} s'élève à ${eur(rT)} TTC pour les parties communes, soit un écart de ${ec>=0?"+":""}${fmt(ec,1)} % par rapport au chiffrage de la maîtrise d'œuvre.</p>
+   <p class="body" id="synCopro" style="white-space:pre-wrap">${esc(synText("copro",D))}</p>
+   <details class="syn-ed" open><summary>Rédiger la lettre d'analyse des offres (première page du PDF)</summary>
+   <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
+   <div class="syn-b"><label>N° de devis des entreprises</label><div class="syn-dv">${ents.map(e=>`<span>${esc(e.nom)} <input type="text" data-sydv="${esc(e.id)}" value="${esc(S.devis[e.id]||"")}" placeholder="n° de devis" style="max-width:110px"></span>`).join("")}</div></div>
+   ${edit(["intro","obs","reco","pj","conclu","sign"])}
+   <p class="hint">Les n° de devis renseignés sont repris dans le texte automatique de l'introduction ; une fois l'introduction modifiée à la main, elle n'est plus mise à jour (bouton « Rétablir »).</p></details>
+   <details class="syn-ed"><summary>Rédiger la note sur la consultation (section 2 du PDF)</summary>${edit(["cons","retours","ecarts"])}</details>
    <h3>Montants TTC des parties communes</h3>
    <div class="bars">${bar("Chiffrage MOE",com.estT,"est")}${ents.map(e=>bar(e.nom,com[e.id+"T"],e.id===ret.id?"ret":"")).join("")}</div>
    <h3>Ce que cela représente pour un copropriétaire</h3>
@@ -3607,6 +3682,14 @@ function renderSynth(){
    ${privLot.length?`<h3>Travaux à charge privative</h3>
    <p class="body">Les lots privatifs (${privLot.map(l=>esc(l.titre.toLowerCase())).join(", ")}) sont commandés individuellement par les copropriétaires qui le souhaitent, aux prix unitaires de l'entreprise retenue. Montant de référence pour l'ensemble des articles chiffrés : ${eur(prv[ret.id+"T"])} TTC.</p>`:""}`;
   $("#selRet").onchange=e=>{state.retenue=e.target.value;save();renderSynth();};
+  const sy=$("#synth");
+  sy.querySelectorAll("textarea[data-syk]").forEach(t=>{const fit=()=>{t.style.height="auto";t.style.height=Math.max(48,t.scrollHeight+2)+"px";};fit();
+    t.addEventListener("input",()=>{fit();const k=t.dataset.syk;synObj().txt[k]=t.value;save();const b=t.closest(".syn-b"),r=b.querySelector("[data-syreset]");if(r)r.disabled=false;const h=b.querySelector(".syn-a .hint");if(h)h.textContent="Texte modifié";if(k==="copro"){$("#synCopro").textContent=t.value;}});});
+  sy.querySelectorAll("[data-syreset]").forEach(b=>b.onclick=()=>{delete synObj().txt[b.dataset.syreset];save();renderSynth();});
+  sy.querySelectorAll("input[data-sydv]").forEach(i=>i.addEventListener("input",()=>{synObj().devis[i.dataset.sydv]=i.value.trim();save();}));
+  sy.querySelectorAll("input[data-sydv]").forEach(i=>i.addEventListener("change",()=>renderSynth()));
+  $("#sy-date").addEventListener("input",e=>{synObj().date=e.target.value;save();});
+  $("#sy-lieu").addEventListener("input",e=>{synObj().lieu=e.target.value;save();});
 }
 
 
