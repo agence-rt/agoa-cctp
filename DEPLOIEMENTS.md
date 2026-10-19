@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°38** — v0.38.0 — 2026-10-19 — Mise à jour
 - **n°37** — v0.37.0 — 2026-10-18 — Mise à jour
 - **n°36** — v0.36.0 — 2026-10-18 — Mise à jour
 - **n°35** — v0.35.0 — 2026-10-18 — Mise à jour

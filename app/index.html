@@ -530,6 +530,8 @@ table.prev-bpu,#cmpTable,#entTable,.pt-tbl,.synth table{font-family:var(--tbl)}
 td.best{background:var(--green-soft)}
 td.best .val{color:var(--green-ink)}
 .synth h3{color:var(--accent)}
+.arch-pick{display:flex;gap:12px;flex-wrap:wrap}.arch-opt{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;flex:1;min-width:260px;font-size:12.5px}
+.arch-opt.on{border-color:var(--accent);background:var(--accent-soft)}.arch-opt input{margin:0}.arch-opt img{height:54px;width:auto;border-radius:3px;background:#fff}
 .syn-ed{border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin:0 0 16px;background:var(--surface)}
 .syn-ed>summary{cursor:pointer;font-weight:650;color:var(--accent)}
 .syn-b{margin:12px 0}.syn-b>label{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
@@ -729,6 +731,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
       <div class="docs-grid">
         <button class="doc-card" id="expCctp"><b>Exporter le CCTP</b><span>PDF : page de garde, sommaire et descriptifs des ouvrages</span></button>
         <button class="doc-card primary" id="expBpuBtn"><b>Exporter le BPU</b><span>Excel : bordereau des prix à remplir par l'entreprise</span></button>
+        <button class="doc-card" id="expBpuDesc"><b>Exporter le BPU avec descriptif</b><span>Excel : même bordereau, avec la description de chaque article</span></button>
       </div>
     </div>
   </section>
@@ -872,6 +875,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 
 <div class="toast" id="toast" role="status"></div>
 
+<script src="logos.js"></script>
 <script>
 /* ---------- Données (extrait du CCTP 364 Les Dryades) ---------- */
 const T = {
@@ -957,7 +961,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.37.0", deploiement: 37};
+const APP = {version: "0.38.0", deploiement: 38};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -992,8 +996,14 @@ const fresh=()=>({id:"aff-364",updated:Date.now(),data:DATA,sel:null,view:"redac
   op:{ref:"364",immeuble:"Les Dryades",objet:"Ravalement des façades",adresse:"27 rue de la Convention",cp:"42000",ville:"Saint-Étienne",mo:"SDC représenté par Foncia Loire Auvergne",syndic:"Foncia Loire Auvergne",adresseSyndic:"5 rue du Lieutenant Morin, 42026 Saint-Étienne Cedex 1",gestionnaire:"",emailGest:"",moe:"Thomas Kochanski Architecte",parcelle:"",nbLots:"",amiante:"Amiante dans les colles des faïences",plomb:"",dateEdition:"Janvier 2024",dateRemise:"15 mars 2024",ragicId:null},
   tvas:[{id:"t20",taux:20,lib:"Taux normal"},{id:"t10",taux:10,lib:"Taux intermédiaire"},{id:"t55",taux:5.5,lib:"Taux réduit (rénovation énergétique)"}]});
 const DEF_TVAS=()=>[{id:"t20",taux:20,lib:"Taux normal"},{id:"t10",taux:10,lib:"Taux intermédiaire"},{id:"t55",taux:5.5,lib:"Taux réduit (rénovation énergétique)"}];
-const AGENCE={nom:"Rémi Thollet Architecte",marque:"Remi Thollet Architecte",tel:"09 66 93 97 28",adresse:"47 avenue Mathurin Moreau 75019 PARIS",web:"www.remithollet.fr",email:"agence@remithollet.fr"};
-const OP_DEF={moe:AGENCE.nom,moeTel:AGENCE.tel,moeAdresse:AGENCE.adresse,moeWeb:AGENCE.web,moeEmail:AGENCE.email};
+const ARCHS={
+ rt:{key:"rt",nom:"Rémi Thollet Architecte",court:"Rémi Thollet",marque:"Remi Thollet Architecte",libelle:"Agence d'architecture Rémi Thollet",tel:"09 66 93 97 28",adresse:"47 avenue Mathurin Moreau 75019 PARIS",web:"www.remithollet.fr",email:"agence@remithollet.fr",signature:"Rémi THOLLET"},
+ tk:{key:"tk",nom:"Thomas Kochanski Architecte",court:"Thomas Kochanski",marque:"Thomas Kochanski Architecte",libelle:"Thomas Kochanski Architecte",tel:"06 60 52 83 87",adresse:"49b Cours Fauriel 42100 SAINT ETIENNE",web:"",email:"",signature:"Thomas KOCHANSKI"}};
+const archCur=()=>ARCHS[(typeof state!=="undefined"&&state&&state.archi)||"rt"]||ARCHS.rt;
+const AGENCE={get nom(){return archCur().nom;},get marque(){return archCur().marque;},get tel(){return archCur().tel;},get adresse(){return archCur().adresse;},get web(){return archCur().web;},get email(){return archCur().email;}};
+const OP_DEF={get moe(){return AGENCE.nom;},get moeTel(){return AGENCE.tel;},get moeAdresse(){return AGENCE.adresse;},get moeWeb(){return AGENCE.web;},get moeEmail(){return AGENCE.email;}};
+const archFoot=()=>[AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].filter(Boolean).join("   ·   ");
+const archLogo=()=>{try{return ARCH_LOGOS[archCur().key]||null;}catch(e){return null;}};
 function coverInfo(o){
   const v=k=>String(o[k]||"").trim(), d=(k,def)=>v(k)||def;
   const adr=[v("adresse"),[v("cp"),v("ville")].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -2384,6 +2394,7 @@ function buildCctpPdf(J,info){
   /* ---- page de garde (charte de l'agence) ---- */
   const cut=(x,y,w,h,c)=>{doc.setFillColor(RED[0],RED[1],RED[2]);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,y,[1,1],"F",true);};
   const C=coverInfo(o);
+  {const LG=archLogo(); if(LG){const lh=LG.w>LG.h?15:20, lw2=lh*LG.w/LG.h; try{doc.addImage(LG.src,"JPEG",R-lw2,10,lw2,lh,undefined,"FAST");}catch(e){console.error(e);}}}
   let cy=32; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
   doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(L,cy+3,R,cy+3);
   cy+=15; font("bold",21,INK);
@@ -2582,7 +2593,7 @@ function buildCctpPdf(J,info){
     doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,R,15.5);
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PH-14,R,PH-14);
     doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
-    font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),L+(R-L)/2,PH-5.6,{align:"center"});
+    font("bold",7,RED); doc.text(wa(archFoot()),L+(R-L)/2,PH-5.6,{align:"center"});
   }
   doc.setProperties({title:"CCTP - "+wa(ref),subject:wa(o.objet||""),creator:"AGOA CCTP"});
   return doc.output("arraybuffer");
@@ -2622,7 +2633,8 @@ function buildSynthPdf(J,info){
   /* page 1 : lettre d'analyse des offres (portrait) */
   const RET=synthRet(M), SD=synthDefaults(M,BD,RET), SY=synObj(), txt=k=>synText(k,SD);
   {
-    const lx=20, lw=170; let yy=22;
+    const lx=20, lw=170; let yy=22; const LG=archLogo();
+    if(LG){const lh=LG.w>LG.h?16:22, lw2=lh*LG.w/LG.h; try{doc.addImage(LG.src,"JPEG",190-lw2,12,lw2,lh,undefined,"FAST");}catch(e){console.error(e);}}
     font("bold",10,INK);
     [["Code travaux",o.ref],["Objet",(o.objet||"").toUpperCase()],["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Gestionnaire",o.gestionnaire]].forEach(([k,v])=>{
       if(!v)return; font("normal",9.5,MUTED); doc.text(wa(k+" :"),lx,yy); font("bold",10,INK);
@@ -2741,12 +2753,12 @@ function buildSynthPdf(J,info){
     doc.setPage(p); font("normal",8,MUTED);
     if(p===1){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(20,283,190,283);
       doc.text(wa(ref),20,288); doc.text(`Page ${p} / ${N}`,190,288,{align:"right"});
-      font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),105,293,{align:"center"}); continue;}
+      font("bold",7,RED); doc.text(wa(archFoot()),105,293,{align:"center"}); continue;}
     doc.text(wa("SYNTHÈSE - "+(o.objet||"")).slice(0,100),L,13); if(info){font("bold",8,RED);doc.text(wa(docTag(info)),R,13,{align:"right"});font("normal",8,MUTED);}
     doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,R,15.5);
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PH-14,R,PH-14);
     doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
-    font("bold",7,RED); doc.text(wa([AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].join("   ·   ")),L+(R-L)/2,PH-5.6,{align:"center"});
+    font("bold",7,RED); doc.text(wa(archFoot()),L+(R-L)/2,PH-5.6,{align:"center"});
   }
   doc.setProperties({title:"Synthèse - "+wa(ref),subject:wa(o.objet||""),creator:"AGOA CCTP"});
   return doc.output("arraybuffer");
@@ -2758,7 +2770,7 @@ function renderOptions(){
   <div class="dev-imp"><h4 style="margin-top:0">Importer un devis existant</h4>
     <p class="hint">Importez le devis d'une entreprise (PDF ou Excel) : l'application reconstitue les lots, chapitres et articles, pour le transformer en CCTP et en BPU selon notre arborescence.</p>
     <button class="btn" id="devBtn">Importer un PDF ou un Excel…</button><input type="file" id="devFile" accept=".pdf,.xlsx,.xls,.ods,.csv" hidden></div>
-  ${AG&&AG.mailGet?`<div class="dev-imp"><h4 style="margin-top:0">Messagerie (notifications de retour d'offre)</h4>
+  ${AG&&AG.mailGet&&false?`<div class="dev-imp"><h4 style="margin-top:0">Messagerie (notifications de retour d'offre)</h4>
     <p class="hint">Quand une entreprise dépose son BPU dans le dossier retour, un mail récapitulatif part automatiquement. Avec Gmail / Google Workspace, utilisez un « mot de passe d'application ».</p>
     <div class="ogrid"><div class="field"><label for="mlHost">Serveur SMTP</label><input type="text" id="mlHost"></div><div class="field"><label for="mlPort">Port</label><input type="text" id="mlPort" style="max-width:90px"></div>
     <div class="field"><label for="mlUser">Identifiant (adresse d'envoi)</label><input type="text" id="mlUser" autocomplete="off"></div><div class="field"><label for="mlPass">Mot de passe</label><input type="password" id="mlPass" autocomplete="new-password"></div>
@@ -2768,6 +2780,9 @@ function renderOptions(){
   <div class="dev-imp"><h4 style="margin-top:0">Historique de l'affaire</h4>
     <p class="hint">Journal des modifications (qui, quand, quoi) et sauvegardes automatiques pour revenir à une version antérieure.</p>
     <button class="btn" id="jrBtn">Journal des modifications</button> <button class="btn" id="bkBtn">Restaurer une version…</button> <button class="btn" id="chkBtn">Contrôler l'affaire</button></div>
+  <div class="dev-imp"><h4 style="margin-top:0">Architecte de l'opération</h4>
+    <p class="hint">Coordonnées et logo repris sur la page de garde du CCTP, la lettre d'analyse des offres et les pieds de page.</p>
+    <div class="arch-pick">${Object.values(ARCHS).map(a=>`<label class="arch-opt${archCur().key===a.key?" on":""}"><input type="radio" name="archi" value="${a.key}" ${archCur().key===a.key?"checked":""}><img src="${ARCH_LOGOS[a.key].src}" alt="Logo ${esc(a.court)}"><span><b>${esc(a.libelle)}</b><br>${esc([a.adresse,a.tel,a.web,a.email].filter(Boolean).join(" · "))}</span></label>`).join("")}</div></div>
   <h4>Opération</h4>
   <div class="ragic">
     <label for="rgQ">Importer depuis Ragic (feuille OPERATIONS)</label>
@@ -2794,6 +2809,7 @@ function renderOptions(){
 $("#optBtn").onclick=()=>{renderOptions();$("#optDlg").showModal();};
 $("#closeOpt").onclick=()=>$("#optDlg").close();
 $("#optDlg").addEventListener("close",()=>{renderHeader();renderTree();renderEditor();show(state.view);});
+$("#optBody").addEventListener("change",e=>{const t=e.target; if(t.name==="archi"){state.archi=t.value;save();renderOptions();renderHeader();toast("Architecte : "+archCur().court);}});
 $("#optBody").addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.op){state.op[t.dataset.op]=t.value;renderHeader();}
@@ -2986,7 +3002,6 @@ async function dbxScanNew(mode){ // mode : "auto" (surveillance), "new" (bouton)
       if(state.view==="analyse")renderAnalyse(); else if(state.view==="consultation")renderConsult();
       toast(done.length>1?`${done.length} offres importées automatiquement`:`Offre de ${done[0].en.nom} importée automatiquement`);
       jPush(done.map(r=>`Offre importée depuis le dossier retour : ${r.en.nom}`));
-      if(mode!=="all"){for(const r of done){try{await mailOffer(r);}catch(e){console.error(e);toast("Le mail n'a pas pu être préparé.");}}}
     }
     if(unknown.length)toast(`${unknown.length} fichier${unknown.length>1?"s":""} à importer manuellement (entreprise non reconnue)`);
     dbxWatchSt();
@@ -3633,7 +3648,7 @@ function synthDefaults(M,BD,ret){
   d.reco=ret?`Sur l'ensemble des offres, l'entreprise la mieux disante est\n${ret.nom}, avec un montant de travaux de ${eur2(T0[ret.id+"T"])} TTC`:"";
   d.pj="Vous trouverez ci-joint le tableau comparatif global, ainsi que l'ensemble des devis reçus.";
   d.conclu="Nous restons à votre entière disposition pour tous renseignements complémentaires.\nDans l'attente de vous relire, recevez, Madame, Monsieur, l'expression de nos salutations distinguées.";
-  d.sign="Rémi THOLLET";
+  d.sign=archCur().signature;
   const ec=ret&&com.est?(com[ret.id]/com.est-1)*100:0;
   d.copro=`${nb(ents.length,"entreprise a été consultée","entreprises ont été consultées")} sur la base du CCTP et du bordereau de prix établis par la maîtrise d'œuvre. ${nb(n,"offre a été reçue et analysée","offres ont été reçues et analysées")} poste par poste.${ret?` L'offre de ${ret.nom} s'élève à ${eur(com[ret.id+"T"])} TTC pour les parties communes, soit un écart de ${ec>=0?"+":""}${fmt(ec,1)} % par rapport au chiffrage de la maîtrise d'œuvre.`:""}`;
   const names=a=>a.map(e=>e.nom).join(", "), sans=ents.filter(e=>!hasOffer(e));
@@ -3786,17 +3801,18 @@ function lotItems(lot){
     it.push({k:"otot",ovb:true,o,hasDed:b.bas.length>0});it.push({k:"otva",ovb:true,o});it.push({k:"ottc",ovb:true,o});});
   return it;
 }
-async function exportBpu(entId,info){
+async function exportBpu(entId,info,opts){
   const en=entId?ents().find(e=>e.id===entId):null;
-  if(info===undefined){if(!await confirmExport("le BPU")) return; info=await askDocInfo("le BPU"); if(!info) return;}
-  const name=safeName(fileBase(state)+" - BPU"+(en?" - "+en.nom:""))+".xlsx";
+  if(info===undefined){if(!await confirmExport(opts&&opts.desc?"le BPU avec descriptif":"le BPU")) return; info=await askDocInfo(opts&&opts.desc?"le BPU avec descriptif":"le BPU"); if(!info) return;}
+  const name=safeName(fileBase(state)+" - BPU"+(opts&&opts.desc?" avec descriptif":"")+(en?" - "+en.nom:""))+".xlsx";
   let E=null; try{E=await loadExcelJS();}catch(e){}
-  if(E){ try{ const buf=await buildBpuStyled(E,en,info); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué : export simplifié."); } }
+  if(E){ try{ const buf=await buildBpuStyled(E,en,info,opts); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué : export simplifié."); } }
   else toast("Mise en page détaillée indisponible (module non chargé) : export simplifié.");
   let X; try{X=await loadXLSX();}catch(e){toast("Le module Excel n'a pas pu être chargé : vérifiez la connexion.");return;}
   await saveXlsx(buildBpuBasic(X,en,info),name);
 }
-async function buildBpuStyled(E,en,info){
+async function buildBpuStyled(E,en,info,opts){
+  const withDesc=!!(opts&&opts.desc);
   const o=state.op||{}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{};
   const BLUE="FF1961AC", INK="FF333333", PALE="FFE5F1FC", LINE="FFB6DDF7", GREY="FFEEF3F8", MUTED="FF6B7A8C";
   const F=(sz,o2={})=>({name:"Arial",size:sz,color:{argb:INK},...o2});
@@ -3814,7 +3830,7 @@ async function buildBpuStyled(E,en,info){
       headerFooter:{oddFooter:'&L&"Arial,Regular"&8AGOA CCTP&C&"Arial,Regular"&8&A&R&"Arial,Regular"&8Page &P / &N'}});
     ws.columns=[{width:14},{width:11,hidden:true},{width:62},{width:11},{width:8},{width:11},{width:8},{width:15},{width:18},{width:38},{width:3,hidden:true},{width:3,hidden:true}];
     const mrg=(r1,r2,text,font,al,h)=>{ws.mergeCells(r1,1,r2,10);const c=ws.getCell(r1,1);c.value=text;c.font=font;c.alignment={vertical:"middle",wrapText:true,...al};};
-    mrg(1,1,"Bordereau des prix unitaires (BPU) - "+ref,F(12,{bold:true}),{horizontal:"center"}); ws.getRow(1).height=20;
+    mrg(1,1,"Bordereau des prix unitaires (BPU)"+(withDesc?" avec descriptif":"")+" - "+ref,F(12,{bold:true}),{horizontal:"center"}); ws.getRow(1).height=20;
     mrg(2,2,info?docTag(info):"",F(9,{bold:true,color:{argb:BLUE}}),{horizontal:"center"}); ws.getRow(2).height=info?15:4;
     mrg(3,4,oper,F(10,{bold:true}),{horizontal:"center"}); ws.getRow(3).height=4; ws.getRow(4).height=34;
     mrg(5,5,`LOT n°${lot.code}. ${lot.titre.toUpperCase()}`,F(11,{bold:true,color:{argb:BLUE}}),{horizontal:"center"}); ws.getRow(5).height=22;
@@ -3833,7 +3849,7 @@ async function buildBpuStyled(E,en,info){
     H.forEach((t,k)=>{const c=ws.getCell(8,k+1);c.value=t;c.font=F(10,{bold:true,color:{argb:BLUE}});c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};c.alignment={horizontal:"center",vertical:"middle",wrapText:true};c.border={top:thin(BLUE),bottom:thin(BLUE)};});
     ws.getRow(8).height=30;
     const items=lotItems(lot), baseItems=items.filter(y=>!y.ovb), ovItems=items.filter(y=>y.ovb); let r=9;
-    const asg=x=>{x.row=r;r+=1+(x.metre?x.metre.length:0);};
+    const asg=x=>{x.row=r;if(withDesc&&x.k==="art"&&x.ar)x.dsc=plainTxt(x.ar.texte).split("\n").map(t=>t.trim()).filter(Boolean);r+=1+(x.metre?x.metre.length:0)+(x.dsc?x.dsc.length:0);};
     baseItems.forEach(asg); const baseLast=r-1;
     const rates0=[...new Set(baseItems.filter(y=>y.k==="art").map(y=>y.tva))];
     r=baseLast+2+(rates0.length+2)+2; ovItems.forEach(asg);
@@ -3870,6 +3886,7 @@ async function buildBpuStyled(E,en,info){
         const m=set(9,{formula:`IF(ISNUMBER(H${x.row}),IF(ISNUMBER(F${x.row}),ROUND(H${x.row}*F${x.row},2),ROUND(H${x.row}*D${x.row},2)),0)`,result:x.m},F(10,{italic:true}),{horizontal:"right"},EUR); m.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};
         const ob=set(10,nts[x.id]||null,F(9),{wrapText:true,horizontal:"left"}); ob.border=box; ob.protection={locked:false};
         set(11,x.ovIn||"B",F(8,{color:{argb:MUTED}}),{}); set(12,x.ovB.length?","+x.ovB.join(",")+",":null,F(8,{color:{argb:MUTED}}),{});
+        (x.dsc||[]).forEach((t,k)=>{const rr=x.row+1+x.metre.length+k;ws.mergeCells(rr,3,rr,10);const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{color:{argb:MUTED}});c.alignment={vertical:"top",wrapText:true,indent:x.d+1};ws.getRow(rr).height=Math.max(14,12.5*Math.ceil(t.length/135)+3);});
         x.metre.forEach((t,k)=>{const rr=x.row+1+k;const a=ws.getCell(rr,1);a.value=k?null:"Métré";a.font=F(9,{italic:true,color:{argb:MUTED}});const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{italic:true,color:{argb:MUTED}});c.alignment={indent:x.d+1};ws.getRow(rr).height=14;});
       }
       else if(x.k==="ovh"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1),cc=ovC(x.o);c.value=ovLab(x.o).toUpperCase();c.font=F(12,{bold:true,color:{argb:ARGB(cc.fg)}});c.alignment={vertical:"middle"};R.height=26;}
@@ -4065,6 +4082,7 @@ $("#impOk").onclick=()=>{
 };
 $("#impBtn").onclick=()=>openImport(null);
 $("#expBpuBtn").onclick=()=>exportBpu(null);
+$("#expBpuDesc").onclick=()=>exportBpu(null,undefined,{desc:true});
 {let tm;$("#dbxPath").addEventListener("input",e=>{state.dropbox=e.target.value;save();clearTimeout(tm);tm=setTimeout(dbxStatus,500);});}
 $("#dbxSuggest").onclick=async()=>{
   if(!(state.op&&state.op.ref)){toast("Renseignez d'abord le code travaux dans les options de l'opération.");return;}
