@@ -245,7 +245,9 @@ input:disabled{opacity:1;color:var(--muted);background:repeating-linear-gradient
 .metre-box input[type=text]{background:var(--surface)}
 .ro{padding:8px 10px;border:1px dashed var(--line);border-radius:5px;text-align:right;white-space:nowrap;min-height:38px}
 .ro.strong{font-weight:650;border-style:solid;border-color:var(--accent);color:var(--accent)}
-.lh,.ligne{display:grid;grid-template-columns:118px 92px minmax(0,1fr) 30px;gap:8px;align-items:center}
+.lh,.ligne{display:grid;grid-template-columns:118px 58px 92px minmax(0,1fr) 30px;gap:8px;align-items:center}
+.pcin{text-align:right}.ligne .pcin:not(:placeholder-shown){background:#ffe3c2;border-color:#e8913a}
+.pctb{display:inline-block;background:#f5a04d;color:#4a2400;font-weight:700;font-size:.78em;border-radius:4px;padding:0 6px;margin-left:8px;white-space:nowrap;vertical-align:baseline}
 .lh{font-size:12px;color:var(--muted);margin:4px 0 6px}
 .ligne{margin-bottom:6px}
 .res{text-align:right;font-size:14px;font-weight:600}
@@ -568,8 +570,8 @@ dialog h3{margin:0 0 12px;font-size:17px}
   .chif{grid-template-columns:1fr 1fr}
   .chif .tot{grid-column:1/-1}
   .lh{display:none}
-  .ligne{grid-template-columns:1fr 90px 32px;padding-bottom:6px;border-bottom:1px dotted var(--line)}
-  .ligne input[data-f=note]{grid-column:1/3;grid-row:2}
+  .ligne{grid-template-columns:1fr 58px 90px 32px;padding-bottom:6px;border-bottom:1px dotted var(--line)}
+  .ligne input[data-f=note]{grid-column:1/4;grid-row:2}
   .synth{padding:24px 18px}
   .bar{grid-template-columns:100px 1fr 96px}
   .cartouche .big{font-size:30px}
@@ -964,7 +966,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.39.0", deploiement: 39};
+const APP = {version: "0.40.0", deploiement: 40};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1060,7 +1062,7 @@ function ovMap(){
 const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
 const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovShort(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovShort(b));});return a.join(", ");};
 const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?ovChip(o):"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=ovChip(b,true);});return h;};
-const ovTxt=it=>{const t=ovTag(it);return t?` [${t.toUpperCase()}]`:"";};
+const ovTxt=it=>{const t=ovTag(it);return (t?` [${t.toUpperCase()}]`:"")+pctTxt(it);};
 function ovLeavesOf(roots){const r=[];const art=l=>l.forEach(a=>{if(a.sub.length)art(a.sub);else if(!isTitle(a))r.push(a);});const nd=n=>{art(n.art||[]);(n.children||[]).forEach(nd);};roots.forEach(nd);return r;}
 function ovBlocksOf(roots){const L=ovLeavesOf(roots);return ovl().map(o=>({o,inn:L.filter(a=>ovOf(a).in===o.id),bas:L.filter(a=>!ovOf(a).in&&ovOf(a).base.includes(o.id))})).filter(b=>b.inn.length||b.bas.length);}
 const hasBaseArt=a=>a.sub.length?a.sub.some(hasBaseArt):!ovOf(a).in;
@@ -1285,9 +1287,16 @@ function evalMetre(src){
   function expr(){let v=term();while(peek()==="+"||peek()==="-"){const o=s[i++];const r=term();v=o==="+"?v+r:v-r;}return v;}
   try{const v=expr();return i===s.length?v:NaN;}catch(e){return NaN;}
 }
+const pcF=l=>{const raw=String(l&&l.pc!=null?l.pc:"").trim().replace(",","."); if(raw==="")return null; const v=parseFloat(raw); return Number.isFinite(v)?v:null;};
+const lineVal=l=>evalMetre(l.expr)*(pcF(l)==null?1:pcF(l)/100);
+const pcList=ar=>{const o=[]; (ar&&ar.lignes||[]).forEach(l=>{const v=pcF(l); if(v!=null&&l.expr.trim()&&Number.isFinite(evalMetre(l.expr))&&!o.includes(v))o.push(v);}); return o;};
+const pcLab=ar=>pcList(ar).map(v=>fmt(v,v%1?1:0)+" %").join(" / ");
+const pcB=ar=>{const t=pcLab(ar);return t?`<span class="pctb">${esc(t)}</span>`:"";};
+const pctTxt=ar=>{const t=pcLab(ar);return t?` (${t})`:"";};
+const mLine=l=>`${l.expr}${pcF(l)!=null?" x "+fmt(pcF(l),pcF(l)%1?1:0)+" %":""} = ${fmt(lineVal(l),2)}`;
 const validLines=ar=>ar.lignes.filter(l=>l.expr.trim()&&Number.isFinite(evalMetre(l.expr)));
 const metreOn=ar=>validLines(ar).length>0;
-const qty=ar=>metreOn(ar)?validLines(ar).reduce((s,l)=>s+evalMetre(l.expr),0):(Number(ar.qman)||0);
+const qty=ar=>metreOn(ar)?validLines(ar).reduce((s,l)=>s+lineVal(l),0):(Number(ar.qman)||0);
 const isTitle=ar=>ar.type==="titre";
 const total=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+total(x),0):isTitle(ar)?0:qty(ar)*ar.pu;
 const countSub=ar=>ar.sub.reduce((s,x)=>s+1+countSub(x),0);
@@ -1546,7 +1555,7 @@ function renderTree(){
   const cur=locate(state.sel), nc=cur?null:nodeCtx(state.sel), curCh=cur?cur.ch:nc&&nc.ch, curLot=cur?cur.lot:nc&&nc.lot;
   const noq=new Set(missingQty().map(m=>m.ar.id));
   const rows=(list,b,n)=>list.map(ar=>{const has=ar.sub.length>0, op=openIds.has(ar.id);
-    const row=`<div class="art${ar.id===state.sel?" cur":""}${msel.has(ar.id)?" msel":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span><button class="x art-x" data-delart="${ar.id}" aria-label="Supprimer ${esc(ar.code)}" title="Supprimer">×</button></div>`;
+    const row=`<div class="art${ar.id===state.sel?" cur":""}${msel.has(ar.id)?" msel":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}${pcLab(ar)?`<span class="pctb">${esc(pcLab(ar))}</span>`:""}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span><button class="x art-x" data-delart="${ar.id}" aria-label="Supprimer ${esc(ar.code)}" title="Supprimer">×</button></div>`;
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
@@ -1570,7 +1579,7 @@ function renderEditor(){
   if(!f){el.innerHTML=`<p>Aucun article. <button class="btn primary" data-act="addFirst">Créer un article</button></p>`;return;}
   const {art:ar,lot,ch,list,i,owner}=f, hasSub=ar.sub.length>0, prev=list[i-1];
   el.innerHTML=`
-  <div class="art-head"><span class="art-code">${ar.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(ar.titre)}" aria-label="Intitulé de l'article"></div>
+  <div class="art-head"><span class="art-code">${ar.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(ar.titre)}" aria-label="Intitulé de l'article"><span class="pctb" id="pctB"${pcLab(ar)?"":" hidden"}>${esc(pcLab(ar))}</span></div>
   ${hlBar(ar)}
   <div class="tools" role="toolbar" aria-label="Actions sur l'article">
     <label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>
@@ -1652,9 +1661,10 @@ function chiffrage(ar,lot){
   </div>
   <div class="metre-box" id="mBox">
     <div class="mb-h"><b>Métré détaillé</b><span class="hint">S'il est renseigné, il remplace la quantité saisie directement.</span></div>
-    ${ar.lignes.length?`<div class="lh"><span>Calcul</span><span style="text-align:right">Résultat</span><span>Explication du calcul</span><span></span></div>`:""}
+    ${ar.lignes.length?`<div class="lh"><span>Calcul</span><span style="text-align:center">%</span><span style="text-align:right">Résultat</span><span>Explication du calcul</span><span></span></div>`:""}
     ${ar.lignes.map((l,j)=>`<div class="ligne">
       <input type="text" data-line="${j}" data-f="expr" value="${esc(l.expr)}" placeholder="ex. 2x12,50" aria-label="Calcul, ligne ${j+1}" autocomplete="off">
+      <input type="text" class="pcin" data-line="${j}" data-f="pc" value="${esc(l.pc==null?"":l.pc)}" placeholder="%" inputmode="decimal" aria-label="Pourcentage appliqué, ligne ${j+1}" autocomplete="off">
       <span class="res num" id="r${j}"></span>
       <input type="text" data-line="${j}" data-f="note" value="${esc(l.note)}" placeholder="ex. longueur des acrotères" aria-label="Explication du calcul, ligne ${j+1}">
       <button class="x" data-act="delLine" data-line="${j}" aria-label="Supprimer la ligne ${j+1}">×</button>
@@ -1674,7 +1684,8 @@ function updateLive(){
   const chif=ci.node?!!ar.isArt:(!ar.sub.length&&!isTitle(ar));
   if(chif){
     ar.lignes.forEach((l,j)=>{const r=$("#r"+j);if(!r)return;const t=l.expr.trim(),v=evalMetre(t);
-      r.className="res num"+(t&&!Number.isFinite(v)?" err":"");r.textContent=!t?"–":Number.isFinite(v)?"= "+fmt(v):"à corriger";});
+      r.className="res num"+(t&&!Number.isFinite(v)?" err":"");r.textContent=!t?"–":Number.isFinite(v)?"= "+fmt(lineVal(l)):"à corriger";});
+    {const lb=pcLab(ar), pb=$("#pctB"); if(pb){pb.textContent=lb;pb.hidden=!lb;} const tr=document.querySelector(`#tree .art[data-id="${ar.id}"] .t`); if(tr){let b=tr.querySelector(".pctb"); if(lb){if(!b){b=document.createElement("span");b.className="pctb";tr.appendChild(b);} b.textContent=lb;}else if(b)b.remove();}}
     const on=metreOn(ar), qIn=$("#fQ"), hint=$("#qHint");
     if(qIn){
       if(on){qIn.disabled=true;qIn.value=rq(qty(ar),ar.u).toFixed(qd(ar.u));hint.textContent=`Issue du métré (${validLines(ar).length} ligne${validLines(ar).length>1?"s":""})`;}
@@ -1686,7 +1697,7 @@ function updateLive(){
     if($("#oT")){$("#oT").textContent=eur2(own);$("#oTVA").textContent=eur2(own*t/100);$("#oTTC").textContent=eur2(own*(1+t/100));}
   }
   if(ci.node){const s=$(`#tree [data-rennode="${ar.nid}"],#tree [data-lotnid="${ar.nid}"]`);if(s&&!s.matches("input"))s.textContent=ar.titre;}
-  else{const tt=$(`#tree .art[data-id="${ar.id}"] .t`); if(tt) tt.textContent=ar.titre;}
+  else{const tt=$(`#tree .art[data-id="${ar.id}"] .t`); if(tt){tt.textContent=ar.titre;const lb=pcLab(ar);if(lb){const b=document.createElement("span");b.className="pctb";b.textContent=lb;tt.appendChild(b);}}}
   if(!ci.node){const row=$(`#tree .art[data-id="${ar.id}"]`),miss=missingQty().some(m=>m.ar===ar);if(row){const was=row.classList.contains("noq");row.classList.toggle("noq",miss);const pd=row.querySelector(".pdots");if(pd)pd.innerHTML=dotsOf(ar,miss);if(was!==miss)renderTreeTop();}}
   renderPreview(); renderTotal();
 }
@@ -1698,11 +1709,11 @@ function bpuRows(list,mode,lot,d=0,force=false){
   return list.map(ar=>{
     if(!force&&(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar))))return "";
     const has=ar.sub.length||isTitle(ar), cur=ar.id===state.sel&&!ent?" cur":"", pad=`style="padding-left:${8+d*16}px"`, idA=ent?"":`data-id="${ar.id}"`;
-    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre.toUpperCase())}${ovBadge(ar)}</td>`;
+    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre.toUpperCase())}${ovBadge(ar)}${pcB(ar)}</td>`;
     if(has) h+=ent?`<td></td><td></td><td></td><td></td><td></td><td></td></tr>`:`<td></td><td></td><td></td><td></td><td class="n">${ar.sub.length?fmt(total(ar)):""}</td></tr>`;
     else{
       h+=`<td class="n">${fq(qty(ar),ar.u)}</td><td>${esc(ar.u)}</td><td class="n">${pct(tvaOf(ar,lot))}</td>`+(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(ar.pu)}</td><td class="n">${fmt(total(ar))}</td>`)+`</tr>`;
-      if(metreOn(ar)&&showMetre(ar)) h+=validLines(ar).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}" ${pad}>${esc(l.expr)} = ${fmt(evalMetre(l.expr))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
+      if(metreOn(ar)&&showMetre(ar)) h+=validLines(ar).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}" ${pad}>${esc(mLine(l))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
     }
     return h+(ar.sub.length?bpuRows(ar.sub,mode,lot,d+1,force):"");
   }).join("");
@@ -1723,7 +1734,7 @@ function nodeRow(n,lot,mode,cls="chap"){
   if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n)}</td></tr>`;
   let h=`<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td>${esc(n.titre.toUpperCase())}</td><td class="n">${fq(qty(n),n.u)}</td><td>${esc(n.u)}</td><td class="n">${pct(tvaOf(n,lot))}</td>`
     +(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(n.pu)}</td><td class="n">${fmt(ownNode(n))}</td>`)+`</tr>`;
-  if(metreOn(n)&&showMetre(n)) h+=validLines(n).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}">${esc(l.expr)} = ${fmt(evalMetre(l.expr))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
+  if(metreOn(n)&&showMetre(n)) h+=validLines(n).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}">${esc(mLine(l))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
   return h;
 }
 /* ---------- Aperçu ---------- */
@@ -1745,7 +1756,7 @@ function renderPreview(){
   }else{
     const IND=16;
     const blk=(list,d,base)=>list.map(ar=>{const cont=ar.sub.length||isTitle(ar);
-      return `<div class="blk ${cont?"st":"ar"}${ar.id===state.sel?" cur":""}" data-id="${ar.id}" style="--ind:${base+d*IND}px"><p class="h"><span class="cd">${ar.code}</span>${esc(ar.titre)}${ovBadge(ar)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub,d+1,base);}).join("");
+      return `<div class="blk ${cont?"st":"ar"}${ar.id===state.sel?" cur":""}" data-id="${ar.id}" style="--ind:${base+d*IND}px"><p class="h"><span class="cd">${ar.code}</span>${esc(ar.titre)}${ovBadge(ar)}${pcB(ar)}</p>${imgsHtml(ar)}${ar.texte?rtView(ar.texte):(isTitle(ar)?"":`<p class="empty">Description à rédiger.</p>`)}${ar.loc?`<p class="loc">${esc(ar.loc)}</p>`:""}</div>`+blk(ar.sub,d+1,base);}).join("");
     const nimgs=n=>(n.imgs&&n.imgs.length)?`<div class="nimgs">${n.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-nid="${n.nid}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Photo")}"></div>`).join("")}</div>`:"";
     const nblk=(n,lvl)=>`<div class="blk nblk lv${lvl}${n.nid===state.sel?" cur":""}" data-nid="${n.nid}"><p class="h"><span class="cd">${n.code}</span>${lvl===1?"LOT — ":""}${esc(n.titre)}${ovBadge(n)}</p>${n.texte?rtView(n.texte):""}${nimgs(n)}</div>`+(n.art?blk(n.art,0,(lvl-1)*IND+IND):"")+(n.children||[]).map(c=>nblk(c,lvl+1)).join("");
     const rl=root===lot?1:(lot.children.includes(root)?2:3);
@@ -3802,7 +3813,7 @@ function lotItems(lot){
   const it=[]; const hasLeaf=st=>it.slice(st).some(x=>x.k==="art");
   it.push({k:"lot",code:lot.code,titre:lot.titre});
   const leafItem=(ar,d,plain)=>({k:"art",d,ar,id:ar.id,code:ar.code,titre:plain?ar.titre:ar.titre+ovTxt(ar),u:ar.u,q:qty(ar),tva:tvaOf(ar),ovIn:ovOf(ar).in||"",ovB:ovOf(ar).base,
-      metre:(metreOn(ar)&&showMetre(ar))?validLines(ar).map(l=>`${l.expr} = ${fmt(evalMetre(l.expr),2)}${l.note?"   "+l.note:""}`):[]});
+      metre:(metreOn(ar)&&showMetre(ar))?validLines(ar).map(l=>`${mLine(l)}${l.note?"   "+l.note:""}`):[]});
   const arts=(list,d)=>list.forEach(ar=>{
     if(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar)))return;
     if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre+ovTxt(ar)});arts(ar.sub,d+1);
