@@ -966,7 +966,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.40.0", deploiement: 40};
+const APP = {version: "0.41.0", deploiement: 41};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1559,7 +1559,7 @@ function renderTree(){
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
-    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}</span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
+    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
     h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
       h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
@@ -1630,7 +1630,7 @@ function renderNodeEditor(nc){
   ${hlBar(n)}
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
   ${rteField("Description",n.texte,isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…")}
-  ${isLot?"":imgsField(n,true)}
+  ${isLot?`<label class="chk" style="margin:6px 0 12px"><input type="checkbox" id="lotNoBpu" ${n.noBpu?"checked":""}> Masquer ce lot dans le BPU publié (Excel et page de saisie des entreprises)</label>`:imgsField(n,true)}
   ${ovBox(n)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
@@ -1895,7 +1895,8 @@ function rtParse(src){
   const html=isRich(src)?src.slice(RT.length):String(src||"");
   const body=new DOMParser().parseFromString("<body>"+html+"</body>","text/html").body;
   const blocks=[]; let cur=null;
-  const start=o=>{cur={li:!!(o&&o.li),ord:!!(o&&o.ord),align:(o&&o.align)||"",runs:[]};blocks.push(cur);return cur;};
+  const start=o=>{cur={li:!!(o&&o.li),ord:!!(o&&o.ord),align:(o&&o.align)||"",ind:(o&&o.ind)||0,runs:[]};blocks.push(cur);return cur;};
+  const indOf=el=>{const m=/^(-?[\d.]+)(em|px|pt)?$/.exec((el.style&&el.style.marginLeft)||"");if(!m)return 0;const v=parseFloat(m[1])/(m[2]==="px"?24:m[2]==="pt"?18:1.5);return Math.max(0,Math.min(8,Math.round(v)));};
   const al=el=>{const a=el.style&&el.style.textAlign;return /^(left|center|right|justify)$/.test(a)?a:"";};
   const sty=(el,st)=>{const s2={...st},t=el.tagName,cs=el.style||{};
     if(t==="B"||t==="STRONG"||/^(bold|[6-9]00)$/.test(cs.fontWeight))s2.b=true;
@@ -1909,8 +1910,8 @@ function rtParse(src){
     if(n.nodeType!==1) return;
     const tag=n.tagName;
     if(tag==="BR"){(cur||start()).runs.push({br:true});return;}
-    if(tag==="UL"||tag==="OL"){[...n.children].forEach(li=>{if(li.tagName!=="LI")return;start({li:true,ord:tag==="OL",align:al(li)});const s2=sty(li,st);[...li.childNodes].forEach(c=>inline(c,s2));});cur=null;return;}
-    if(/^(P|DIV|H[1-6]|BLOCKQUOTE|LI)$/.test(tag)){start({align:al(n)});const s2=sty(n,st);[...n.childNodes].forEach(c=>inline(c,s2));cur=null;return;}
+    if(tag==="UL"||tag==="OL"){[...n.children].forEach(li=>{if(li.tagName!=="LI")return;start({li:true,ord:tag==="OL",align:al(li),ind:indOf(li)});const s2=sty(li,st);[...li.childNodes].forEach(c=>inline(c,s2));});cur=null;return;}
+    if(/^(P|DIV|H[1-6]|BLOCKQUOTE|LI)$/.test(tag)){start({align:al(n),ind:indOf(n)});const s2=sty(n,st);[...n.childNodes].forEach(c=>inline(c,s2));cur=null;return;}
     const s2=sty(n,st);[...n.childNodes].forEach(c=>inline(c,s2));
   };
   [...body.childNodes].forEach(c=>inline(c,{}));
@@ -1931,7 +1932,7 @@ function rtSerialize(blocks,em){
   let out="",lt=null; const close=()=>{if(lt){out+=`</${lt}>`;lt=null;}};
   blocks.forEach(b=>{
     const m=[]; b.runs.forEach(r=>{const l=m[m.length-1];if(l&&same(l,r))l.t+=r.t;else m.push({...r});});
-    const inner=m.map(run).join(""), st=b.align&&b.align!=="justify"?` style="text-align:${b.align}"`:"";
+    const inner=m.map(run).join(""), sp=[]; if(b.align&&b.align!=="justify")sp.push("text-align:"+b.align); if(b.ind)sp.push("margin-left:"+(b.ind*1.5)+"em"); const st=sp.length?` style="${sp.join(";")}"`:"";
     if(b.li){const tg=b.ord?"ol":"ul";if(lt!==tg){close();out+=`<${tg}>`;lt=tg;}out+=`<li${st}>${inner||"<br>"}</li>`;}
     else{close();out+=`<p${st}>${inner||"<br>"}</p>`;}
   });
@@ -1967,6 +1968,8 @@ const rteBar=()=>`<div class="rte-bar" role="toolbar" aria-label="Mise en forme 
   <button type="button" data-rt="sizeDown" title="Réduire le texte">A−</button>
   <span class="sep"></span>
   ${[["justifyLeft","Aligner à gauche"],["justifyCenter","Centrer"],["justifyRight","Aligner à droite"],["justifyFull","Justifier (par défaut)"]].map(([k,t])=>`<button type="button" data-rt="${k}" title="${t}">${algSvg(k)}</button>`).join("")}
+  <button type="button" data-rt="outdentBlk" title="Diminuer le retrait"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><rect x="1" y="3" width="14" height="1.6"/><rect x="6" y="7.2" width="9" height="1.6"/><rect x="1" y="11.4" width="14" height="1.6"/><path d="M4 5.6 1.2 8 4 10.4z"/></svg></button>
+  <button type="button" data-rt="indentBlk" title="Augmenter le retrait"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><rect x="1" y="3" width="14" height="1.6"/><rect x="6" y="7.2" width="9" height="1.6"/><rect x="1" y="11.4" width="14" height="1.6"/><path d="M1 5.6 3.8 8 1 10.4z"/></svg></button>
   <span class="sep"></span>
   <button type="button" data-rt="insertUnorderedList" title="Liste à puces">• Puces</button>
   <button type="button" data-rt="insertOrderedList" title="Liste numérotée">1. Liste</button>
@@ -2003,6 +2006,8 @@ const rteField=(label,t,ph)=>`<div class="field dcard"><div class="dcard-h"><svg
     x("styleWithCSS",false,false);
     if(k==="hilite"){x("styleWithCSS",false,true);const on=!/transparent|rgba\(0, 0, 0, 0\)/.test(document.queryCommandValue("hiliteColor")||"transparent");x("hiliteColor",false,on?"transparent":"#fff176");}
     else if(k==="sizeUp"||k==="sizeDown"){const c=curPt(),i=RT_SIZES.findIndex(v=>v>=c-0.01);const j=k==="sizeUp"?Math.min(RT_SIZES.length-1,(RT_SIZES[i]>c+0.01?i:i+1)):Math.max(0,i-1);applySize(RT_SIZES[j<0?0:j]);return;}
+    else if(k==="indentBlk"||k==="outdentBlk"){const e0=ed(),sel=getSelection(); if(!e0||!sel.rangeCount)return; const r0=sel.getRangeAt(0); const d=k==="indentBlk"?1:-1;
+      [...e0.querySelectorAll("p,li")].filter(n=>r0.intersectsNode(n)).forEach(n=>{const m=/^(-?[\d.]+)em$/.exec(n.style.marginLeft||""); const lv=Math.max(0,Math.min(8,Math.round((m?parseFloat(m[1]):0)/1.5)+d)); if(lv)n.style.marginLeft=(lv*1.5)+"em"; else n.style.removeProperty("margin-left"); if(!n.getAttribute("style"))n.removeAttribute("style");});}
     else if(k==="clear"){x("removeFormat");x("styleWithCSS",false,true);x("hiliteColor",false,"transparent");ed().querySelectorAll("[style]").forEach(n=>{n.style.fontSize="";});}
     else x(k);
     sync();
@@ -2295,6 +2300,7 @@ tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(a
   if(e.shiftKey){e.preventDefault();msRange(id);state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
   if(e.ctrlKey||e.metaKey){e.preventDefault();if(!msel.size&&state.sel&&locate(state.sel))msel.add(state.sel);msel.has(id)?msel.delete(id):msel.add(id);msAnchor=id;state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
   msel.clear();msAnchor=id;select(id);}});
+document.addEventListener("change",e=>{const t=e.target; if(t&&t.id==="lotNoBpu"){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){if(t.checked)nc.node.noBpu=true; else delete nc.node.noBpu; save(); renderTree(); toast(t.checked?`Lot ${nc.node.code} masqué dans le BPU publié`:`Lot ${nc.node.code} de nouveau présent dans le BPU publié`);}}});
 document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();});
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{
@@ -2495,7 +2501,7 @@ function buildCctpPdf(J,info){
       const lh0=base*0.3528*1.38;
       if(!toks.length){y+=lh0*0.55;prevLi=false;return;}
       if(bk.li){num=(prevLi&&bk.ord&&prevOrd)?num+1:1;}prevLi=bk.li;prevOrd=bk.ord;
-      const ind=bk.li?INDL:0; let line=[],lw=0,A=0,first=true;
+      const ind=(bk.li?INDL:0)+(bk.ind||0)*5; let line=[],lw=0,A=0,first=true;
       const begin=()=>{if(y+lh0>B)np();A=avail()-ind;};
       const emit=last=>{
         while(line.length&&line[line.length-1].sp){lw-=line.pop().w;}
@@ -3766,7 +3772,7 @@ function bpuFlat(){
     const has=ar.sub.length||isTitle(ar);
     rows.push(has?{k:"par",code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte)}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte),u:ar.u,q:qty(ar),tva:tvaOf(ar)});
     arts(ar.sub,d+1);});
-  state.data.forEach(lot=>{
+  state.data.filter(l=>!l.noBpu).forEach(lot=>{
     rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
     const node=(n,d)=>{if(!nodeHasBase(n))return;rows.push({k:"node",code:n.code,titre:n.titre,d,texte:plainTxt(n.texte)});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
     lot.children.forEach(ch=>node(ch,0));
@@ -3856,8 +3862,8 @@ async function buildBpuStyled(E,en,info,opts){
   const ref=[o.ref,o.immeuble].filter(Boolean).join("-")||"AFFAIRE", oper=[o.objet,o.adresse,[o.cp,o.ville].filter(Boolean).join(" ")].filter(Boolean).join(" ").toUpperCase();
   const pct=r=>String(Number(r).toFixed(1)).replace(".",",")+"%";
   const runs=rows=>{rows=[...rows].sort((a,b)=>a-b);const out=[];let a=null,b=null;rows.forEach(r=>{if(a===null){a=b=r;}else if(r===b+1){b=r;}else{out.push(a===b?`I${a}`:`I${a}:I${b}`);a=b=r;}});if(a!==null)out.push(a===b?`I${a}`:`I${a}:I${b}`);return out.join(",");};
-  const rec=[];
-  for(const lot of state.data){
+  const rec=[]; const bLots=state.data.filter(l=>!l.noBpu);
+  for(const lot of bLots){
     const sn=sheetName(lot), ws=wb.addWorksheet(sn,{views:[{state:"frozen",ySplit:8,showGridLines:false}],
       pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0,horizontalCentered:true,printTitlesRow:"1:8",margins:{left:.35,right:.35,top:.5,bottom:.55,header:.25,footer:.25}},
       headerFooter:{oddFooter:'&L&"Arial,Regular"&8AGOA CCTP&C&"Arial,Regular"&8&A&R&"Arial,Regular"&8Page &P / &N'}});
@@ -3871,10 +3877,10 @@ async function buildBpuStyled(E,en,info,opts){
     { // nom de l'entreprise : cellule libre (première feuille) ; les autres feuilles la reprennent
       const l7=ws.getCell(7,1); l7.value="Entreprise :"; l7.font=F(10,{bold:true}); l7.alignment={vertical:"middle"};
       ws.mergeCells(7,3,7,6); const n7=ws.getCell(7,3);
-      if(lot===state.data[0]){ n7.value=en?en.nom:null; n7.protection={locked:false}; n7.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}}; n7.font=F(11,{bold:true,color:{argb:BLUE}}); }
-      else { const f0=sheetName(state.data[0]).replace(/'/g,"''"); n7.value={formula:`IF('${f0}'!C7="","",'${f0}'!C7)`,result:en?en.nom:""}; n7.font=F(11,{bold:true,color:{argb:BLUE}}); }
+      if(lot===bLots[0]){ n7.value=en?en.nom:null; n7.protection={locked:false}; n7.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}}; n7.font=F(11,{bold:true,color:{argb:BLUE}}); }
+      else { const f0=sheetName(bLots[0]).replace(/'/g,"''"); n7.value={formula:`IF('${f0}'!C7="","",'${f0}'!C7)`,result:en?en.nom:""}; n7.font=F(11,{bold:true,color:{argb:BLUE}}); }
       n7.alignment={vertical:"middle",horizontal:"left"};
-      for(let k=3;k<=6;k++){const c=ws.getCell(7,k);try{delete c._mergeStyle;}catch(e){}c.border={top:thin(BLUE),bottom:thin(BLUE),left:k===3?thin(BLUE):undefined,right:k===6?thin(BLUE):undefined};if(lot===state.data[0]){c.protection={locked:false};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};}}
+      for(let k=3;k<=6;k++){const c=ws.getCell(7,k);try{delete c._mergeStyle;}catch(e){}c.border={top:thin(BLUE),bottom:thin(BLUE),left:k===3?thin(BLUE):undefined,right:k===6?thin(BLUE):undefined};if(lot===bLots[0]){c.protection={locked:false};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};}}
       ws.mergeCells(7,7,7,10); const r7=ws.getCell(7,7); r7.value=o.dateRemise?`Remise des offres avant le ${o.dateRemise}`:""; r7.font=F(10,{bold:true}); r7.alignment={vertical:"middle",horizontal:"right"};
       ws.getRow(7).height=22; }
     {const du=depotUrl(en); if(du){ws.mergeCells(6,1,6,10);const lc=ws.getCell(6,1);lc.value={text:"Dépôt de l'offre (BPU rempli + devis PDF) : "+du,hyperlink:du};lc.font=F(10,{underline:true,color:{argb:BLUE}});lc.alignment={vertical:"middle",horizontal:"left"};ws.getRow(6).height=20;}}
@@ -3972,7 +3978,7 @@ async function buildBpuStyled(E,en,info,opts){
   const rs=wb.addWorksheet("Total de l'affaire",{views:[{showGridLines:false}],pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
   rs.columns=[{width:10},{width:58},{width:18},{width:18},{width:18}];
   rs.mergeCells(1,1,1,5); const t1=rs.getCell(1,1); t1.value="Bordereau des prix unitaires (BPU) - "+ref; t1.font=F(12,{bold:true}); t1.alignment={horizontal:"center"}; rs.getRow(1).height=24;
-  rs.mergeCells(2,1,2,5); const t2=rs.getCell(2,1); {const f0=sheetName(state.data[0]).replace(/'/g,"''"); t2.value={formula:`"Total de l'affaire"&IF('${f0}'!C7=""," "," - "&'${f0}'!C7)`,result:"Total de l'affaire"+(en?" - "+en.nom:"")};} t2.font=F(11,{bold:true,color:{argb:BLUE}}); t2.alignment={horizontal:"center"}; rs.getRow(2).height=22;
+  rs.mergeCells(2,1,2,5); const t2=rs.getCell(2,1); {const f0=sheetName(bLots[0]).replace(/'/g,"''"); t2.value={formula:`"Total de l'affaire"&IF('${f0}'!C7=""," "," - "&'${f0}'!C7)`,result:"Total de l'affaire"+(en?" - "+en.nom:"")};} t2.font=F(11,{bold:true,color:{argb:BLUE}}); t2.alignment={horizontal:"center"}; rs.getRow(2).height=22;
   if(info){rs.mergeCells(3,1,3,5); const t3=rs.getCell(3,1); t3.value=docTag(info); t3.font=F(9,{bold:true,color:{argb:BLUE}}); t3.alignment={horizontal:"center"};}
   ["Lot","Désignation","Montant HT","Montant TVA","Montant TTC"].forEach((t,k)=>{const c=rs.getCell(4,k+1);c.value=t;c.font=F(10,{bold:true,color:{argb:BLUE}});c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};c.alignment={horizontal:k>1?"center":"left",vertical:"middle"};c.border={top:thin(BLUE),bottom:thin(BLUE)};}); rs.getRow(4).height=26;
   let q=5; const q0=q; let sH=0,sT=0,sC=0;
