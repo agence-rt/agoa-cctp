@@ -94,7 +94,7 @@ function ragicCfg() {
 }
 async function ragicGet(url, key) {
   let r;
-  try { r = await fetch(url, { headers: { Authorization: "Basic " + key } }); }
+  try { r = await fetch(url + (url.includes("?") ? "&" : "?") + "APIKey=" + encodeURIComponent(String(key).replace(/[^A-Za-z0-9+\/=_-]/g, ""))); }   // clé dans l'adresse : méthode documentée par Ragic pour une clé API seule
   catch (e) { throw new Error("[network] " + e.message); }
   if (r.status === 401 || r.status === 403) throw new Error("[auth] Accès refusé par Ragic");
   if (!r.ok) throw new Error("[tool_error] Ragic HTTP " + r.status);
