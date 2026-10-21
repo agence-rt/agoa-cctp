@@ -46,8 +46,18 @@ function openAgoarv(file) {
   else pendingFile = { name: path.basename(file), text, file };
 }
 
+/* ---------- connexions partagées (AGOA Launcher > CONNEXIONS) : clé Ragic, clé Claude, compte Google ---------- */
+const { readShared } = require("./shared");
+let SHARED = {};
+function sharedSecret(name) {   // en mémoire seulement : rien n'est recopié dans le fichier de configuration
+  if (name === "ragicKey" && SHARED.ragic && SHARED.ragic.key) return SHARED.ragic.key;
+  if (name === "anthropicKey" && SHARED.anthropic && SHARED.anthropic.key) return SHARED.anthropic.key;
+  return "";
+}
+
 /* ---------- secrets (clé Ragic, jeton GitHub) : chiffrés avec le compte Windows quand c'est possible ---------- */
 function getSecret(name) {
+  const sh = sharedSecret(name); if (sh) return sh;
   const c = readJson(configPath(), {});
   const v = c[name];
   if (!v) return "";
@@ -79,7 +89,8 @@ function ragicCfg() {
   const c = readJson(configPath(), {});
   const key = getSecret("ragicKey");
   if (!key) throw new Error("[no_key] Clé API Ragic manquante : Aide, Clé API Ragic…");
-  return { host: (c.ragicHost || "https://eu2.ragic.com").replace(/\/+$/, ""), key };
+  const host = SHARED.ragic && SHARED.ragic.host ? "https://" + String(SHARED.ragic.host).replace(/^https?:\/\//, "") : (c.ragicHost || "https://eu2.ragic.com");
+  return { host: host.replace(/\/+$/, ""), key };
 }
 async function ragicGet(url, key) {
   let r;
@@ -192,7 +203,7 @@ function writeSharedAiKey(key) {
   writeAtomic(f, Buffer.concat([iv, c.getAuthTag(), enc]).toString("base64"), false);
   return true;
 }
-const aiKey = () => readSharedAiKey() || getSecret("anthropicKey");
+const aiKey = () => sharedSecret("anthropicKey") || readSharedAiKey() || getSecret("anthropicKey");
 async function askAnthropicKey() {
   const shared = !!findLibDir();
   const v = await askSecret("Reformulation par IA", "Clé API Anthropic",
@@ -429,6 +440,7 @@ async function ensureAuthorized() {
   if (!authEnabled()) return true;
   const a = readAuth();
   if (a && isAllowed(a.email)) return true;
+  if (SHARED.google && isAllowed(SHARED.google.email)) return true;   // compte déjà connecté dans AGOA Launcher
   closeSplash();
   const ok = await askLogin();
   if (ok) showSplash();   // on retrouve l'écran de démarrage jusqu'à l'ouverture de l'application
@@ -751,6 +763,7 @@ else {
     if (await startupUpdateCheck() === "updating") return;   // (l'application redémarre après installation)
     if (updateState === "downloading" || updateState === "ready") return;
     splashStatus("Vérification de l'accès…");
+    SHARED = await readShared();
     if (!(await ensureAuthorized())) { allowClose = true; app.quit(); return; }
     splashStatus("Démarrage…");
     createWindow(); booting = false;

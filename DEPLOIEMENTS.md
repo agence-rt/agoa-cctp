@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°44** — v0.44.0 — 2026-10-21 — Connexions partagées : la clé Ragic, la clé Claude et le compte Google d'AGOA Launcher sont repris sans nouvelle saisie
 - **n°43** — v0.43.0 — 2026-10-21 — Mise à jour
 - **n°42** — v0.42.0 — 2026-10-21 — Mise à jour
 - **n°41** — v0.41.0 — 2026-10-20 — Mise à jour
