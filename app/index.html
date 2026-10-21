@@ -112,7 +112,7 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .lot-name{cursor:text}
 .lot-in{width:100%;margin-top:4px;padding:4px 6px!important;font-size:13px}
 .lot-r{display:flex;align-items:center;gap:2px;flex:none}
-.lot-mv{display:inline-flex;margin-left:auto}.lot-mv .x{width:22px;height:24px;font-size:10px;opacity:.5}.tree .lot:hover .lot-mv .x{opacity:1}.lot-mv .x:disabled{opacity:.15}
+.lot-mv{display:inline-flex;margin-left:auto}.lot-mv .x{width:22px;height:24px;font-size:10px;opacity:.5}.tree .lot:hover .lot-mv .x,.tree .chs:hover .lot-mv .x,.tree .art:hover .lot-mv .x{opacity:1}.tree .chs .lot-mv,.tree .art .lot-mv{margin-left:6px}.lot-mv .x:disabled{opacity:.15}
 .lot-x,.pen{width:24px;height:24px;font-size:15px;opacity:.45;flex:none}
 .tree .lot:hover .lot-x,.lot-x:focus-visible,.tree summary:hover .pen,.tree .sub:hover .pen,.pen:focus-visible{opacity:1}
 .pen{margin-left:auto;margin-top:-3px}
@@ -614,8 +614,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #cmpTable th.ent{white-space:normal;line-height:1.25}#cmpTable th.ent .th-sub{display:block;max-width:150px;margin:0 auto;font-size:10.5px}
 #cmpTable td.q,#cmpTable thead th.qh{width:56px}
 #cmpTable thead th.c1,#cmpTable thead th.c2{z-index:6}
-#cmpTable tr.lot td{background:var(--lcp,var(--accent-soft));color:var(--lcs,inherit);font-weight:700;border-top:2px solid var(--lcf,var(--line))}
-#cmpTable tr.ch td{background:var(--paper);font-weight:650}
+#cmpTable tr.lot td{background:var(--lcm,var(--accent-soft));color:var(--lcf,inherit);font-weight:700;font-size:13px;border-top:2px solid var(--lcf,var(--line));border-bottom:1px solid var(--lcf,var(--line))}
+#cmpTable tr.ch td{background:var(--lcp,var(--paper));font-weight:650}
 #cmpTable tr.par td{font-weight:600}
 #cmpTable tr.xc td{color:var(--muted);text-decoration:line-through}
 #cmpTable tr.xc td.c1{text-decoration:none}
@@ -982,7 +982,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.47.0", deploiement: 47};
+const APP = {version: "0.48.0", deploiement: 48};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1347,7 +1347,7 @@ function firstId(){let r=null;lists(list=>{if(!r&&list[0])r=list[0].id;});return
 function leaves(cb){lists((list,owner,lot,ch)=>list.forEach(ar=>{if(!ar.sub.length&&!isTitle(ar))cb(ar,lot,ch);}));}
 function renumber(){lists((list,owner)=>list.forEach((x,i)=>x.code=owner.code+"."+(i+1)));}
 const pad=n=>String(n).padStart(2,"0");
-function ensureNodeIds(){const v=n=>{n.nid=n.nid||nid();(n.children||[]).forEach(v);};state.data.forEach(v);}
+function ensureNodeIds(){const seen=new Set();const v=n=>{if(!n.nid||seen.has(n.nid))n.nid=nid();seen.add(n.nid);(n.children||[]).forEach(v);};state.data.forEach(v);}
 function findNodeByNid(k){let r=null;lists((list,owner)=>{if(!r&&!owner.id&&owner.nid===k)r=owner;});return r;}
 function renumberAll(){
   state.data.forEach((lot,i)=>{lot.code=pad(i+1);let j=0;
@@ -1386,6 +1386,26 @@ function moveLot(i,dir){
   state.sel=sel; save(); refresh(); toast(`Lot « ${L[j].titre} » déplacé en position ${j+1}`);
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-lotmv]");if(!b)return;e.preventDefault();e.stopPropagation();const [i,d]=b.dataset.lotmv.split(":").map(Number);moveLot(i,d);if($("#optDlg")&&$("#optDlg").open)renderOptions();},true);
+function moveChapter(nidK,dir){
+  const L=state.data; let li=-1,ci=-1; L.forEach((l,a)=>l.children.forEach((c,b)=>{if(c.nid===nidK){li=a;ci=b;}}));
+  if(li<0) return; const ch=L[li].children[ci], sel=state.sel;
+  const j=ci+dir;
+  if(j>=0&&j<L[li].children.length){[L[li].children[ci],L[li].children[j]]=[L[li].children[j],L[li].children[ci]];}
+  else if(dir<0&&li>0){L[li].children.splice(ci,1);L[li-1].children.push(ch);openIds.add(L[li-1].nid);}
+  else if(dir>0&&li<L.length-1){L[li].children.splice(ci,1);L[li+1].children.unshift(ch);openIds.add(L[li+1].nid);}
+  else{toast(dir<0?"Déjà en première position":"Déjà en dernière position");return;}
+  if(!L.every(l=>l.children.length)){const e=L.find(l=>!l.children.length);if(e){const a=blank();e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[a],nid:nid()});}}
+  state.sel=sel; refresh();
+}
+function moveTitleArt(id,dir){
+  const f=locate(id); if(!f) return; const j=f.i+dir;
+  if(j<0||j>=f.list.length){toast(dir<0?"Déjà en première position":"Déjà en dernière position");return;}
+  [f.list[f.i],f.list[j]]=[f.list[j],f.list[f.i]]; state.sel=id; refresh();
+}
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-chmv]"); if(c){e.preventDefault();e.stopPropagation();const [k,d]=c.dataset.chmv.split("|");moveChapter(k,+d);return;}
+  const a=e.target.closest("[data-armv]"); if(a){e.preventDefault();e.stopPropagation();const [k,d]=a.dataset.armv.split("|");moveTitleArt(k,+d);}
+},true);
 function addLot(){
   const code=pad(state.data.length+1), a=blank();
   state.data.push({code,titre:"Nouveau lot",texte:"",charge:"Commune",children:[{code:code+".1",titre:"Nouveau chapitre",texte:"",art:[a]}]});
@@ -1598,14 +1618,14 @@ function renderTree(){
   const cur=locate(state.sel), nc=cur?null:nodeCtx(state.sel), curCh=cur?cur.ch:nc&&nc.ch, curLot=cur?cur.lot:nc&&nc.lot;
   const noq=new Set(missingQty().map(m=>m.ar.id));
   const rows=(list,b,n)=>list.map(ar=>{const has=ar.sub.length>0, op=openIds.has(ar.id);
-    const row=`<div class="art${ar.id===state.sel?" cur":""}${msel.has(ar.id)?" msel":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}${pcLab(ar)?`<span class="pctb">${esc(pcLab(ar))}</span>`:""}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span><button class="x art-x" data-delart="${ar.id}" aria-label="Supprimer ${esc(ar.code)}" title="Supprimer">×</button></div>`;
+    const row=`<div class="art${ar.id===state.sel?" cur":""}${msel.has(ar.id)?" msel":""}${n?" nested":""}${isTitle(ar)?" is-title":""}${noq.has(ar.id)?" noq":""}" draggable="true" data-id="${ar.id}" role="button" tabindex="0" aria-level="${n+3}"${has?` aria-expanded="${op}"`:""}>${has?`<button class="atg" data-arttg="${ar.id}" aria-label="${op?"Replier":"Déplier"} ${ar.code}">${op?"−":"+"}</button>`:`<span class="grip" aria-hidden="true"></span>`}<span class="code">${ar.code}</span><span class="t"${hlStyle(ar)}>${esc(ar.titre)}${pcLab(ar)?`<span class="pctb">${esc(pcLab(ar))}</span>`:""}</span>${ovTreeTag(ar)}<span class="pdots">${dotsOf(ar,noq.has(ar.id))}</span>${isTitle(ar)?`<span class="lot-mv"><button class="x" data-armv="${ar.id}|-1" aria-label="Monter" title="Monter">▲</button><button class="x" data-armv="${ar.id}|1" aria-label="Descendre" title="Descendre">▼</button></span>`:""}<button class="x art-x" data-delart="${ar.id}" aria-label="Supprimer ${esc(ar.code)}" title="Supprimer">×</button></div>`;
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
     h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
     h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
-      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
+      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<span class="lot-mv"><button class="x" data-chmv="${ch.nid}|-1" aria-label="Monter le chapitre" title="Monter">▲</button><button class="x" data-chmv="${ch.nid}|1" aria-label="Descendre le chapitre" title="Descendre">▼</button></span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
       h+=`<div class="kids">${rows(ch.art||[],1,0)}</div></details>`;
     });
     h+=`</div></details>`;
@@ -3453,11 +3473,11 @@ function anaLive(){
 function anaSync(){
   const live=anaLive();
   if(!state.ana){
-    state.ana={seuil:25,ref:"med",only:false,mode:"detail",lots:live.lots.map(L=>({id:L.id,titre:L.titre,charge:L.charge,rows:[]}))};
+    state.ana={seuil:25,ref:"med",only:false,v47:true,mode:"lot",lots:live.lots.map(L=>({id:L.id,titre:L.titre,charge:L.charge,rows:[]}))};
     live.rows.forEach(r=>state.ana.lots.find(l=>l.id===r.lotId).rows.push({id:r.id,d:r.d}));
     return live;
   }
-  const A=state.ana, present=new Set();
+  const A=state.ana, present=new Set(); if(!A.v47){A.v47=true;A.mode="lot";}
   A.lots.forEach(l=>{l.rows=l.rows.filter(r=>live.info.has(r.id));l.rows.forEach(r=>present.add(r.id));});
   let prev=null;
   live.rows.forEach(r=>{
@@ -3603,7 +3623,7 @@ function renderAnalyse(){
       ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(e.nom)}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
     </span>
     <span class="sep"></span>
-    <button class="btn sm" id="anaNewLot">Nouveau lot</button><button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
+    <button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
   const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
     <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
   const ec=()=>"";
@@ -3624,7 +3644,7 @@ function renderAnalyse(){
         const cls=`${w.k==="ch"?"ch":w.k==="par"?"par":"art"}${w.ex?" xc":""} hov`, ind=`padding-left:${w.d*14}px`;
         const ctl=`<span class="ana-grip" draggable="true" data-agrip="${li}:${w.ri}" title="Glisser pour déplacer cette ligne${w.leaf?"":" et son contenu"}">⋮⋮</span><input type="checkbox" class="ana-inc" data-ainc="${li}:${w.ri}" ${w.x?"":"checked"} title="${w.x?"Réintégrer ce poste":"Écarter ce poste de l'analyse"}"> `;
         const mv=`<span class="ana-ctl"><button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button><button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
-        body+=`<tr class="${cls}" data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
+        body+=`<tr class="${cls}" ${w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""} data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
         if(w.leaf){
           body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
@@ -3642,7 +3662,7 @@ function renderAnalyse(){
       const cell=(v,est)=>`<td class="n e1"></td><td class="n">${eur2(v)}${ec(v,est)}</td>`;
       body+=`<tr class="lot" style="${lotStyle(lotById(l.id))}"><td class="c1">Lot ${pad(li+1)}</td><td class="c2">${esc(l.titre)} <span class="hint">(${esc((l.charge||"Commune").toLowerCase())})</span></td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>cell(tot.e[e.id].ht,tot.est)).join("")}</tr>`;
       rows.forEach((w,wi)=>{if(w.k!=="ch"||w.ex||anaOvOnly(rows,wi))return;const t=w.sub;
-        body+=`<tr class="ch"><td class="c1">${esc(w.o.code||"")}</td><td class="c2">${esc(w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>cell(t.e[e.id].ht,t.est)).join("")}</tr>`;});
+        body+=`<tr class="ch" style="${lotStyle(lotById(l.id))}"><td class="c1">${esc(w.o.code||"")}</td><td class="c2">${esc(w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>cell(t.e[e.id].ht,t.est)).join("")}</tr>`;});
     });
   }
   const T=anaSums(M,()=>true), C=anaSums(M,l=>l.charge==="Commune"), V=anaSums(M,l=>l.charge!=="Commune");
@@ -3902,7 +3922,7 @@ async function exportBpu(entId,info,opts){
   if(info===undefined){if(!await confirmExport(opts&&opts.desc?"le BPU avec descriptif":"le BPU")) return; info=await askDocInfo(opts&&opts.desc?"le BPU avec descriptif":"le BPU"); if(!info) return;}
   const name=safeName(fileBase(state)+" - BPU"+(opts&&opts.desc?" avec descriptif":"")+(en?" - "+en.nom:""))+".xlsx";
   let E=null; try{E=await loadExcelJS();}catch(e){}
-  if(E){ try{ const buf=await buildBpuStyled(E,en,info,opts); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué : export simplifié."); } }
+  if(E){ try{ const buf=await buildBpuStyled(E,en,info,opts); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué ("+((err&&err.message)||err)+") : export simplifié.",null,9000); } }
   else toast("Mise en page détaillée indisponible (module non chargé) : export simplifié.");
   let X; try{X=await loadXLSX();}catch(e){toast("Le module Excel n'a pas pu être chargé : vérifiez la connexion.");return;}
   await saveXlsx(buildBpuBasic(X,en,info),name);
