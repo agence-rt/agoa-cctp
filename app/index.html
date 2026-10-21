@@ -354,7 +354,7 @@ mark{background:#fff176;color:inherit;padding:0}
 .sheet .empty{color:var(--muted);font-style:italic}
 
 /* consultation / analyse / synthèse */
-.consult{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+.consult{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
 #optBtn{display:inline-flex;align-items:center;gap:7px}
 .dev-imp{margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
 .dev-tree{max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:6px 0;font-size:13px}
@@ -363,10 +363,11 @@ mark{background:#fff176;color:inherit;padding:0}
 .dv-r{display:block;padding:3px 12px}.dv-l{font-weight:700;color:var(--accent);background:var(--accent-soft);margin-top:6px;cursor:pointer}.dv-l input{margin-right:6px}
 .dv-c{font-weight:600}.dv-t{color:var(--accent)}.dv-a{color:var(--ink)}.dv-n{float:right;color:var(--muted);font-size:12px}
 .dev-opts{display:grid;gap:6px;margin:12px 0 0;font-size:13.5px}
-.docs-grid{display:grid;gap:12px;margin:8px 16px 16px}
+.docs-grid{display:grid;gap:10px;margin:12px 14px 14px}
 .doc-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;font:inherit}
 .doc-card b{font-size:15.5px}.doc-card span{font-size:12.5px;color:var(--muted)}
 .doc-card:hover{border-color:var(--accent)}
+.ent-lots{margin-top:6px;font-size:12.5px}.ent-lots summary{cursor:pointer;color:var(--muted)}.ent-lots>div{display:flex;flex-direction:column;gap:3px;padding:6px 0 2px}.lotck{display:flex;gap:6px;align-items:flex-start;font-size:12.5px}.lotck input{margin-top:2px}
 .doc-card.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}.doc-card.primary span{color:inherit;opacity:.88}
 .dbx-st{margin:8px 0 0;font-size:12.5px;overflow-wrap:anywhere}.dbx-st.ok{color:var(--green-ink)}.dbx-st.bad{color:var(--ochre)}
 .pane-h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -598,14 +599,16 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .ana-bar input[type=number]{width:64px;text-align:right}
 .ana-bar .sep{width:1px;height:22px;background:var(--line)}
 #v-analyse .scroll{max-height:calc(100vh - 300px);margin:0 18px;border:1px solid var(--line);border-radius:6px}
-#cmpTable{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
+#cmpTable{border-collapse:separate;border-spacing:0;font-size:12.5px;width:auto;margin-right:auto}
 #cmpTable th,#cmpTable td{padding:4px 8px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface)}
 #cmpTable thead th{position:sticky;top:0;z-index:4;background:var(--paper);font-size:12px}
 #cmpTable thead tr:nth-child(2) th{top:31px}
 #cmpTable th.ent{border-left:1px solid var(--line);text-align:center}
 #cmpTable td.e1{border-left:1px solid var(--line)}
-#cmpTable td.c1,#cmpTable th.c1{position:sticky;left:0;z-index:3;min-width:104px}
-#cmpTable td.c2,#cmpTable th.c2{position:sticky;left:104px;z-index:3;min-width:290px;max-width:360px;white-space:normal}
+#cmpTable td.c1,#cmpTable th.c1{position:sticky;left:0;z-index:3;width:104px;min-width:104px;max-width:104px}
+#cmpTable td.c2,#cmpTable th.c2{position:sticky;left:104px;z-index:3;width:300px;min-width:300px;max-width:300px;white-space:normal}
+#cmpTable th.ent{white-space:normal;line-height:1.25}#cmpTable th.ent .th-sub{display:block;max-width:150px;margin:0 auto;font-size:10.5px}
+#cmpTable td.q,#cmpTable thead th.qh{width:56px}
 #cmpTable thead th.c1,#cmpTable thead th.c2{z-index:6}
 #cmpTable tr.lot td{background:var(--accent-soft);font-weight:700}
 #cmpTable tr.ch td{background:var(--paper);font-weight:650}
@@ -632,10 +635,13 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 #cmpTable tr.dropa td{box-shadow:inset 0 -3px 0 var(--accent)}
 #cmpTable tr.dragx{opacity:.4}
 #cmpTable select.lotch{font-size:11.5px;padding:1px 2px}
-.ana-cols{position:relative;font-size:13px}
-.ana-cols summary{cursor:pointer;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);list-style:none;user-select:none}
-.ana-cols[open] summary{border-color:var(--accent)}
-.ana-cols>div{position:absolute;z-index:20;top:34px;left:0;min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,.14);display:flex;flex-direction:column;gap:6px}
+.achips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.achip{display:inline-flex;align-items:stretch;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);position:relative}
+.achip button{border:0;background:none;padding:4px 10px;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
+.achip.off{border-color:var(--line);background:var(--surface)}.achip.off>button{color:var(--muted);font-weight:400;text-decoration:line-through}
+.ana-lots{border-left:1px solid var(--line);position:static}.ana-lots summary{list-style:none;cursor:pointer;padding:4px 7px;font-size:11.5px;color:var(--muted);user-select:none;height:100%;display:flex;align-items:center}
+.ana-lots summary.part{color:var(--ochre);font-weight:600}
+.ana-lots>div{position:absolute;z-index:30;top:100%;left:0;margin-top:3px;min-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,.14);display:flex;flex-direction:column;gap:5px;color:var(--ink)}
 #cmpTable.nomoe .mo{display:none}
 .ent-sub.offer-ok{color:#2e7d32;font-weight:600}
 select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:600}
@@ -715,6 +721,15 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 
   <section class="view consult" id="v-consultation" hidden>
     <div class="pane">
+      <div class="pane-h"><div><h2>Dossier de consultation</h2><p>Pièces à transmettre aux entreprises</p></div></div>
+      <div id="qtyWarn"></div>
+      <div class="docs-grid">
+        <button class="doc-card" id="expCctp"><b>Exporter le CCTP</b><span>PDF : page de garde, sommaire et descriptifs des ouvrages</span></button>
+        <button class="doc-card" id="expBpuBtn"><b>Exporter le BPU</b><span>Excel : bordereau des prix à remplir par l'entreprise</span></button>
+        <button class="doc-card" id="expBpuDesc"><b>Exporter le BPU avec descriptif</b><span>Excel : même bordereau, avec la description de chaque article</span></button>
+      </div>
+    </div>
+    <div class="pane">
       <div class="pane-h">
         <div><h2>Entreprises consultées</h2><p id="remise"></p></div>
         <button class="btn primary" id="entAddBtn">Ajouter des entreprises</button>
@@ -733,15 +748,6 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
         <div class="rb-act"><button class="btn sm" id="dbxScanBtn" title="Lit les nouveaux fichiers du dossier retour, importe les offres et prévient par mail">Vérifier les retours maintenant</button> <button class="btn sm" id="dbxAllBtn" title="Relit tous les BPU du dossier, y compris ceux déjà vus">Tout relire</button> <button class="btn sm" id="dbxSuggest">Retrouver le dossier</button> <button class="btn sm" id="dbxChoose">Choisir le dossier…</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
       </div>
       <table id="entTable"></table>
-    </div>
-    <div class="pane">
-      <div class="pane-h"><div><h2>Dossier de consultation</h2><p>Pièces à transmettre aux entreprises</p></div></div>
-      <div id="qtyWarn"></div>
-      <div class="docs-grid">
-        <button class="doc-card" id="expCctp"><b>Exporter le CCTP</b><span>PDF : page de garde, sommaire et descriptifs des ouvrages</span></button>
-        <button class="doc-card primary" id="expBpuBtn"><b>Exporter le BPU</b><span>Excel : bordereau des prix à remplir par l'entreprise</span></button>
-        <button class="doc-card" id="expBpuDesc"><b>Exporter le BPU avec descriptif</b><span>Excel : même bordereau, avec la description de chaque article</span></button>
-      </div>
     </div>
   </section>
 
@@ -1435,6 +1441,14 @@ const blank=(u="")=>({id:nid(),code:"",titre:"Nouvel article",u,pu:0,tva:null,qm
 const ents=()=>state.ents||(state.ents=[]);
 const hasOffer=e=>!!(e.offre||e.base!=null);
 const offers=()=>ents().filter(hasOffer);
+/* Lots auxquels une entreprise répond : e.skip = lots hors compétence (non répondus). Les lots masqués au BPU ne sont jamais analysés. */
+const entSkip=e=>new Set((e&&e.skip)||[]);
+const entAnswers=(e,lot)=>!lot.noBpu&&!entSkip(e).has(lot.nid);
+function leavesE(e,cb){leaves((ar,lot,ch)=>{if(entAnswers(e,lot))cb(ar,lot,ch);});}
+const lotsBpu=()=>state.data.filter(l=>!l.noBpu);
+function entLotsLabel(e){const L=lotsBpu(),n=L.filter(l=>entAnswers(e,l)).length;return n===L.length?"Tous les lots":`${n} lot${n>1?"s":""} sur ${L.length}`;}
+function entLotsBoxes(e,att){return lotsBpu().map(l=>`<label class="lotck"><input type="checkbox" ${att}="${esc(e.id)}|${esc(l.nid)}" ${entAnswers(e,l)?"checked":""}> Lot ${esc(l.code||"")} ${esc(l.titre)}</label>`).join("");}
+function entSetLot(e,lotNid,on){const sk=new Set(e.skip||[]);on?sk.delete(lotNid):sk.add(lotNid);e.skip=[...sk];if(!e.skip.length)delete e.skip;}
 const nb=(n,s,p)=>`${n===0?"Aucune":n} ${n>1?p:s}`.replace(/^./,c=>c.toUpperCase());
 const STATUTS=["À consulter","Consultée","Offre reçue","A décliné"];
 function hash(s){let h=7;for(const c of s)h=(h*31+c.charCodeAt(0))%9973;return h;}
@@ -3087,7 +3101,7 @@ function renderConsult(){
   const E=ents(); $("#dbxPath").value=state.dropbox||"";
   {const e0=E[0]||{nom:"Entreprise"};$("#dbxEx1").textContent=dbxFile(e0,"BPU")+".xlsx";$("#dbxEx2").textContent=dbxFile(e0,"DEVIS")+".pdf";}
   $("#entTable").innerHTML=E.length?`<tr><th>Entreprise</th><th>État</th><th></th></tr>`+E.map((e,i)=>`<tr>
-    <td><b>${esc(e.nom)}</b>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><span class="dbx-lk"><input type="url" class="dbx-link" data-entlink="${i}" value="${esc(e.depot||"")}" placeholder="Lien de dépôt Dropbox (https://www.dropbox.com/request/…)" aria-label="Lien de dépôt de ${esc(e.nom)}" autocomplete="off"><button class="btn sm" data-entcopy="${i}" ${depotUrl(e)?"":"disabled"}>Copier</button></span><span class="ent-act"><button class="lnk" data-entportal="${i}">Page de saisie</button><button class="lnk" data-entexp="${i}">Exporter le BPU</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
+    <td><b>${esc(e.nom)}</b>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><span class="dbx-lk"><input type="url" class="dbx-link" data-entlink="${i}" value="${esc(e.depot||"")}" placeholder="Lien de dépôt Dropbox (https://www.dropbox.com/request/…)" aria-label="Lien de dépôt de ${esc(e.nom)}" autocomplete="off"><button class="btn sm" data-entcopy="${i}" ${depotUrl(e)?"":"disabled"}>Copier</button></span><details class="ent-lots"><summary>Lots répondus : <b>${esc(entLotsLabel(e))}</b></summary><div>${entLotsBoxes(e,"data-entlot")}<span class="hint">Les lots non cochés (hors compétence) ne sont pas comptés comme incomplets.</span></div></details><span class="ent-act"><button class="lnk" data-entportal="${i}">Saisie manuelle</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
     <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${hasOffer(e)?`<span class="hint ent-sub offer-ok">✓ ${esc(offerInfo(e))}</span>`:""}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
@@ -3096,6 +3110,7 @@ function renderConsult(){
 
 $("#qtyWarn").addEventListener("click",e=>{if(e.target.id==="qwGo")openQtyCheck();});
 $("#entAddBtn").onclick=()=>{const p=$("#entAdd");p.hidden=!p.hidden;if(!p.hidden)$("#entQ").focus();};
+$("#entTable").addEventListener("change",e=>{const c=e.target.closest("[data-entlot]");if(!c)return;const [id,ln]=c.dataset.entlot.split("|"),en=ents().find(x=>x.id===id);if(!en)return;entSetLot(en,ln,c.checked);save();const d=c.closest("details");const idx=ents().indexOf(en);renderConsult();const nd=document.querySelectorAll("#entTable details.ent-lots")[idx];if(nd)nd.open=true;});
 $("#entTable").addEventListener("input",e=>{const s=e.target.closest("[data-entst]");if(s){const en=ents()[+s.dataset.entst];en.statut=s.value;save();s.classList.toggle("st-ok",hasOffer(en)||en.statut==="Offre reçue");}});
 $("#entTable").addEventListener("click",async e=>{const b=e.target.closest("[data-delent]");if(!b)return;const en=ents()[+b.dataset.delent];
   if(await ask(`Retirer <b>${esc(en.nom)}</b> de la liste des entreprises consultées ?${hasOffer(en)?"<br><span class=\"hint\">Son offre ne sera plus prise en compte dans l'analyse.</span>":""}`,"Retirer",true)){
@@ -3435,6 +3450,7 @@ function anaModel(){
   const ovAcc=(id,key,w)=>{const O=M.ov[id];if(!O)return;const k=1+tvaOf(w.o,null)/100;O.est[key]+=w.est;O.est[key+"T"]+=w.est*k;E.forEach((e,j)=>{if(w.a[j]!=null){O.e[e.id][key]+=w.a[j];O.e[e.id][key+"T"]+=w.a[j]*k;}});};
   const emptyT=()=>({est:0,estT:0,e:Object.fromEntries(E.map(e=>[e.id,{ht:0,ttc:0}]))});
   A.lots.forEach((l,li)=>{
+    const lotObj=state.data.find(x=>x.nid===l.id); if(lotObj&&lotObj.noBpu) return;
     const rows=l.rows.map((r,ri)=>{const o=live.info.get(r.id);return {li,ri,d:r.d,x:!!r.x,ex:false,k:o.k,o:o.obj,leaf:o.k==="art",q:0,est:0,estT:0,p:[],a:[],miss:[],dev:[],flagged:false,sub:null};});
     let exD=null;
     rows.forEach(w=>{
@@ -3443,7 +3459,7 @@ function anaModel(){
       w.ex=exD!==null;
       if(!w.leaf) return;
       const ar=w.o, k=1+tvaOf(ar,null)/100; w.q=qty(ar); w.est=w.q*ar.pu; w.estT=w.est*k;
-      E.forEach(e=>{const m=!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0, p=m?null:puEnt(ar,e);
+      E.forEach(e=>{const out=!!lotObj&&entSkip(e).has(lotObj.nid), m=!out&&!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0, p=(m||out)?null:puEnt(ar,e);
         w.miss.push(m); w.p.push(p); w.a.push(p==null?null:w.q*p);});
       if(!w.ex&&w.q>0){
         const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]);
@@ -3535,6 +3551,7 @@ function cmpBands(tbl,n){ // sépare visuellement les entreprises : fond gris l�
     const L=c.slice(-2*n); if(L.length<2*n)return;
     L.forEach((x,i)=>{const g=Math.floor(i/2);x.classList.add("cg");if(g%2)x.classList.add("gb");if(i%2===0)x.classList.add("cg1");});});
 }
+let anaLotOpen=null;
 function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
@@ -3549,10 +3566,10 @@ function renderAnalyse(){
     <label><input type="checkbox" id="anaCol" ${col?"checked":""}> Couleurs d'écart</label>
     <label><input type="checkbox" id="anaOnly" ${A.only?"checked":""}> Seulement les lignes avec écart (${M.nflag})</label>
     <span class="sep"></span>
-    <details class="ana-cols"><summary>Colonnes affichées${A.hide.length||A.hideMoe?` (${Ev.length+(A.hideMoe?0:1)}/${E.length+1})`:""}</summary><div>
-      <label><input type="checkbox" data-acol="moe" ${A.hideMoe?"":"checked"}> Estimation MOE</label>
-      ${E.map(e=>`<label><input type="checkbox" data-acol="${esc(e.id)}" ${A.hide.includes(e.id)?"":"checked"}> ${esc(e.nom)}${state.retenue===e.id?" (retenue)":""}</label>`).join("")}
-    </div></details>
+    <span class="achips" role="group" aria-label="Entreprises affichées"><span class="hint">Entreprises :</span>
+      <span class="achip ${A.hideMoe?"off":""}"><button data-achip="moe" aria-pressed="${!A.hideMoe}" title="Afficher ou masquer l'estimation de la MOE">Estimation MOE</button></span>
+      ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(e.nom)}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
+    </span>
     <span class="sep"></span>
     <button class="btn sm" id="anaNewLot">Nouveau lot</button><button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
   const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
@@ -3631,6 +3648,8 @@ function renderAnalyse(){
     if(t.id==="anaNewLot"){const r=await openDlg({title:"Nouveau lot",msg:"Lot vide de l'analyse : déplacez-y ensuite des lignes ou des chapitres.",txt:{label:"Nom du lot",value:""},ch:true,ok:"Créer"});if(r){newLot(r.txt,r.ch);redo();toast("Lot créé");}return;}
     if(t.id==="anaReset"){if(await ask("Revenir à la structure du CCTP ? Les postes écartés, l'ordre et les lots recomposés de l'analyse seront perdus (les offres des entreprises sont conservées).","Réinitialiser",true)){delete state.ana;redo();toast("Structure d'analyse réinitialisée");}return;}
     let b;
+    if(b=t.closest("[data-achip]")){const k=b.dataset.achip;A.hide=A.hide||[];if(k==="moe")A.hideMoe=!A.hideMoe;else if(A.hide.includes(k))A.hide=A.hide.filter(x=>x!==k);else A.hide.push(k);save();renderAnalyse();return;}
+    if(b=t.closest("[data-alotd] summary")){const id=b.parentNode.dataset.alotd;anaLotOpen=b.parentNode.open?null:id;}
     if(b=t.closest("[data-aup]")){const [li,ri]=idx(b.dataset.aup),R=A.lots[li].rows,d=R[ri].d;let i=ri-1;while(i>=0&&R[i].d>d)i--;if(i>=0&&R[i].d===d){anaMove(li,ri,li,i);redo();}else toast("Déjà en première position");return;}
     if(b=t.closest("[data-adn]")){const [li,ri]=idx(b.dataset.adn),R=A.lots[li].rows,d=R[ri].d,e=anaBlockEnd(R,ri);if(e<R.length&&R[e].d===d){anaMove(li,ri,li,anaBlockEnd(R,e));redo();}else toast("Déjà en dernière position");return;}
     if(b=t.closest("[data-amv]")){const [li,ri]=idx(b.dataset.amv),o=A.lots[li].rows[ri],info=anaLive().info.get(o.id);
@@ -3647,8 +3666,7 @@ function renderAnalyse(){
     const t=e.target, A=state.ana; if(!A) return;
     if(t.dataset.ainc){const [li,ri]=idx(t.dataset.ainc),r=A.lots[li].rows[ri];if(t.checked)delete r.x;else r.x=true;redo();return;}
     if(t.dataset.lotch!==undefined){A.lots[+t.dataset.lotch].charge=t.value;redo();return;}
-    if(t.dataset.acol){A.hide=A.hide||[];const k=t.dataset.acol;if(k==="moe")A.hideMoe=!t.checked;else{A.hide=A.hide.filter(x=>x!==k);if(!t.checked)A.hide.push(k);}
-      const d=document.querySelector(".ana-cols"),op=d&&d.open;save();renderAnalyse();const d2=document.querySelector(".ana-cols");if(d2&&op)d2.open=true;return;}
+    if(t.dataset.alot){const [id,ln]=t.dataset.alot.split("|"),en=ents().find(x=>x.id===id);if(en){entSetLot(en,ln,t.checked);anaLotOpen=id;save();renderAnalyse();}return;}
     if(t.id==="anaSeuilO"){A.seuilOffre=Math.max(1,parseFloat(t.value)||20);redo();return;}
     if(t.id==="anaCol"){A.colors=t.checked;redo();return;}
     if(t.id==="anaOnly"){A.only=t.checked;redo();return;}
@@ -3778,7 +3796,7 @@ function bpuFlat(){
     rows.push(has?{k:"par",code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte)}:{k:"art",id:ar.id,ar,code:ar.code,titre:ar.titre+ovTxt(ar),d,texte:plainTxt(ar.texte),u:ar.u,q:qty(ar),tva:tvaOf(ar)});
     arts(ar.sub,d+1);});
   state.data.filter(l=>!l.noBpu).forEach(lot=>{
-    rows.push({k:"lot",code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
+    rows.push({k:"lot",nid:lot.nid,code:lot.code,titre:lot.titre,d:0,texte:plainTxt(lot.texte)});
     const node=(n,d)=>{if(!nodeHasBase(n))return;rows.push({k:"node",code:n.code,titre:n.titre,d,texte:plainTxt(n.texte)});if(n.art)arts(n.art,d+1);(n.children||[]).forEach(c=>node(c,d+1));};
     lot.children.forEach(ch=>node(ch,0));
     rows.push({k:"btot",ids:ovLeavesOf([lot]).filter(a=>!ovOf(a).in).map(a=>a.id)});
@@ -3791,7 +3809,7 @@ function bpuFlat(){
   });
   return rows;
 }
-const missingFor=e=>{if(!e.offre)return 0;let m=0;leaves(ar=>{if(qty(ar)>0&&(e.offre.pus||{})[ar.id]==null)m++;});return m;};
+const missingFor=e=>{if(!e.offre)return 0;let m=0;leavesE(e,ar=>{if(qty(ar)>0&&(e.offre.pus||{})[ar.id]==null)m++;});return m;};
 function offerInfo(e){
   if(!e.offre) return e.date&&e.date!=="–"?`Offre reçue le ${e.date}`:"Offre enregistrée";
   const d=new Date(e.offre.recu), m=missingFor(e);
@@ -4137,13 +4155,13 @@ $("#portalPrev").onclick=()=>{const E=ents();if(!E.length){toast("Ajoutez d'abor
 
 /* page de saisie côté entreprise (simulation) */
 let PD=null;
-function openPortal(entId){
+function openPortal(entId,manual){
   const en=ents().find(e=>e.id===entId); if(!en) return;
-  PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null};
+  PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null,manual:!!manual};
   renderPortal(); $("#portalDlg").showModal();
 }
 function portalTotals(){let ht=0,tva=0,miss=0,n=0;const O={};ovl().forEach(o=>O[o.id]={ht:0,ttc:0});
-  leaves(ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0)miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
+  leavesE(ents().find(x=>x.id===PD.id),ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0)miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
     if(!c.in){ht+=m;tva+=m*k;}else if(O[c.in]){O[c.in].ht+=m;O[c.in].ttc+=m*(1+k);}
     c.base.forEach(id=>{if(O[id]){O[id].ht-=m;O[id].ttc-=m*(1+k);}});});
   return{ht,tva,ttc:ht+tva,miss,n,O};}
@@ -4156,8 +4174,9 @@ function portalSums(){
 function renderPortal(){
   const en=ents().find(e=>e.id===PD.id), o=state.op||{};
   let h="";
-  let bs=0,os=0;
+  let bs=0,os=0,skipLot=false;const sk=entSkip(en);
   bpuFlat().forEach(r=>{
+    if(r.k==='lot')skipLot=sk.has(r.nid); if(skipLot)return;
     const desc=r.texte?`<span class="pt-desc">${esc(r.texte)}</span>`:"", pad=`style="padding-left:${6+Math.min(r.d,4)*12}px"`;
     if(r.k==="lot"){bs=h.length;h+=`<tr class="lot"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}</td></tr>`;}
     else if(r.k==="btot"){const at=`data-pids="${r.ids.join(",")}"`;
@@ -4182,24 +4201,24 @@ function renderPortal(){
         <td><input type="text" class="nt" data-pnt="${r.id}" value="${esc(PD.notes[r.id]||"")}" placeholder="Annotation" aria-label="Annotation sur ${esc(r.titre)}"></td></tr>`;}
   });
   $("#ptBody").innerHTML=`
-    <div class="pt-head"><div><h3 id="ptTitle">Consultation des entreprises${o.immeuble?" · "+esc(o.immeuble):""}</h3>
+    <div class="pt-head"><div><h3 id="ptTitle">${PD.manual?"Saisie manuelle de l'offre":"Consultation des entreprises"}${o.immeuble?" · "+esc(o.immeuble):""}</h3>
       <p>${esc([o.ref&&"Code travaux "+o.ref,o.objet,o.adresse].filter(Boolean).join(" · "))}${o.dateRemise?` · Remise des offres avant le ${esc(o.dateRemise)}`:""}</p>
-      <p style="margin-top:6px"><b>${esc(en.nom)}</b>${en.offre?` · offre déjà transmise, vous pouvez la modifier et la soumettre à nouveau`:""}</p></div>
+      <p style="margin-top:6px"><b>${esc(en.nom)}</b>${PD.manual?` · saisissez ou corrigez les prix à partir du devis de l'entreprise`:""}${en.offre?` · offre déjà enregistrée, vous pouvez la modifier`:""}${(en.skip||[]).length?` · lots non répondus masqués`:""}</p></div>
       <button class="btn" data-pclose>Fermer</button></div>
-    <div class="pt-steps"><span class="st"><i>1</i>Renseignez vos prix unitaires HT</span><span class="st"><i>2</i>Joignez votre devis sur papier à en-tête (PDF)</span><span class="st"><i>3</i>Soumettez votre offre</span><span class="sp"></span>
-      <button class="btn sm" data-pxl>Télécharger le BPU (Excel)</button>
-      <label class="btn sm" for="pImp" style="cursor:pointer">Importer mon BPU Excel rempli</label><input type="file" id="pImp" accept=".xlsx,.xls,.ods" hidden></div>
+    <div class="pt-steps">${PD.manual?`<span class="st"><i>1</i>Saisissez les prix unitaires HT de l'entreprise</span><span class="st"><i>2</i>Joignez son devis (PDF, facultatif)</span><span class="st"><i>3</i>Enregistrez l'offre</span>`:`<span class="st"><i>1</i>Renseignez vos prix unitaires HT</span><span class="st"><i>2</i>Joignez votre devis sur papier à en-tête (PDF)</span><span class="st"><i>3</i>Soumettez votre offre</span>`}<span class="sp"></span>
+      ${PD.manual?"":`<button class="btn sm" data-pxl>Télécharger le BPU (Excel)</button>`}
+      <label class="btn sm" for="pImp" style="cursor:pointer">${PD.manual?"Reprendre les prix d'un BPU Excel":"Importer mon BPU Excel rempli"}</label><input type="file" id="pImp" accept=".xlsx,.xls,.ods" hidden></div>
     <div class="pt-body"><table class="pt-tbl"><thead><tr><th>N°</th><th>Désignation</th><th class="n">Qté</th><th>U</th><th class="n">TVA</th><th>Prix unitaire HT</th><th class="n">Montant HT</th><th>Annotations</th></tr></thead><tbody>${h}</tbody></table></div>
     <div class="pt-foot"><div class="pt-tot" id="ptTot"></div><span class="sp"></span>
       <div class="pt-pdf"><label class="btn sm" for="pPdf" style="cursor:pointer">Joindre le devis (PDF)</label><input type="file" id="pPdf" accept="application/pdf,.pdf" hidden><span id="pPdfName" class="hint"></span></div>
-      ${depotUrl(ents().find(x=>x.id===PD.id))?`<a class="btn sm" href="${esc(depotUrl(ents().find(x=>x.id===PD.id)))}" target="_blank" rel="noopener noreferrer">Déposer sur Dropbox</a>`:""}<button class="btn primary" id="pSubmit">Soumettre mon offre</button></div>`;
+      ${depotUrl(ents().find(x=>x.id===PD.id))?`<a class="btn sm" href="${esc(depotUrl(ents().find(x=>x.id===PD.id)))}" target="_blank" rel="noopener noreferrer">Déposer sur Dropbox</a>`:""}<button class="btn primary" id="pSubmit">${PD.manual?"Enregistrer l'offre":"Soumettre mon offre"}</button></div>`;
   portalFoot();
 }
 function portalFoot(){
   const t=portalTotals();portalSums();
   $("#ptTot").innerHTML=`<span>Total HT <b>${eur2(t.ht)}</b></span><span>TVA <b>${eur2(t.tva)}</b></span><span>Total TTC <b>${eur2(t.ttc)}</b></span>${ovl().map(o=>`<span title="Hors marché de base : ${esc(ovLab(o))}">${esc(ovShort(o))} <b>${sgn(t.O[o.id].ht)} HT</b></span>`).join("")}${t.miss?`<span style="color:var(--ochre)">${t.miss} prix manquant${t.miss>1?"s":""}</span>`:`<span style="color:var(--accent)">Tous les prix sont renseignés</span>`}`;
-  $("#pPdfName").textContent=PD.devis?PD.devis.nom:"Devis obligatoire";
-  $("#pSubmit").disabled=!PD.devis;
+  $("#pPdfName").textContent=PD.devis?PD.devis.nom:(PD.manual?"":"Devis obligatoire");
+  $("#pSubmit").disabled=!PD.devis&&!PD.manual;
 }
 $("#ptBody").addEventListener("input",e=>{
   const t=e.target; if(!PD) return;
@@ -4221,10 +4240,10 @@ $("#ptBody").addEventListener("click",async e=>{
   if(e.target.closest("[data-pclose]")){$("#portalDlg").close();return;}
   if(e.target.closest("[data-pxl]")){exportBpu(PD.id,docInfoDefault());return;}
   if(e.target.closest("#pSubmit")){
-    const en=ents().find(x=>x.id===PD.id), t=portalTotals(); if(!en||!PD.devis) return;
-    if(t.miss&&!await ask(`Il manque <b>${t.miss}</b> prix unitaire${t.miss>1?"s":""} sur des articles chiffrés. Soumettre l'offre en l'état ?`,"Soumettre quand même")) return;
+    const en=ents().find(x=>x.id===PD.id), t=portalTotals(); if(!en||(!PD.devis&&!PD.manual)) return;
+    if(t.miss&&!await ask(`Il manque <b>${t.miss}</b> prix unitaire${t.miss>1?"s":""} sur des articles chiffrés. ${PD.manual?"Enregistrer":"Soumettre"} l'offre en l'état ?`,PD.manual?"Enregistrer quand même":"Soumettre quand même")) return;
     registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},devis:PD.devis});
-    const dv=PD.devisBuf; $("#portalDlg").close(); PD=null; renderConsult(); toast(`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
+    const dv=PD.devisBuf, manual=PD.manual; $("#portalDlg").close(); PD=null; renderConsult(); toast(manual?`Offre de ${en.nom} enregistrée : l'analyse des offres est à jour`:`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
     try{const files=[{name:dbxFile(en,"BPU")+".xlsx",bytes:await bpuBytes(en)}]; if(dv)files.push({name:dbxFile(en,"DEVIS")+".pdf",bytes:dv}); await depositFiles(en,files);}catch(err){console.error(err);toast("Offre enregistrée, mais le dépôt dans Dropbox a échoué.");}
   }
 });
@@ -4237,7 +4256,7 @@ $("#entTable").addEventListener("click",e=>{
     const fb=()=>{try{inp.select();document.execCommand("copy");ok();}catch(x){toast("Copie impossible : sélectionnez le lien et copiez-le.");}};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(ok,fb);else fb();return;}
   const p=e.target.closest("[data-entportal]"), x=e.target.closest("[data-entexp]"), m=e.target.closest("[data-entimp]");
-  if(p){openPortal(ents()[+p.dataset.entportal].id);} if(x){exportBpu(ents()[+x.dataset.entexp].id);} if(m){openImport(ents()[+m.dataset.entimp].id);}
+  if(p){openPortal(ents()[+p.dataset.entportal].id,true);} if(m){openImport(ents()[+m.dataset.entimp].id);}
 });
 
 $("#logoHome").addEventListener("click",()=>$("#homeBtn").click());
