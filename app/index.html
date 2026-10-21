@@ -69,6 +69,9 @@ tr.aff{cursor:pointer}
 tr.aff:hover td{background:var(--paper)}
 tr.aff td.code{font-size:15px;color:var(--ink);font-weight:600}
 .aff-adr{display:block}
+.aff-im{display:flex;gap:10px;align-items:center}.aff-ph{width:44px;height:44px;object-fit:cover;border-radius:5px;border:1px solid var(--line);flex:none}.aff-ph.none{background:var(--paper)}
+select.avanc{font:inherit;font-size:12.5px;font-weight:600;border-radius:12px;padding:3px 8px;border:1px solid transparent;cursor:pointer}
+select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#dbeafe;color:#1d4f8c}select.avanc.av2{background:#ffe3c2;color:#8a3b00}select.avanc.av3{background:#d6f0e3;color:#1e6b46}
 .aff-act{display:flex;gap:6px;justify-content:flex-end;align-items:center}
 .view[hidden]{display:none}
 
@@ -967,7 +970,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.42.0", deploiement: 42};
+const APP = {version: "0.43.0", deploiement: 43};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -4467,20 +4470,28 @@ function openAffaire(id){
   renderHeader(); renderTree(); renderEditor(); show(!state.view||state.view==="home"?"redaction":state.view);
 }
 function affTotal(a){const p=state;state=a;let t=0;try{leaves(ar=>{if(!ovOf(ar).in)t+=qty(ar)*ar.pu;});}finally{state=p;}return t;}
+const AVANC=["Rédaction en cours","AO envoyé","Analyse des offres à faire","Analyse envoyée"];
+const avancOf=a=>AVANC.includes(a.avancement)?a.avancement:((a.ents||[]).some(e=>e.offre)?"Analyse des offres à faire":"Rédaction en cours");
 function renderHome(){
   const q=($("#homeQ").value||"").toLowerCase().trim();
   const list=store.affaires.slice().sort((a,b)=>(b.updated||0)-(a.updated||0))
     .filter(a=>!q||[a.op.ref,a.op.immeuble,a.op.objet,a.op.adresse,a.op.syndic].join(" ").toLowerCase().includes(q));
   const d=t=>t?new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"}):"–";
-  $("#homeList").innerHTML=store.affaires.length?(list.length?`<table class="aff-table"><tr><th>Code</th><th>Immeuble</th><th>Objet</th><th class="n">Lots</th><th class="n">Montant HT</th><th class="n">Modifiée le</th><th></th></tr>
+  $("#homeList").innerHTML=store.affaires.length?(list.length?`<table class="aff-table"><tr><th>Code</th><th>Immeuble</th><th>Objet</th><th>Avancement</th><th class="n">Lots</th><th class="n">Montant HT</th><th class="n">Modifiée le</th><th></th></tr>
     ${list.map(a=>`<tr class="aff" data-open="${a.id}" tabindex="0"><td class="code">${esc(a.op.ref||"–")}</td>
-      <td><b>${esc(a.op.immeuble||"Sans nom")}</b><span class="hint aff-adr">${esc([a.op.adresse,a.op.ville].filter(Boolean).join(", "))}</span></td>
-      <td>${esc(a.op.objet||"")}</td><td class="n">${a.data.length}</td><td class="n">${eur(affTotal(a))}</td><td class="n">${d(a.updated)}</td>
+      <td><div class="aff-im">${a.op.photo?`<img class="aff-ph" src="${a.op.photo}" alt="">`:`<span class="aff-ph none"></span>`}<span><b>${esc(a.op.immeuble||"Sans nom")}</b><span class="hint aff-adr">${esc([a.op.adresse,a.op.ville].filter(Boolean).join(", "))}</span></span></div></td>
+      <td>${esc(a.op.objet||"")}</td><td><select class="avanc av${AVANC.indexOf(avancOf(a))}" data-avanc="${a.id}" aria-label="Avancement">${AVANC.map(v=>`<option ${v===avancOf(a)?"selected":""}>${v}</option>`).join("")}</select></td><td class="n">${a.data.length}</td><td class="n">${eur(affTotal(a))}</td><td class="n">${d(a.updated)}</td>
       <td class="n aff-act"><button class="btn sm" data-dupaff="${a.id}">Dupliquer</button><button class="x" data-delaff="${a.id}" aria-label="Supprimer l'affaire ${esc(a.op.ref||a.op.immeuble)}" title="Supprimer l'affaire">×</button></td></tr>`).join("")}</table>`
     :`<p class="hint" style="padding:18px">Aucune affaire ne correspond à « ${esc(q)} ».</p>`)
     :`<p class="hint" style="padding:18px">Aucune affaire pour le moment. Créez-en une pour commencer.</p>`;
 }
 $("#homeQ").addEventListener("input",renderHome);
+$("#homeList").addEventListener("change",async e=>{const sel=e.target.closest("[data-avanc]"); if(!sel)return; e.stopPropagation();
+  const a=store.affaires.find(x=>x.id===sel.dataset.avanc); if(!a)return; a.avancement=sel.value; a.updated=Date.now();
+  sel.className="avanc av"+AVANC.indexOf(sel.value);
+  try{LS.setItem(KEY,JSON.stringify(store));}catch(err){}
+  if(AG&&a.filePath){try{await AG.writeFile(a.filePath,serializeAffaire(a));a.fileSaved=Date.now()+1;}catch(err){toast("Avancement enregistré dans l'application, mais pas dans le fichier .cctp.");}}
+  toast("Avancement : "+sel.value);});
 $("#newAff").onclick=()=>{
   const a=newAffaire(); store.affaires.push(a); save(); openAffaire(a.id);
   renderOptions(); $("#optDlg").showModal(); const q=$("#rgQ"); if(q){q.value="";q.focus();}
@@ -4513,9 +4524,9 @@ $("#homeList").addEventListener("click",async e=>{
         :`Supprimer définitivement l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} et tout son contenu ? Cette action ne peut pas être annulée.`,nat?"Retirer de la liste":"Supprimer l'affaire",!nat)){
       store.affaires=store.affaires.filter(x=>x!==s);try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast(nat?"Affaire retirée de la liste":"Affaire supprimée");}
     return;}
-  const r=e.target.closest("[data-open]"); if(r) openAffaire(r.dataset.open);
+  if(e.target.closest("[data-avanc]"))return; const r=e.target.closest("[data-open]"); if(r) openAffaire(r.dataset.open);
 });
-$("#homeList").addEventListener("keydown",e=>{const r=e.target.closest("[data-open]");if(r&&e.key==="Enter")openAffaire(r.dataset.open);});
+$("#homeList").addEventListener("keydown",e=>{if(e.target.closest("[data-avanc]"))return;const r=e.target.closest("[data-open]");if(r&&e.key==="Enter")openAffaire(r.dataset.open);});
 $("#homeBtn").onclick=()=>show("home");
 
 if(store.cur&&store.affaires.some(a=>a.id===store.cur)) openAffaire(store.cur); else show("home");
