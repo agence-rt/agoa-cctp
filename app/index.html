@@ -985,7 +985,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.49.0", deploiement: 49};
+const APP = {version: "0.50.0", deploiement: 50};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1417,6 +1417,28 @@ function moveChapter(nidK,dir){
   if(!L.every(l=>l.children.length)){const e=L.find(l=>!l.children.length);if(e){const a=blank();e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[a],nid:nid()});}}
   state.sel=sel; refresh();
 }
+function moveChapterTo(k,tk,pos){
+  const L=state.data; let li=-1,ci=-1; L.forEach((l,a)=>l.children.forEach((c,b)=>{if(c.nid===k){li=a;ci=b;}}));
+  if(li<0||k===tk) return; const ch=L[li].children[ci], sel=state.sel;
+  const tl=L.findIndex(l=>l.nid===tk); let dl,di;
+  if(tl>=0){dl=tl;di=L[tl].children.length;}
+  else{dl=-1;di=-1;L.forEach((l,a)=>l.children.forEach((c,b)=>{if(c.nid===tk){dl=a;di=b+(pos==="after"?1:0);}}));if(dl<0)return;}
+  if(dl===li&&di>ci)di--;
+  L[li].children.splice(ci,1);
+  if(dl===li&&di===ci){L[li].children.splice(ci,0,ch);return;}
+  L[dl].children.splice(di,0,ch); openIds.add(L[dl].nid);
+  const e=L.find(l=>!l.children.length); if(e)e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[blank()],nid:nid()});
+  ensureNodeIds(); state.sel=sel; refresh(); toast(`Chapitre déplacé en ${ch.code}`);
+}
+let dragCh=null;
+$("#tree").addEventListener("dragstart",e=>{const c=e.target.closest("summary.chs[data-chnid]");if(!c||e.target.closest(".art"))return;dragCh=c.dataset.chnid;c.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ch");});
+$("#tree").addEventListener("dragover",e=>{if(!dragCh)return;const t=e.target.closest("summary.chs[data-chnid],summary.lot");if(!t)return;if(t.dataset.chnid===dragCh)return;e.preventDefault();
+  $("#tree").querySelectorAll(".drop-before,.drop-after,.drop-in").forEach(x=>x.classList.remove("drop-before","drop-after","drop-in"));
+  if(t.matches("summary.lot"))t.classList.add("drop-in");else{const r=t.getBoundingClientRect();t.classList.add(e.clientY<r.top+r.height/2?"drop-before":"drop-after");}});
+$("#tree").addEventListener("drop",e=>{if(!dragCh)return;const t=e.target.closest("summary.chs[data-chnid],summary.lot");const k=dragCh;dragCh=null;$("#tree").querySelectorAll(".drop-before,.drop-after,.drop-in,.dragging").forEach(x=>x.classList.remove("drop-before","drop-after","drop-in","dragging"));if(!t)return;e.preventDefault();
+  if(t.matches("summary.lot")){moveChapterTo(k,t.closest("details").dataset.oid);}
+  else{const r=t.getBoundingClientRect();moveChapterTo(k,t.dataset.chnid,e.clientY<r.top+r.height/2?"before":"after");}});
+$("#tree").addEventListener("dragend",()=>{if(dragCh){dragCh=null;$("#tree").querySelectorAll(".drop-before,.drop-after,.drop-in,.dragging").forEach(x=>x.classList.remove("drop-before","drop-after","drop-in","dragging"));}});
 function moveTitleArt(id,dir){
   const f=locate(id); if(!f) return; const j=f.i+dir;
   if(j<0||j>=f.list.length){toast(dir<0?"Déjà en première position":"Déjà en dernière position");return;}
@@ -1645,7 +1667,7 @@ function renderTree(){
     h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
     h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
-      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<span class="lot-mv"><button class="x" data-chmv="${ch.nid}|-1" aria-label="Monter le chapitre" title="Monter">▲</button><button class="x" data-chmv="${ch.nid}|1" aria-label="Descendre le chapitre" title="Descendre">▼</button></span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
+      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}" data-chnid="${ch.nid}" draggable="true"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<span class="lot-mv"><button class="x" data-chmv="${ch.nid}|-1" aria-label="Monter le chapitre" title="Monter">▲</button><button class="x" data-chmv="${ch.nid}|1" aria-label="Descendre le chapitre" title="Descendre">▼</button></span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
       h+=`<div class="kids">${rows(ch.art||[],1,0)}</div></details>`;
     });
     h+=`</div></details>`;
