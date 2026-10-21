@@ -112,6 +112,7 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .lot-name{cursor:text}
 .lot-in{width:100%;margin-top:4px;padding:4px 6px!important;font-size:13px}
 .lot-r{display:flex;align-items:center;gap:2px;flex:none}
+.lot-mv{display:inline-flex;margin-left:auto}.lot-mv .x{width:22px;height:24px;font-size:10px;opacity:.5}.tree .lot:hover .lot-mv .x{opacity:1}.lot-mv .x:disabled{opacity:.15}
 .lot-x,.pen{width:24px;height:24px;font-size:15px;opacity:.45;flex:none}
 .tree .lot:hover .lot-x,.lot-x:focus-visible,.tree summary:hover .pen,.tree .sub:hover .pen,.pen:focus-visible{opacity:1}
 .pen{margin-left:auto;margin-top:-3px}
@@ -638,6 +639,8 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 #cmpTable tr.dropa td{box-shadow:inset 0 -3px 0 var(--accent)}
 #cmpTable tr.dragx{opacity:.4}
 #cmpTable select.lotch{font-size:11.5px;padding:1px 2px}
+.ana-lotsel{position:relative;font-size:13px}.ana-lotsel summary{cursor:pointer;padding:5px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);color:var(--accent);font-weight:600;list-style:none;user-select:none}
+.ana-lotsel>div{position:absolute;z-index:30;top:100%;left:0;margin-top:3px;min-width:280px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,.14);display:flex;flex-direction:column;gap:5px}
 .achips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
 .achip{display:inline-flex;align-items:stretch;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);position:relative}
 .achip button{border:0;background:none;padding:4px 10px;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
@@ -979,7 +982,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.46.0", deploiement: 46};
+const APP = {version: "0.47.0", deploiement: 47};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1375,6 +1378,14 @@ function addChapter(lot,after){
   const a=blank(), ch={titre:"Nouveau chapitre",texte:"",art:[a]}; const i=after?lot.children.indexOf(after)+1:lot.children.length;
   lot.children.splice(i,0,ch); ensureNodeIds(); renumberAll(); state.sel=ch.nid; save(); renderTree(); renderEditor(); toast(`Chapitre ${ch.code} ajouté`);
 }
+function moveLot(i,dir){
+  const j=i+dir; if(j<0||j>=state.data.length) return;
+  const sel=state.sel, L=state.data; [L[i],L[j]]=[L[j],L[i]];
+  renumberAll();
+  if(state.ana){const order=L.map(l=>l.nid), A=state.ana;A.lots.sort((a,b)=>{const x=order.indexOf(a.id),y=order.indexOf(b.id);return (x<0?999:x)-(y<0?999:y);});}
+  state.sel=sel; save(); refresh(); toast(`Lot « ${L[j].titre} » déplacé en position ${j+1}`);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-lotmv]");if(!b)return;e.preventDefault();e.stopPropagation();const [i,d]=b.dataset.lotmv.split(":").map(Number);moveLot(i,d);if($("#optDlg")&&$("#optDlg").open)renderOptions();},true);
 function addLot(){
   const code=pad(state.data.length+1), a=blank();
   state.data.push({code,titre:"Nouveau lot",texte:"",charge:"Commune",children:[{code:code+".1",titre:"Nouveau chapitre",texte:"",art:[a]}]});
@@ -1591,7 +1602,7 @@ function renderTree(){
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
-    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
+    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
     h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
       h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
@@ -2872,7 +2883,7 @@ function renderOptions(){
   <table><tr><th>Lot</th><th>Intitulé</th><th>Charge</th><th></th></tr>
   ${state.data.map((l,i)=>`<tr><td class="code">${l.code}</td><td><input type="text" data-lot="${i}" data-lf="titre" value="${esc(l.titre)}" aria-label="Intitulé du lot ${l.code}"></td>
     <td><select data-lot="${i}" data-lf="charge" aria-label="Charge du lot ${l.code}">${["Commune","Privative"].map(c=>`<option ${c===l.charge?"selected":""}>${c}</option>`).join("")}</select></td>
-    <td style="width:40px"><button class="x" data-dellot="${i}" aria-label="Supprimer le lot ${l.code}" ${state.data.length<2?"disabled":""}>×</button></td></tr>`).join("")}</table>
+    <td style="width:90px"><button class="x" data-lotmv="${i}:-1" ${i===0?"disabled":""} aria-label="Monter le lot" title="Monter">▲</button><button class="x" data-lotmv="${i}:1" ${i===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre">▼</button><button class="x" data-dellot="${i}" aria-label="Supprimer le lot ${l.code}" ${state.data.length<2?"disabled":""}>×</button></td></tr>`).join("")}</table>
   <button class="btn sm" id="addLotOpt" style="margin-top:8px">Ajouter un lot</button>
   <h4>TVA</h4>
   <div class="field" style="max-width:260px"><label for="optTva">Taux de TVA par défaut</label><select id="optTva" data-opt="tvaDef">${tvSel(defTva())}</select></div>
@@ -3452,7 +3463,7 @@ function anaSync(){
   live.rows.forEach(r=>{
     if(!present.has(r.id)){
       let lot=null,idx=0;
-      if(prev){lot=A.lots.find(l=>l.rows.some(x=>x.id===prev));if(lot)idx=lot.rows.findIndex(x=>x.id===prev)+1;}
+      if(prev){const pl=A.lots.find(l=>l.rows.some(x=>x.id===prev));if(pl&&pl.id===r.lotId){lot=pl;idx=pl.rows.findIndex(x=>x.id===prev)+1;}}
       if(!lot){lot=A.lots.find(l=>l.id===r.lotId);
         if(!lot){const L=live.lots.find(x=>x.id===r.lotId);lot={id:r.lotId,titre:L.titre,charge:L.charge,rows:[]};A.lots.push(lot);}
         idx=lot.rows.length;}
@@ -3470,7 +3481,7 @@ function anaModel(){
   const ovAcc=(id,key,w)=>{const O=M.ov[id];if(!O)return;const k=1+tvaOf(w.o,null)/100;O.est[key]+=w.est;O.est[key+"T"]+=w.est*k;E.forEach((e,j)=>{if(w.a[j]!=null){O.e[e.id][key]+=w.a[j];O.e[e.id][key+"T"]+=w.a[j]*k;}});};
   const emptyT=()=>({est:0,estT:0,e:Object.fromEntries(E.map(e=>[e.id,{ht:0,ttc:0}]))});
   A.lots.forEach((l,li)=>{
-    const lotObj=state.data.find(x=>x.nid===l.id); if(lotObj&&lotObj.noBpu) return;
+    const lotObj=state.data.find(x=>x.nid===l.id); if(lotObj&&lotObj.noBpu) return; if((A.off||[]).includes(l.id)) return;
     const rows=l.rows.map((r,ri)=>{const o=live.info.get(r.id);return {li,ri,d:r.d,x:!!r.x,ex:false,k:o.k,o:o.obj,leaf:o.k==="art",q:0,est:0,estT:0,p:[],a:[],miss:[],dev:[],flagged:false,sub:null};});
     let exD=null;
     rows.forEach(w=>{
@@ -3571,12 +3582,12 @@ function cmpBands(tbl,n){ // sépare visuellement les entreprises : fond gris l�
     const L=c.slice(-2*n); if(L.length<2*n)return;
     L.forEach((x,i)=>{const g=Math.floor(i/2);x.classList.add("cg");if(g%2)x.classList.add("gb");if(i%2===0)x.classList.add("cg1");});});
 }
-let anaLotOpen=null;
+let anaLotOpen=null,anaLotSelOpen=false;
 function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
   if(!offers().length){bar.innerHTML="";leg.innerHTML="";$("#anaSum").innerHTML="";tbl.innerHTML=`<tbody><tr><td class="hint" style="padding:18px;background:transparent;white-space:normal">Aucune offre reçue pour le moment. Elles s'afficheront ici dès qu'une entreprise aura soumis son BPU, ou que vous aurez importé un BPU complété.</td></tr></tbody>`;return;}
-  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; $("#anaSum").innerHTML=anaBilanHtml(M); A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id)); const col=A.colors!==false;
+  const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; $("#anaSum").innerHTML=""; A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id)); const col=A.colors!==false;
   const sc=document.querySelector("#v-analyse .scroll"), st=sc?[sc.scrollTop,sc.scrollLeft]:[0,0];
   bar.innerHTML=`<div class="seg" role="group" aria-label="Affichage"><button data-anamode="detail" aria-pressed="${det}">Détail du BPU</button><button data-anamode="lot" aria-pressed="${!det}">Par lot et chapitre</button></div>
     <span class="sep"></span>
@@ -3586,6 +3597,7 @@ function renderAnalyse(){
     <label><input type="checkbox" id="anaCol" ${col?"checked":""}> Couleurs d'écart</label>
     <label><input type="checkbox" id="anaOnly" ${A.only?"checked":""}> Seulement les lignes avec écart (${M.nflag})</label>
     <span class="sep"></span>
+    <details class="ana-lotsel" ${anaLotSelOpen?"open":""}><summary title="Choisir les lots à analyser">Lots analysés (${state.data.filter(l=>!l.noBpu&&!(A.off||[]).includes(l.nid)).length}/${state.data.filter(l=>!l.noBpu).length}) ▾</summary><div>${state.data.map(l=>l.noBpu?`<label class="lotck" style="opacity:.55"><input type="checkbox" disabled> Lot ${esc(l.code)} ${esc(l.titre)} <span class="hint">(hors BPU)</span></label>`:`<label class="lotck"><input type="checkbox" data-alsel="${esc(l.nid)}" ${(A.off||[]).includes(l.nid)?"":"checked"}> Lot ${esc(l.code)} ${esc(l.titre)}</label>`).join("")}</div></details>
     <span class="achips" role="group" aria-label="Entreprises affichées"><span class="hint">Entreprises :</span>
       <span class="achip ${A.hideMoe?"off":""}"><button data-achip="moe" aria-pressed="${!A.hideMoe}" title="Afficher ou masquer l'estimation de la MOE">Estimation MOE</button></span>
       ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(e.nom)}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
@@ -3670,6 +3682,7 @@ function renderAnalyse(){
     let b;
     if(b=t.closest("[data-achip]")){const k=b.dataset.achip;A.hide=A.hide||[];if(k==="moe")A.hideMoe=!A.hideMoe;else if(A.hide.includes(k))A.hide=A.hide.filter(x=>x!==k);else A.hide.push(k);save();renderAnalyse();return;}
     if(b=t.closest("[data-alotd] summary")){const id=b.parentNode.dataset.alotd;anaLotOpen=b.parentNode.open?null:id;}
+    if(b=t.closest(".ana-lotsel summary")){anaLotSelOpen=!b.parentNode.open;}
     if(b=t.closest("[data-aup]")){const [li,ri]=idx(b.dataset.aup),R=A.lots[li].rows,d=R[ri].d;let i=ri-1;while(i>=0&&R[i].d>d)i--;if(i>=0&&R[i].d===d){anaMove(li,ri,li,i);redo();}else toast("Déjà en première position");return;}
     if(b=t.closest("[data-adn]")){const [li,ri]=idx(b.dataset.adn),R=A.lots[li].rows,d=R[ri].d,e=anaBlockEnd(R,ri);if(e<R.length&&R[e].d===d){anaMove(li,ri,li,anaBlockEnd(R,e));redo();}else toast("Déjà en dernière position");return;}
     if(b=t.closest("[data-amv]")){const [li,ri]=idx(b.dataset.amv),o=A.lots[li].rows[ri],info=anaLive().info.get(o.id);
@@ -3686,6 +3699,7 @@ function renderAnalyse(){
     const t=e.target, A=state.ana; if(!A) return;
     if(t.dataset.ainc){const [li,ri]=idx(t.dataset.ainc),r=A.lots[li].rows[ri];if(t.checked)delete r.x;else r.x=true;redo();return;}
     if(t.dataset.lotch!==undefined){A.lots[+t.dataset.lotch].charge=t.value;redo();return;}
+    if(t.dataset.alsel){const k=t.dataset.alsel;A.off=(A.off||[]).filter(x=>x!==k);if(!t.checked)A.off.push(k);anaLotSelOpen=true;save();renderAnalyse();return;}
     if(t.dataset.alot){const [id,ln]=t.dataset.alot.split("|"),en=ents().find(x=>x.id===id);if(en){entSetLot(en,ln,t.checked);anaLotOpen=id;save();renderAnalyse();}return;}
     if(t.id==="anaSeuilO"){A.seuilOffre=Math.max(1,parseFloat(t.value)||20);redo();return;}
     if(t.id==="anaCol"){A.colors=t.checked;redo();return;}

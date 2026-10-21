@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°47** — v0.47.0 — 2026-10-21 — Mise à jour
 - **n°46** — v0.46.0 — 2026-10-21 — Mise à jour
 - **n°45** — v0.45.0 — 2026-10-21 — Ragic : clé API transmise dans l'adresse (méthode documentée par Ragic), comme la clé d'AGOA Launcher
 - **n°44** — v0.44.0 — 2026-10-21 — Connexions partagées : la clé Ragic, la clé Claude et le compte Google d'AGOA Launcher sont repris sans nouvelle saisie
