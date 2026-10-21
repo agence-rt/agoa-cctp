@@ -488,7 +488,15 @@ async function confirmClose() {
   closing = true;
   try {
     const info = await js("window.__agoaCloseInfo ? window.__agoaCloseInfo() : null").catch(() => null);
-    if (info && info.fichier && !info.dirty) { allowClose = true; win.close(); return; }
+    if (info && info.fichier) { // l'affaire a un fichier .cctp : enregistrement automatique à la fermeture, sans question
+      if (info.dirty) await js("window.__agoaSaveQuiet()");
+      if (info.auto) {
+        await js(`window.__agoaCloseToast && window.__agoaCloseToast(${JSON.stringify("✓ Sauvegarde automatique à la fermeture : " + info.code)})`).catch(() => {});
+        await new Promise(r => setTimeout(r, 1400));
+      }
+      await js("typeof Store !== 'undefined' && Store.flush && Store.flush()").catch(() => {});
+      allowClose = true; win.close(); return;
+    }
     let buttons, detail, actions;
     if (info && info.fichier) {
       buttons = ["Enregistrer et fermer", "Fermer sans enregistrer", "Annuler"]; actions = ["save", "close", "cancel"];

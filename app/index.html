@@ -554,6 +554,7 @@ dialog h3{margin:0 0 12px;font-size:17px}
 
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:6px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:10;max-width:90vw}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.ok{background:#1e7a4f;color:#fff;font-weight:600}
 
 @media (max-width:1150px){
   .redac{grid-template-columns:var(--treeW,300px) minmax(0,1fr)}
@@ -966,7 +967,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.41.0", deploiement: 41};
+const APP = {version: "0.42.0", deploiement: 42};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1040,7 +1041,7 @@ let quotaWarned=false;
    state.ovs = [{id,kind:"option"|"variante",nom}]. Un lot, chapitre, article ou sous-article porte :
    ovIn  = id de l'option/variante dont il fait partie (exclu du marché de base, chiffré à part)
    ovBase = ids des options/variantes dont il est une base à décompter. Tout est hérité par les niveaux inférieurs. */
-let OVV=0, OVC=null;
+let OVV=0, OVC=null, MAN_OV=0;
 const ovl=()=>state.ovs||(state.ovs=[]);
 const OVP=[["Orange","#FFE0B2","#8A4B00"],["Mauve","#D7C4F0","#47267F"],["Bleu","#BBDEFB","#0D47A1"],["Vert","#C8E6C9","#1B5E20"],["Rose","#F8BBD9","#880E4F"],["Jaune","#FFF59D","#6D5A00"],["Turquoise","#B2EBF2","#006064"],["Rouge","#FFCDD2","#B71C1C"]];
 const ovC=o=>{const i=(o&&o.col!=null&&OVP[o.col])?o.col:(o&&o.kind==="variante"?1:0);return{bg:OVP[i][1],fg:OVP[i][2],n:OVP[i][0]};};
@@ -1215,7 +1216,7 @@ async function saveAffaireFile(quiet){
       let p=state.filePath;
       if(p){await AG.writeFile(p,text);}
       else{p=await AG.saveAs(name,text); if(!p){if(!quiet)toast("Enregistrement annulé.");return;}}
-      state.filePath=p; state.fileName=p.split(/[\\/]/).pop(); state.fileSaved=Date.now()+1; bkMaybe(true);
+      state.filePath=p; state.fileName=p.split(/[\\/]/).pop(); state.fileSaved=Date.now()+1; MAN_OV=OVV; bkMaybe(true);
       try{LS.setItem(KEY,JSON.stringify(store))}catch(e){} markDirty(); toast(`Fichier enregistré : ${state.fileName}`);
     }catch(e){toast("L'enregistrement du fichier a échoué : "+(e&&e.message||"erreur"));}
     return;
@@ -1235,10 +1236,10 @@ function autoSaveFile(){
   if(!AG||!state||!state.filePath) return;
   clearTimeout(autoT);
   autoT=setTimeout(async()=>{const s=state; if(!s||!s.filePath)return;
-    try{await AG.writeFile(s.filePath,serializeAffaire(s)); s.fileSaved=Date.now()+1; markDirty(); bkMaybe(false);}
+    try{await AG.writeFile(s.filePath,serializeAffaire(s)); s.fileSaved=Date.now()+1; markDirty(); bkMaybe(false); autoToast();}
     catch(e){ // verrou temporaire (Dropbox, antivirus) : on réessaie sans déranger, et on n'alerte qu'en cas d'échec répété
       autoT=setTimeout(async()=>{const s2=state; if(!s2||!s2.filePath)return;
-        try{await AG.writeFile(s2.filePath,serializeAffaire(s2)); s2.fileSaved=Date.now()+1; markDirty();}
+        try{await AG.writeFile(s2.filePath,serializeAffaire(s2)); s2.fileSaved=Date.now()+1; markDirty(); autoToast();}
         catch(e2){toast("Enregistrement automatique impossible : "+(e2&&e2.message||"erreur")+". Utilisez le bouton Enregistrer.");}},4000);}},1200);
 }
 async function importAffaireText(text,fname,fpath){
@@ -1261,7 +1262,8 @@ if(AG){
   window.__agoaCloseInfo=()=>{
     const s=state; if(!s) return null;
     const dirty=!s.fileSaved||s.updated>s.fileSaved;
-    return {code:fileBase(s),fichier:s.filePath||null,dirty};};
+    return {code:fileBase(s),fichier:s.filePath||null,dirty,auto:OVV>0&&OVV!==MAN_OV};};
+  window.__agoaCloseToast=m=>{toast(m,"ok",4000);};
   window.__agoaSaveQuiet=async()=>{clearTimeout(autoT);const x=state;if(x&&x.filePath){await AG.writeFile(x.filePath,serializeAffaire(x));x.fileSaved=Date.now()+1;}};
   window.__agoaSaveNow=async()=>{clearTimeout(autoT);await saveAffaireFile(true);window.Store.flush();};
   window.__agoaSaveAsNow=async()=>{const s=state;if(!s)return true;const keep=s.filePath;s.filePath=null;await saveAffaireFile(false);if(!s.filePath){s.filePath=keep;return false;}window.Store.flush();return true;};
@@ -4445,7 +4447,9 @@ function show(view){
 }
 document.querySelector("nav.steps").addEventListener("click",e=>{const b=e.target.closest("button");if(b)show(b.dataset.view);});
 document.addEventListener("click",e=>{if(e.target.closest("#expCctp")){exportCctp();return;}const b=e.target.closest("[data-todo]");if(b)toast(b.dataset.todo+" : prévu dans une prochaine version");});
-let tt; function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),3200);}
+let tt; function toast(m,kind,ms){const t=$("#toast");t.textContent=m;t.classList.toggle("ok",kind==="ok");t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),ms||3200);}
+let autoTT=null;
+function autoToast(n){const t=document.getElementById("toast"); if(t&&t.classList.contains("on")&&!t.classList.contains("ok")&&(n||0)<5){clearTimeout(autoTT);autoTT=setTimeout(()=>autoToast((n||0)+1),1100);return;} const d=new Date(); toast("✓ Sauvegarde automatique effectuée à "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"),"ok",2200);}
 
 /* ---------- Affaires ---------- */
 function openAffaire(id){
