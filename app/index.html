@@ -112,6 +112,9 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .lot-name{cursor:text}
 .lot-in{width:100%;margin-top:4px;padding:4px 6px!important;font-size:13px}
 .lot-r{display:flex;align-items:center;gap:2px;flex:none}
+#artMenu{position:fixed;z-index:200;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:4px;display:flex;flex-direction:column}
+#artMenu button{text-align:left;border:0;background:none;padding:7px 12px;font:inherit;font-size:13.5px;border-radius:4px;cursor:pointer;color:var(--ink)}
+#artMenu button:hover{background:var(--accent-soft);color:var(--accent)}
 .lot-mv{display:inline-flex;margin-left:auto}.lot-mv .x{width:22px;height:24px;font-size:10px;opacity:.5}.tree .lot:hover .lot-mv .x,.tree .chs:hover .lot-mv .x,.tree .art:hover .lot-mv .x{opacity:1}.tree .chs .lot-mv,.tree .art .lot-mv{margin-left:6px}.lot-mv .x:disabled{opacity:.15}
 .lot-x,.pen{width:24px;height:24px;font-size:15px;opacity:.45;flex:none}
 .tree .lot:hover .lot-x,.lot-x:focus-visible,.tree summary:hover .pen,.tree .sub:hover .pen,.pen:focus-visible{opacity:1}
@@ -982,7 +985,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.48.0", deploiement: 48};
+const APP = {version: "0.49.0", deploiement: 49};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1386,6 +1389,23 @@ function moveLot(i,dir){
   state.sel=sel; save(); refresh(); toast(`Lot « ${L[j].titre} » déplacé en position ${j+1}`);
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-lotmv]");if(!b)return;e.preventDefault();e.stopPropagation();const [i,d]=b.dataset.lotmv.split(":").map(Number);moveLot(i,d);if($("#optDlg")&&$("#optDlg").open)renderOptions();},true);
+/* Menu contextuel (clic droit) sur un article de l'arborescence */
+function artMenuClose(){const m=document.getElementById("artMenu");if(m)m.remove();}
+function artDup(id){const f=locate(id);if(!f)return;const c=reid(JSON.parse(JSON.stringify(f.art)));c.titre+=" (copie)";f.list.splice(f.i+1,0,c);state.sel=c.id;refresh();toast(`Copie créée en ${c.code}`);}
+function artNew(id){const f=locate(id);if(!f)return;const n=blank(f.art.u);f.list.splice(f.i+1,0,n);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
+document.addEventListener("contextmenu",e=>{
+  const a=e.target.closest("#tree .art[data-id]"); if(!a){artMenuClose();return;}
+  e.preventDefault(); artMenuClose();
+  const m=document.createElement("div"); m.id="artMenu"; m.setAttribute("role","menu");
+  m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">Nouvel article</button>`;
+  m.dataset.id=a.dataset.id; document.body.appendChild(m);
+  const w=m.offsetWidth,h=m.offsetHeight; m.style.left=Math.min(e.clientX,innerWidth-w-6)+"px"; m.style.top=Math.min(e.clientY,innerHeight-h-6)+"px";
+});
+document.addEventListener("click",e=>{const b=e.target.closest("#artMenu button");
+  if(b){const m=b.parentNode,id=m.dataset.id,k=b.dataset.amact;m.remove();k==="dup"?artDup(id):artNew(id);return;}
+  artMenuClose();},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")artMenuClose();});
+addEventListener("blur",artMenuClose);
 function moveChapter(nidK,dir){
   const L=state.data; let li=-1,ci=-1; L.forEach((l,a)=>l.children.forEach((c,b)=>{if(c.nid===nidK){li=a;ci=b;}}));
   if(li<0) return; const ch=L[li].children[ci], sel=state.sel;
