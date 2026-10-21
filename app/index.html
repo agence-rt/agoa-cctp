@@ -283,6 +283,7 @@ input:disabled{opacity:1;color:var(--muted);background:repeating-linear-gradient
 .preview td,.preview th{font-size:12.5px}
 .prev-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px;position:sticky;top:0;background:var(--surface);z-index:1}
 .prev-h b{font-size:13px}
+.preview.multi{display:flex;flex-direction:column;overflow:hidden;height:calc(100vh - 120px)}.preview.multi .pv-secs{flex:1;min-height:0;display:flex;flex-direction:column}.preview.multi .pv-sec{flex:1 1 0;min-height:120px;overflow:auto;border-top:2px solid var(--line)}.preview.multi .pv-sec .prev-h{top:0}
 .seg{display:flex;background:var(--paper);border-radius:6px;padding:2px}
 .seg button{border:0;background:none;padding:4px 10px;border-radius:4px;font-size:12.5px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
@@ -428,6 +429,8 @@ dialog.wide{width:min(940px,95vw);max-height:90vh;padding:0}
 dialog.lib{width:min(1100px,96vw)}
 dialog.lib.floating{position:fixed;margin:0;top:80px;right:24px;left:auto;width:min(860px,62vw);height:72vh;max-height:92vh;resize:both;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3);border:1px solid var(--line);z-index:300}
 dialog.lib.floating .opt-h{cursor:move}
+dialog.lib.detached{position:static;margin:0;width:100%;max-width:none;height:100vh;max-height:none;border:0;box-shadow:none;resize:none;overflow:auto;display:block}
+dialog.lib.detached .opt-h{cursor:default}dialog.lib.detached .lib-body{height:calc(100vh - 70px)}
 dialog.lib.floating .lib-body{height:calc(100% - 64px)}
 .lib-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;padding:14px 22px 20px;height:min(72vh,720px)}
 .lib-left{display:flex;flex-direction:column;min-height:0;gap:10px}
@@ -440,6 +443,7 @@ dialog.lib.floating .lib-body{height:calc(100% - 64px)}
 .lib-row:last-child{border-bottom:0}
 .lib-row:hover{background:var(--paper)}
 .lib-row.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.lib-d,.pl-d{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;font-weight:400;color:var(--muted);line-height:1.35;margin-top:2px;white-space:normal;text-transform:none;letter-spacing:0}
 .lib-t{min-width:0;display:flex;flex-direction:column;font-size:13.5px;flex:1}
 .lib-row.lv0{--ld:0px;background:var(--accent-soft)}
 .lib-row.lv0 .lib-t b{color:var(--accent)}
@@ -653,6 +657,7 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 .achips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
 .achip{display:inline-flex;align-items:stretch;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);position:relative}
 .achip button{border:0;background:none;padding:4px 10px;font:inherit;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
+.achip[draggable]{cursor:grab}.achip.over{outline:2px dashed var(--accent);outline-offset:1px}.achip.dragging{opacity:.5}
 .achip.off{border-color:var(--line);background:var(--surface)}.achip.off>button{color:var(--muted);font-weight:400;text-decoration:line-through}
 .ana-lots{border-left:1px solid var(--line);position:static}.ana-lots summary{list-style:none;cursor:pointer;padding:4px 7px;font-size:11.5px;color:var(--muted);user-select:none;height:100%;display:flex;align-items:center}
 .ana-lots summary.part{color:var(--ochre);font-weight:600}
@@ -815,7 +820,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 </dialog>
 
 <dialog id="libDlg" class="wide lib" aria-labelledby="libTitle">
-  <div class="opt-h"><div><h3 id="libTitle">Bibliothèque d'articles</h3><span id="libTarget" class="hint"></span></div><button class="btn" id="closeLib">Fermer</button></div>
+  <div class="opt-h"><div><h3 id="libTitle">Bibliothèque d'articles</h3><span id="libTarget" class="hint"></span></div><span style="display:flex;gap:6px"><button class="btn" id="detachLib" title="Ouvrir la bibliothèque dans une fenêtre séparée (à placer sur un second écran)">Fenêtre séparée ⧉</button><button class="btn" id="closeLib">Fermer</button></span></div>
   <div class="lib-body">
     <div class="lib-left">
       <div class="rg-row"><input type="search" id="libQ" placeholder="Rechercher (flèches et Entrée pour insérer)" aria-label="Rechercher dans la bibliothèque" autocomplete="off"><button class="btn" id="libNew">Nouveau titre</button></div>
@@ -846,6 +851,23 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <p class="hint" style="margin:8px 0">Cliquez-glissez sur l'image pour tracer une flèche ou un carré.</p>
   <div class="ann-wrap"><canvas id="annCv"></canvas></div>
   <div class="dlg-act"><button class="btn" id="annCancel">Annuler</button><button class="btn primary" id="annOk">Valider</button></div>
+</dialog>
+
+<dialog id="cropDlg" aria-labelledby="cropTitle" style="width:min(680px,96vw);padding:18px 20px">
+  <h3 id="cropTitle" style="margin-top:0">Cadrer l'image</h3>
+  <div class="ann-bar" role="toolbar" aria-label="Format du cadre">
+    <span class="hint">Format :</span>
+    <button type="button" class="btn sm" data-cropr="1.3333">4:3</button>
+    <button type="button" class="btn sm" data-cropr="1.5">3:2</button>
+    <button type="button" class="btn sm" data-cropr="1.7778">16:9</button>
+    <button type="button" class="btn sm" data-cropr="1">Carré</button>
+    <button type="button" class="btn sm" data-cropr="0.75">Portrait 3:4</button>
+    <span class="sep"></span>
+    <label class="hint" for="cropZ">Zoom</label><input type="range" id="cropZ" min="1" max="4" step="0.01" value="1" style="width:160px">
+  </div>
+  <p class="hint" style="margin:8px 0">Glissez l'image pour la déplacer dans le cadre, utilisez le zoom ou la molette pour l'agrandir. Toutes les photos au même format gardent ainsi la même taille.</p>
+  <div style="display:flex;justify-content:center"><canvas id="cropCv" style="max-width:100%;border:1px solid var(--line);cursor:grab;touch-action:none;background:#eee"></canvas></div>
+  <div class="dlg-act" style="justify-content:space-between"><button class="btn" id="cropReset" title="Revenir à l'image complète">Image complète</button><span style="display:flex;gap:8px"><button class="btn" id="cropCancel">Annuler</button><button class="btn primary" id="cropOk">Valider</button></span></div>
 </dialog>
 
 <dialog id="ovDlg" aria-labelledby="ovTitle" style="width:min(720px,94vw);padding:22px 24px">
@@ -986,12 +1008,13 @@ const ENTS = [
 const UNITS=["u","ens","ft","m²","ml","m³","mois","kg"];
 const OP_FIELDS=[["ref","Code travaux"],["immeuble","Immeuble"],["objet","Objet des travaux"],["adresse","Adresse"],["cp","Code postal"],["ville","Ville"],["mo","Maître d'ouvrage"],["syndic","Syndic"],["adresseSyndic","Adresse du syndic"],["telSyndic","Téléphone du syndic"],["gestionnaire","Gestionnaire"],["emailGest","E-mail du gestionnaire"],["moe","Maîtrise d'œuvre (architecte)"],["moeTel","Téléphone de l'architecte"],["moeAdresse","Adresse de l'architecte"],["moeWeb","Site web de l'architecte"],["moeEmail","E-mail de l'architecte"],["parcelle","Parcelle cadastrale"],["nbLots","Nombre de lots"],["amiante","Diagnostic amiante"],["plomb","Diagnostic plomb"],["dateEdition","Date d'édition"],["dateRemise","Date de remise des offres"]];
 const RAGIC={server:"Ragic",apname:"agoa",sheet:"/operations/10",codeField:"1000295"};
-const $=s=>document.querySelector(s);
+let LIBWIN=null;
+const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.querySelector(s):null);
 
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.52.0", deploiement: 52};
+const APP = {version: "0.53.0", deploiement: 53};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1532,7 +1555,7 @@ function imgsField(ar,after){
   return `<div class="field imgs"><span class="flabel">${after?"Photos":"Images"} <span class="hint">· ${after?"affichées après la description dans le CCTP":"affichées à droite du texte dans le CCTP"}, taille fixe, 7 cm de large</span></span>
     ${L.length?`<div class="img-list">${L.map(i=>`<div class="img-it" data-imgid="${i.id}"><span class="th" style="width:${Math.round(clampW(i.w)*14)}px"><img src="${i.src}" alt=""></span>
       <div class="img-ctl"><span class="nm">${esc(i.name||"Image")}</span>
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-imgann="${i.id}" title="Ajouter une flèche ou un carré sur la photo">Annoter${(i.shapes||[]).length?` (${i.shapes.length})`:""}</button><button class="btn sm danger" data-imgdel="${i.id}">Retirer</button></div></div></div>`).join("")}</div>`:""}
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-imgann="${i.id}" title="Ajouter une flèche ou un carré sur la photo">Annoter${(i.shapes||[]).length?` (${i.shapes.length})`:""}</button><button class="btn sm" data-imgcrop="${i.id}" title="Rogner ou cadrer l'image à un format fixe">Cadrer${i.crop?" ✓":""}</button><button class="btn sm danger" data-imgdel="${i.id}">Retirer</button></div></div></div>`).join("")}</div>`:""}
     <input type="file" id="imgFile" accept="image/*" multiple hidden>
     <button class="btn sm" data-imgadd>Ajouter une image</button></div>`;
 }
@@ -1742,7 +1765,7 @@ async function majBdd(){
     <tr><td>Sous-articles</td><td>${nbS(f.it)}</td><td>${nbS(ar)}</td></tr></table>`;
   if(!await ask(`<b>Remplacer l'article de la bibliothèque ?</b><br>L'article modèle <b>${esc(f.it.titre)}</b> (${where}) sera <b>écrasé</b> par <b>${ar.code}</b> ${esc(ar.titre)}.${cmp}<span class="hint">Le modèle précédent sera perdu pour tous les utilisateurs de la bibliothèque partagée.</span>`,"Remplacer l'article de la bibliothèque",true)) return;
   const n=toLibArt(ar,true); f.list[f.list.indexOf(f.it)]=n; save(); renderEditor();
-  if(state.prev==="lib")renderLibPanel(true);
+  if(prevModes().includes("lib"))renderPreview();
   toast(`Bibliothèque mise à jour : ${where} › ${n.titre}`);
 }
 function renderNodeEditor(nc){
@@ -1861,11 +1884,20 @@ function nodeRow(n,lot,mode,cls="chap"){
   return h;
 }
 /* ---------- Aperçu ---------- */
+const prevModes=()=>{const o=["bpu","cctp","lib"],p=(state.prevs&&state.prevs.length?state.prevs:[state.prev||"bpu"]).filter(k=>o.includes(k));return p.length?o.filter(k=>p.includes(k)):["bpu"];};
 function renderPreview(){
-  const el=$("#preview");
-  if(state.prev==="lib"){renderLibPanel();return;}
+  const el=$("#preview"), M=prevModes();
+  if(M.length===1){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";state.prev=M[0];if(M[0]==="lib"){renderLibPanel();return;}return renderPreviewOne(el,M[0],false);}
+  el.classList.add("multi"); state.prev=M[0];
+  const keep=el.querySelector("#plQ")?{q:$("#plQ").value,st:$("#plList")?$("#plList").scrollTop:0}:null;
+  const sc={};el.querySelectorAll(".pv-sec").forEach(x=>sc[x.dataset.pv]=x.scrollTop);
+  el.innerHTML=`<div class="prev-h"><b>Aperçu</b>${prevSeg()}</div><div class="pv-secs">${M.map(m=>`<section class="pv-sec" data-pv="${m}"></section>`).join("")}</div>`;
+  M.forEach(m=>{const s=el.querySelector(`[data-pv="${m}"]`); if(m==="lib")renderLibPanel(true,s,keep&&keep.q); else renderPreviewOne(s,m,true); if(sc[m])s.scrollTop=sc[m];});
+  if(keep&&$("#plList"))$("#plList").scrollTop=keep.st;
+}
+function renderPreviewOne(el,mode,multi){
   const f=locate(state.sel), nc=f?null:nodeCtx(state.sel); if(!f&&!nc){el.innerHTML="";return;}
-  const root=f?f.top:nc.node, lot=f?f.lot:nc.lot, isB=state.prev==="bpu";
+  const root=f?f.top:nc.node, lot=f?f.lot:nc.lot, isB=mode==="bpu";
   let body;
   if(isB){
     const nodeRows=(n,top)=>(!top&&!nodeHasBase(n))?"":(top?"":nodeRow(n,lot,"moe"))
@@ -1885,8 +1917,8 @@ function renderPreview(){
     const rl=root===lot?1:(lot.children.includes(root)?2:3);
     body=`<div class="sheet">${(root===lot&&lot===state.data[0])?coverHtml():""}<div style="${lotSheetStyle(lot)}">${nblk(root,rl)}</div></div>`;
   }
-  el.innerHTML=`<div class="prev-h"><b>Aperçu ${root.code} ${esc(root.titre)}</b>
-    ${prevSeg()}</div>${body}`;
+  el.innerHTML=`<div class="prev-h"><b>${mode==="bpu"?"BPU":"CCTP"} ${root.code} ${esc(root.titre)}</b>
+    ${multi?"":prevSeg()}</div>${body}`;
   const c=el.querySelector(".cur"); if(c&&el.scrollHeight>el.clientHeight){const r=c.getBoundingClientRect(),p=el.getBoundingClientRect();if(r.top<p.top+50||r.bottom>p.bottom)c.scrollIntoView({block:"nearest"});}
 }
 function coverHtml(){
@@ -1898,12 +1930,12 @@ function coverHtml(){
     <div class="cv-cols">${card("ARCHITECTE",[{t:C.arch.nom,b:1},{t:C.arch.adresse},{t:C.arch.tel&&"Tél. : "+C.arch.tel},{t:C.arch.web},{t:C.arch.email}].filter(x=>x.t))}${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
 </div>`;
 }
-const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${state.prev===k}">${l}</button>`).join("")}</div><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
-function renderLibPanel(force){
-  const el=$("#preview");
+const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${prevModes().includes(k)}" title="Afficher ou masquer ce volet (plusieurs possibles)">${l}</button>`).join("")}</div><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
+function renderLibPanel(force,sec,q0){
+  const el=sec||$("#preview"), multi=!!sec;
   if(!force&&el.querySelector("#plQ")){$("#plTarget").textContent=libTargetText();return;}
-  const q=el.querySelector("#plQ")?$("#plQ").value:"";
-  el.innerHTML=`<div class="prev-h"><b>Bibliothèque</b>${prevSeg()}</div>
+  const q=q0!=null?q0:(el.querySelector("#plQ")?$("#plQ").value:"");
+  el.innerHTML=`<div class="prev-h"><b>Bibliothèque</b>${multi?"":prevSeg()}</div>
     <div class="pl-top"><input type="search" id="plQ" placeholder="Rechercher un article, un sous-titre…" aria-label="Rechercher dans la bibliothèque" autocomplete="off" value="${esc(q)}">
       <div class="lv-row" id="plLv" style="margin:8px 0 2px"></div>
       <p class="hint" id="plTarget">${libTargetText()}</p>
@@ -1920,7 +1952,7 @@ function renderLibPanelList(){
     const tip=esc(plainTxt(it.texte).slice(0,280));
     return `<div class="pl-row lv${Math.min(r.d,3)}" style="--ld:0px" draggable="true" data-plib="${it.id}" title="${tip}">${libGuides(R,R.indexOf(r))}
       ${hasKids?`<button class="tg bx" data-pltg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"+":"−"}</button>`:`<span class="tg"></span>`}
-      <span class="pl-t">${esc(it.titre)}</span><span class="hint pl-i">${info}</span>
+      <span class="pl-t">${esc(it.titre)}${libDesc(it,"pl-d")}</span><span class="hint pl-i">${info}</span>
       <button class="x pl-ed" data-pled="${it.id}" aria-label="Modifier ${esc(it.titre)}" title="Modifier dans la bibliothèque">✎</button><button class="x pl-del" data-pldel="${it.id}" aria-label="Supprimer ${esc(it.titre)}" title="Supprimer de la bibliothèque">×</button><button class="x pl-add" data-plins="${it.id}" aria-label="Insérer ${esc(it.titre)}" title="Insérer au point d'insertion">+</button></div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond.":"La bibliothèque est vide."}</p>`;
 }
@@ -2172,7 +2204,7 @@ $("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)
   if(t.dataset&&t.dataset.ovin!==undefined){const v=t.checked?t.dataset.ovin:"";all(x=>{if(v)x.ovIn=v;else delete x.ovIn;});ovRefresh();}
   else if(t.dataset&&t.dataset.ovb){const id=t.dataset.ovb;all(x=>{const a=new Set(x.ovBase||[]);t.checked?a.add(id):a.delete(id);if(a.size)x.ovBase=[...a];else delete x.ovBase;});ovRefresh();}});
 function ovRefresh(){save();renderTree();renderEditor();renderPreview();renderTotal();}
-$("#editor").addEventListener("click",e=>{const an=e.target.closest("[data-imgann]");if(an){annOpen(an.dataset.imgann);return;}const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
+$("#editor").addEventListener("click",e=>{const an=e.target.closest("[data-imgann]");if(an){annOpen(an.dataset.imgann);return;}const cr=e.target.closest("[data-imgcrop]");if(cr){cropOpen(cr.dataset.imgcrop);return;}const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
 $("#ovBtn").onclick=()=>openOv();
 /* ---------- annotation des images (flèche, carré) ---------- */
 let ANN=null;
@@ -2212,6 +2244,30 @@ function annOpen(imgId){
         im.orig=im.orig||im.src;im.shapes=ANN.shapes;im.src=o.toDataURL("image/jpeg",0.9);}
       else if(im.orig){im.src=im.orig;delete im.orig;delete im.shapes;}
       save();$("#annDlg").close();ANN=null;renderEditor();renderPreview();toast("Annotations enregistrées");}});
+})();
+let CROP=null;
+function cropDraw(){const c=CROP,cv=$("#cropCv"),g=cv.getContext("2d"),W=cv.width,H=cv.height,iw=c.img.naturalWidth,ih=c.img.naturalHeight,s=Math.max(W/iw,H/ih)*c.z,dw=iw*s,dh=ih*s;
+  const mx=(dw-W)/2,my=(dh-H)/2;c.cx=Math.min(.5+mx/dw,Math.max(.5-mx/dw,c.cx));c.cy=Math.min(.5+my/dh,Math.max(.5-my/dh,c.cy));
+  g.fillStyle="#fff";g.fillRect(0,0,W,H);g.drawImage(c.img,W/2-c.cx*dw,H/2-c.cy*dh,dw,dh);}
+function cropSize(){const c=CROP,cv=$("#cropCv"),W=Math.min(600,Math.round(innerWidth*.8));cv.width=W;cv.height=Math.round(W/c.r);cv.style.height="auto";
+  document.querySelectorAll("[data-cropr]").forEach(b=>b.setAttribute("aria-pressed",String(Math.abs(+b.dataset.cropr-c.r)<.01)));cropDraw();}
+function cropOpen(imgId){const ci=curItem();if(!ci)return;const im=(ci.it.imgs||[]).find(i=>i.id===imgId);if(!im)return;
+  const img=new Image();img.onload=()=>{const cr=im.crop||{};CROP={im,img,r:cr.r||1.3333,z:cr.z||1,cx:cr.cx==null?.5:cr.cx,cy:cr.cy==null?.5:cr.cy};$("#cropZ").value=CROP.z;cropSize();$("#cropDlg").showModal();};
+  img.src=im.full||im.src;}
+(function(){const cv=$("#cropCv");let d=null;
+  cv.addEventListener("pointerdown",e=>{if(!CROP)return;cv.setPointerCapture(e.pointerId);d={x:e.clientX,y:e.clientY,cx:CROP.cx,cy:CROP.cy};cv.style.cursor="grabbing";});
+  cv.addEventListener("pointermove",e=>{if(!CROP||!d)return;const c=CROP,r=cv.getBoundingClientRect(),iw=c.img.naturalWidth,ih=c.img.naturalHeight,s=Math.max(cv.width/iw,cv.height/ih)*c.z,k=cv.width/r.width;
+    c.cx=d.cx-(e.clientX-d.x)*k/(iw*s);c.cy=d.cy-(e.clientY-d.y)*k/(ih*s);cropDraw();});
+  const end=()=>{d=null;cv.style.cursor="grab";};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+  cv.addEventListener("wheel",e=>{if(!CROP)return;e.preventDefault();CROP.z=Math.min(4,Math.max(1,CROP.z*(e.deltaY<0?1.08:1/1.08)));$("#cropZ").value=CROP.z;cropDraw();},{passive:false});
+  $("#cropZ").addEventListener("input",e=>{if(!CROP)return;CROP.z=parseFloat(e.target.value)||1;cropDraw();});
+  $("#cropDlg").addEventListener("click",e=>{if(!CROP)return;const t=e.target.closest("[data-cropr]");if(t){CROP.r=+t.dataset.cropr;cropSize();return;}
+    if(e.target.id==="cropCancel"){$("#cropDlg").close();CROP=null;return;}
+    if(e.target.id==="cropReset"){const im=CROP.im;if(im.full){im.src=im.full;delete im.full;}delete im.crop;delete im.orig;delete im.shapes;save();$("#cropDlg").close();CROP=null;renderEditor();renderPreview();toast("Image complète rétablie");return;}
+    if(e.target.id==="cropOk"){const c=CROP,im=c.im,W=1100,H=Math.round(W/c.r),o=document.createElement("canvas");o.width=W;o.height=H;const g=o.getContext("2d"),iw=c.img.naturalWidth,ih=c.img.naturalHeight,s=Math.max(W/iw,H/ih)*c.z,dw=iw*s,dh=ih*s;
+      g.fillStyle="#fff";g.fillRect(0,0,W,H);g.drawImage(c.img,W/2-c.cx*dw,H/2-c.cy*dh,dw,dh);
+      const hadAnn=!!(im.shapes&&im.shapes.length);im.full=im.full||im.orig||im.src;delete im.orig;delete im.shapes;
+      im.src=o.toDataURL("image/jpeg",.88);im.crop={r:c.r,z:c.z,cx:c.cx,cy:c.cy};save();$("#cropDlg").close();CROP=null;renderEditor();renderPreview();toast(hadAnn?"Image cadrée (les annotations ont été retirées, à refaire)":"Image cadrée");}});
 })();
 function ovAdd(kind,assign){const used=new Set(ovl().map(x=>x.col)),k0=OVP.findIndex((c,k)=>!used.has(k)),o={id:"ov"+nid(),kind,nom:"",col:k0<0?ovl().length%OVP.length:k0};ovl().push(o);
   if(assign){const ci=curItem();if(ci)ci.it.ovIn=o.id;}
@@ -2335,7 +2391,7 @@ $("#preview").addEventListener("dblclick",e=>{const r=e.target.closest("[data-pl
 $("#preview").addEventListener("dragstart",e=>{const r=e.target.closest("[data-plib]");if(!r)return;libDragId=r.dataset.plib;r.classList.add("dragging");e.dataTransfer.effectAllowed="copy";e.dataTransfer.setData("text/plain","agoa-lib:"+libDragId);});
 $("#preview").addEventListener("dragend",()=>{libDragId=null;clearDrop();document.querySelectorAll(".pl-row.dragging").forEach(x=>x.classList.remove("dragging"));});
 $("#preview").addEventListener("click",e=>{
-  const p=e.target.closest("[data-prev]"); if(p){state.prev=p.dataset.prev;save();if(state.prev==="lib")renderLibPanel(true);else renderPreview();return;}
+  const p=e.target.closest("[data-prev]"); if(p){const k=p.dataset.prev;let M=prevModes();if(M.includes(k)){if(M.length>1)M=M.filter(x=>x!==k);}else M=[...M,k];state.prevs=M;state.prev=M[0];save();const el=$("#preview");if(M.length===1&&M[0]==="lib"){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";renderLibPanel(true);}else renderPreview();return;}
   const tg=e.target.closest("[data-pltg]"); if(tg){const k=tg.dataset.pltg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibPanelList();return;}
   const pi=e.target.closest("[data-plins]"); if(pi){libInsert(pi.dataset.plins);return;}
   if(e.target.closest('[data-act="libManage"]')){openLib();return;}
@@ -3282,8 +3338,8 @@ function refreshLibUI(){
   const ps=$("#plStat");if(ps){ps.textContent=libStat.txt;ps.className="lib-stat"+(libStat.ok?"":" bad");}
 }
 function redrawLib(){
-  if($("#libDlg")&&$("#libDlg").open&&!(document.activeElement&&/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)&&$("#libDetail").contains(document.activeElement))) renderLib();
-  if(state&&state.prev==="lib"&&$("#plQ")) renderLibPanelList();
+  if($("#libDlg")&&$("#libDlg").open&&!((ae=>ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&$("#libDetail").contains(ae))((LIBWIN&&!LIBWIN.closed?LIBWIN.document:document).activeElement))) renderLib();
+  if(state&&prevModes().includes("lib")&&$("#plQ")) renderLibPanelList();
 }
 async function libSync(force){
   if(!AG||libBusy||!store) return; libBusy=true;
@@ -3392,6 +3448,7 @@ function libTargetText(){
   return `Point d'insertion : ${where}`;
 }
 function renderLib(){$("#libTarget").textContent=libTargetText();renderLibList();renderLibDetail();const st=$("#libStat");if(st){st.textContent=libStat.txt;st.className="lib-stat"+(libStat.ok?"":" bad");}}
+const libDesc=(it,c)=>{const t=plainTxt(it.texte||"").replace(/\s+/g," ").trim();return t?`<span class="${c||"lib-d"}">${esc(t.slice(0,240))}${t.length>240?"…":""}</span>`:"";};
 function renderLibList(keep){
   const _st=$("#libList").scrollTop;
   $("#libLv").innerHTML=libLvHtml();
@@ -3402,7 +3459,7 @@ function renderLibList(keep){
       :(isTitle(it)?"titre":`${esc(it.u)}${it.pu?`, ${money(it.pu)}`:""}`)+((it.sub||[]).length?`, ${it.sub.length} sous-article${it.sub.length>1?"s":""}`:"");
     return `<div class="lib-row lv${Math.min(r.d,2)}${it.id===libSel?" on":""}" style="--ld:0px" data-lib="${it.id}" role="option" aria-selected="${it.id===libSel}">${libGuides(R,R.indexOf(r))}
       ${(r.k!=="article"||(it.sub||[]).length)?`<button class="tg bx" data-libtg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"+":"−"}</button>`:`<span class="tg"></span>`}
-      <div class="lib-t"><b>${esc(it.titre)}</b><span class="hint">${info}</span></div>
+      <div class="lib-t"><b>${esc(it.titre)}</b><span class="hint">${info}</span>${libDesc(it)}</div>
       ${state?`<button class="btn sm" data-libins="${it.id}">Insérer</button>`:""}</div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond à la recherche.":"La bibliothèque est vide : créez un premier titre."}</p>`;
   $("#libList").scrollTop=_st;
@@ -3484,18 +3541,36 @@ async function libDelete(id){
   const ok=await ask(`Supprimer « ${esc(f.it.titre)} »${extra} de la bibliothèque${AG?" partagée":""} ? Les éléments déjà insérés dans les affaires ne sont pas modifiés.`,"Supprimer",true);
   if(wasOpen) d.show();
   if(!ok) return;
-  f.list.splice(f.list.indexOf(f.it),1); if(libSel===id)libSel=null; save(); renderLib(); if(state&&state.prev==="lib")renderLibPanel(true);
+  f.list.splice(f.list.indexOf(f.it),1); if(libSel===id)libSel=null; save(); renderLib(); if(state&&prevModes().includes("lib"))renderPreview();
   toast(`« ${f.it.titre} » supprimé de la bibliothèque`);
 }
-function openLib(){$("#libQ").value="";libSel=null;renderLib();const d=$("#libDlg");if(!d.open)d.show();d.classList.add("floating");$("#libQ").focus();}
+function openLib(){if(LIBWIN&&!LIBWIN.closed){LIBWIN.focus();$("#libQ").focus();return;}$("#libQ").value="";libSel=null;renderLib();const d=$("#libDlg");if(!d.open)d.show();d.classList.add("floating");$("#libQ").focus();}
 (function libFloat(){const d=$("#libDlg"),h=d.querySelector(".opt-h");let sx,sy,ox,oy,on=false;
   h.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;on=true;const r=d.getBoundingClientRect();sx=e.clientX;sy=e.clientY;ox=r.left;oy=r.top;h.setPointerCapture(e.pointerId);});
   h.addEventListener("pointermove",e=>{if(!on)return;d.style.left=Math.max(0,Math.min(innerWidth-120,ox+e.clientX-sx))+"px";d.style.top=Math.max(0,Math.min(innerHeight-60,oy+e.clientY-sy))+"px";d.style.right="auto";});
   h.addEventListener("pointerup",()=>{on=false;});
 })();
+function libAttach(){const d=document.getElementById("libDlg")||(LIBWIN&&LIBWIN.document.getElementById("libDlg"));if(!d)return;const open=d.open;d.close();d.classList.remove("detached");d.classList.add("floating");LIBWIN=null;document.body.appendChild(d);if(open)d.show();const b=document.getElementById("detachLib");if(b)b.style.display="";}
+function libDetach(){
+  if(LIBWIN&&!LIBWIN.closed){LIBWIN.focus();return;}
+  let w=null;try{w=window.open("","agoaLib","width=1000,height=820,left=40,top=40");}catch(e){}
+  if(!w){toast("Impossible d'ouvrir une fenêtre séparée : la bibliothèque reste flottante.");return;}
+  const d=document.getElementById("libDlg");d.close();
+  const D=w.document;D.open();D.write("<!doctype html><html><head><meta charset=utf-8><title>Bibliothèque d'articles — AGOA</title></head><body style='margin:0'></body></html>");D.close();
+  [...document.documentElement.attributes].forEach(a=>D.documentElement.setAttribute(a.name,a.value));
+  document.head.querySelectorAll("style,link[rel=stylesheet]").forEach(n=>D.head.appendChild(n.cloneNode(true)));
+  D.body.className=document.body.className;
+  LIBWIN=w;d.classList.remove("floating");d.classList.add("detached");d.removeAttribute("style");D.body.appendChild(d);d.show();
+  w.addEventListener("pagehide",()=>{if(LIBWIN===w)libAttach();});
+  w.addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault();}});
+  const b=D.getElementById("detachLib");if(b)b.style.display="none";
+  const q=D.getElementById("libQ");if(q)q.focus();
+}
+window.addEventListener("beforeunload",()=>{if(LIBWIN&&!LIBWIN.closed){try{LIBWIN.close();}catch(e){}}});
 $("#libBtn").onclick=openLib;
-$("#closeLib").onclick=()=>$("#libDlg").close();
-$("#libDlg").addEventListener("close",()=>{if(state&&state.prev==="lib")renderLibPanel(true);});
+$("#detachLib").onclick=libDetach;
+$("#closeLib").onclick=()=>{if(LIBWIN&&!LIBWIN.closed){const w=LIBWIN;libAttach();w.close();}$("#libDlg").close();};
+$("#libDlg").addEventListener("close",()=>{if(state&&prevModes().includes("lib"))renderPreview();});
 $("#libQ").addEventListener("input",()=>{libSel=null;renderLibList();renderLibDetail();});
 $("#libQ").addEventListener("keydown",e=>{
   const R=libRows(), i=R.findIndex(r=>r.it.id===libSel);
@@ -3692,11 +3767,11 @@ function renderAnalyse(){
     <details class="ana-lotsel" ${anaLotSelOpen?"open":""}><summary title="Choisir les lots à analyser">Lots analysés (${state.data.filter(l=>!l.noBpu&&!(A.off||[]).includes(l.nid)).length}/${state.data.filter(l=>!l.noBpu).length}) ▾</summary><div>${state.data.map(l=>l.noBpu?`<label class="lotck" style="opacity:.55"><input type="checkbox" disabled> Lot ${esc(l.code)} ${esc(l.titre)} <span class="hint">(hors BPU)</span></label>`:`<label class="lotck"><input type="checkbox" data-alsel="${esc(l.nid)}" ${(A.off||[]).includes(l.nid)?"":"checked"}> Lot ${esc(l.code)} ${esc(l.titre)}</label>`).join("")}</div></details>
     <span class="achips" role="group" aria-label="Entreprises affichées"><span class="hint">Entreprises :</span>
       <span class="achip ${A.hideMoe?"off":""}"><button data-achip="moe" aria-pressed="${!A.hideMoe}" title="Afficher ou masquer l'estimation de la MOE">Estimation MOE</button></span>
-      ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(e.nom)}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
+      ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}" draggable="true" data-achipd="${esc(e.id)}" title="Glisser pour changer l'ordre"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(e.nom)}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
     </span>
     <span class="sep"></span>
     <button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
-  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}${e.offre?`<span class="th-sub${m?" warn":""}" style="display:block;font-weight:400">${esc(offerInfo(e))}</span>`:""}</th>`;}).join("")}</tr>
+  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}</th>`;}).join("")}</tr>
     <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
   const ec=()=>"";
   let body="";
@@ -3797,6 +3872,11 @@ function renderAnalyse(){
     if(t.id==="anaCol"){A.colors=t.checked;redo();return;}
     if(t.id==="anaOnly"){A.only=t.checked;redo();return;}
   });
+  let chipDrag=null;
+  V.addEventListener("dragstart",e=>{const c=e.target.closest&&e.target.closest("[data-achipd]");if(!c)return;chipDrag=c.dataset.achipd;e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain",chipDrag);}catch(x){}c.classList.add("dragging");});
+  V.addEventListener("dragover",e=>{if(!chipDrag)return;const c=e.target.closest("[data-achipd]");if(!c)return;e.preventDefault();V.querySelectorAll(".achip.over").forEach(x=>x.classList.remove("over"));if(c.dataset.achipd!==chipDrag)c.classList.add("over");});
+  V.addEventListener("dragend",()=>{chipDrag=null;V.querySelectorAll(".achip.over,.achip.dragging").forEach(x=>x.classList.remove("over","dragging"));});
+  V.addEventListener("drop",e=>{if(!chipDrag)return;const c=e.target.closest("[data-achipd]");if(!c)return;e.preventDefault();const to=c.dataset.achipd,from=chipDrag;chipDrag=null;if(to===from)return;const L=ents(),a=L.findIndex(x=>x.id===from),b=L.findIndex(x=>x.id===to);if(a<0||b<0)return;const [it]=L.splice(a,1);L.splice(b,0,it);save();renderAnalyse();});
   V.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="anaSeuil"){e.preventDefault();$("#anaValid").click();}});
   V.addEventListener("dragstart",e=>{const g=e.target.closest("[data-agrip]");if(!g){return;}drag=idx(g.dataset.agrip);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ana");g.closest("tr").classList.add("dragx");});
   V.addEventListener("dragend",()=>{drag=null;V.querySelectorAll(".dragx,.dropb,.dropa").forEach(x=>x.classList.remove("dragx","dropb","dropa"));});

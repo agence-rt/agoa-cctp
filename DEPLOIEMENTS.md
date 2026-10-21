@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°53** — v0.53.0 — 2026-10-21 — Aperçu BPU+CCTP+Bibliothèque simultanés, descriptif en bibliothèque, bibliothèque en fenêtre séparée, cadrage d'image, ordre des entreprises par glisser-déposer, en-tête = nom seul
 - **n°52** — v0.52.0 — 2026-10-21 — Mise à jour
 - **n°51** — v0.51.0 — 2026-10-21 — Mise à jour
 - **n°50** — v0.50.0 — 2026-10-21 — Mise à jour

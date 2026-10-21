@@ -468,7 +468,12 @@ function createWindow() {
     else if (p.selectionText) items.push({ role: "copy", label: "Copier" });
     if (items.length) Menu.buildFromTemplate(items).popup({ window: win });
   });
-  win.webContents.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto):/i.test(url)) shell.openExternal(url); return { action: "deny" }; });
+  win.webContents.setWindowOpenHandler(({ url, frameName }) => {
+    // Fenêtre séparée de la bibliothèque (déplaçable sur un second écran)
+    if ((url === "" || url === "about:blank") && frameName === "agoaLib") return { action: "allow", overrideBrowserWindowOptions: { autoHideMenuBar: true, parent: undefined, modal: false, show: true, backgroundColor: "#ffffff", title: "Bibliothèque d'articles — AGOA" } };
+    if (/^(https?|mailto):/i.test(url)) shell.openExternal(url);
+    return { action: "deny" };
+  });
   win.webContents.on("will-navigate", (e, url) => { if (!url.startsWith("file:")) { e.preventDefault(); if (/^(https?|mailto):/i.test(url)) shell.openExternal(url); } });
   win.webContents.on("did-finish-load", () => { ready = true; if (pendingFile) { win.webContents.send("open-file", pendingFile.name, pendingFile.text, pendingFile.file); pendingFile = null; } });
   win.on("close", e => {
