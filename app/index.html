@@ -91,7 +91,9 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree details.lotd>summary.lot{margin:0;padding:8px 10px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;background:transparent;border-left:3px solid transparent}
 .tree details.lotd>summary.lot::before{margin-top:0}
 .tree details.lotd[open]>summary.lot{border-bottom:1px solid var(--line)}
-.tree details.lotd>summary.lot.cur{background:var(--paper);border-left-color:var(--accent)}
+.tree details.lotd>summary.lot{background:var(--lcp);border-left-color:var(--lcf)}
+.tree details.lotd{border-color:var(--lcm)}.tree details.lotd>summary.lot.cur{background:var(--lcm);border-left-color:var(--lcf)}
+.tree details.lotd>summary.lot b{color:var(--lcs)}
 .tree details.chd{padding-bottom:2px}
 .tree details.chd>summary.chs{padding:6px 10px 6px 2px;align-items:flex-start}
 .tree details.chd>summary.chs .code{margin-top:0}
@@ -106,7 +108,7 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree .lot-name{cursor:pointer}
 .chk.sm{font-size:13px;margin:0}
 .tree .lot:first-child{margin-top:6px}
-.tree .lot b{color:var(--accent);font-weight:700}
+.tree .lot b{font-weight:700}
 .tree .lot .lot-name{color:var(--ink);font-weight:600}
 .lot-n{min-width:0;flex:1}
 .lot-name{cursor:text}
@@ -424,6 +426,9 @@ dialog.wide{width:min(940px,95vw);max-height:90vh;padding:0}
 .rg-res button:hover{border-color:var(--accent)}
 .rg-msg{margin-top:8px;font-size:13px}
 dialog.lib{width:min(1100px,96vw)}
+dialog.lib.floating{position:fixed;margin:0;top:80px;right:24px;left:auto;width:min(860px,62vw);height:72vh;max-height:92vh;resize:both;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3);border:1px solid var(--line);z-index:300}
+dialog.lib.floating .opt-h{cursor:move}
+dialog.lib.floating .lib-body{height:calc(100% - 64px)}
 .lib-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;padding:14px 22px 20px;height:min(72vh,720px)}
 .lib-left{display:flex;flex-direction:column;min-height:0;gap:10px}
 .lib-left input[type=search]{background:var(--paper);border:1px solid var(--line);border-radius:5px;padding:8px 10px;flex:1}
@@ -986,7 +991,7 @@ const $=s=>document.querySelector(s);
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.51.0", deploiement: 51};
+const APP = {version: "0.52.0", deploiement: 52};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1094,9 +1099,10 @@ const LOT_COLORS={bleu:{n:"Bleu",pale:"#E5F1FC",mid:"#B6DDF7",strong:"#1961AC",f
   jaune:{n:"Jaune",pale:"#FFF6D6",mid:"#F2DE8C",strong:"#8F7208",frame:"#B8930C"},orange:{n:"Orange",pale:"#FDE9D6",mid:"#F5C79B",strong:"#B35A0E",frame:"#D9701A"},
   rose:{n:"Rose",pale:"#FCE4EC",mid:"#F2B6CB",strong:"#A82C60",frame:"#C93A78"},violet:{n:"Violet",pale:"#EEE6F8",mid:"#CDB9EA",strong:"#6B3FA0",frame:"#7E4DBA"},
   turquoise:{n:"Turquoise",pale:"#DDF4F4",mid:"#A8DCDC",strong:"#1B7F82",frame:"#17696C"},gris:{n:"Gris",pale:"#EEF0F2",mid:"#CBD0D6",strong:"#4A5560",frame:"#6B7682"}};
-const lotCol=l=>LOT_COLORS[l&&l.color]||LOT_COLORS.bleu;
+const lotCol=l=>LOT_COLORS[l&&l.color]||LOT_COLORS.gris;
 const lotById=id=>state.data.find(l=>l.nid===id);
 const hexRgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const LOT_DEF="gris";
 const lotStyle=l=>{const c=lotCol(l);return `--lcp:${c.pale};--lcm:${c.mid};--lcs:${c.strong};--lcf:${c.frame}`;};
 const lotSheetStyle=l=>{const c=lotCol(l);return `--accent:${c.strong};--accent-soft:${c.pale};--line:${c.mid};--band:${c.strong}`;};
 function ovFrameRows(html,col,mode="all",bg){const rows=String(html).match(/<tr[\s\S]*?<\/tr>/g)||[];
@@ -1432,6 +1438,13 @@ function moveChapterTo(k,tk,pos){
   ensureNodeIds(); state.sel=sel; refresh(); toast(`Chapitre déplacé en ${ch.code}`);
 }
 let dragCh=null;
+(function treeAutoScroll(){const T=$("#tree").closest("aside.tree")||$("#tree");
+  const go=e=>{if(!(dragId||dragCh||libDragId))return;const r=T.getBoundingClientRect(),z=Math.min(70,r.height/4);let dy=0;
+    if(e.clientY<r.top+z&&e.clientY>r.top-30)dy=-Math.ceil((r.top+z-e.clientY)/4+2);else if(e.clientY>r.bottom-z&&e.clientY<r.bottom+30)dy=Math.ceil((e.clientY-(r.bottom-z))/4+2);
+    if(dy&&e.clientX>=r.left&&e.clientX<=r.right)T.scrollTop+=dy;};
+  document.addEventListener("dragover",go);
+  T.addEventListener("wheel",e=>{if(dragId||dragCh||libDragId){T.scrollTop+=e.deltaY;e.preventDefault();}},{passive:false});
+})();
 $("#tree").addEventListener("dragstart",e=>{const c=e.target.closest("summary.chs[data-chnid]");if(!c||e.target.closest(".art"))return;dragCh=c.dataset.chnid;c.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ch");});
 $("#tree").addEventListener("dragover",e=>{if(!dragCh)return;const t=e.target.closest("summary.chs[data-chnid],summary.lot");if(!t)return;if(t.dataset.chnid===dragCh)return;e.preventDefault();
   $("#tree").querySelectorAll(".drop-before,.drop-after,.drop-in").forEach(x=>x.classList.remove("drop-before","drop-after","drop-in"));
@@ -1669,7 +1682,7 @@ function renderTree(){
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
-    h+=`<details class="lotd" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
+    h+=`<details class="lotd" style="${lotStyle(lot)}" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
     h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
       h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}" data-chnid="${ch.nid}" draggable="true"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<span class="lot-mv"><button class="x" data-chmv="${ch.nid}|-1" aria-label="Monter le chapitre" title="Monter">▲</button><button class="x" data-chmv="${ch.nid}|1" aria-label="Descendre le chapitre" title="Descendre">▼</button></span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
@@ -1740,7 +1753,7 @@ function renderNodeEditor(nc){
   ${hlBar(n)}
   <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
   ${rteField("Description",n.texte,isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…")}
-  ${isLot?`<div class="lotcol" role="group" aria-label="Couleur du lot"><span>Couleur du lot</span>${Object.entries(LOT_COLORS).map(([k,c])=>`<button type="button" class="lc${(n.color||"bleu")===k?" on":""}" data-lotcolor="${k}" title="${c.n}" aria-label="${c.n}" aria-pressed="${(n.color||"bleu")===k}" style="background:${c.pale};border-color:${c.frame}"></button>`).join("")}</div><label class="chk" style="margin:6px 0 12px"><input type="checkbox" id="lotNoBpu" ${n.noBpu?"checked":""}> Masquer ce lot dans le BPU publié (Excel et page de saisie des entreprises)</label>`:imgsField(n,true)}
+  ${isLot?`<div class="lotcol" role="group" aria-label="Couleur du lot"><span>Couleur du lot</span>${Object.entries(LOT_COLORS).map(([k,c])=>`<button type="button" class="lc${(n.color||"gris")===k?" on":""}" data-lotcolor="${k}" title="${c.n}" aria-label="${c.n}" aria-pressed="${(n.color||"gris")===k}" style="background:${c.pale};border-color:${c.frame}"></button>`).join("")}</div><label class="chk" style="margin:6px 0 12px"><input type="checkbox" id="lotNoBpu" ${n.noBpu?"checked":""}> Masquer ce lot dans le BPU publié (Excel et page de saisie des entreprises)</label>`:imgsField(n,true)}
   ${ovBox(n)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
@@ -2412,7 +2425,7 @@ tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(a
   msel.clear();msAnchor=id;select(id);}});
 document.addEventListener("change",e=>{const t=e.target; if(t&&t.id==="lotNoBpu"){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){if(t.checked)nc.node.noBpu=true; else delete nc.node.noBpu; save(); renderTree(); toast(t.checked?`Lot ${nc.node.code} masqué dans le BPU publié`:`Lot ${nc.node.code} de nouveau présent dans le BPU publié`);}}});
 document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();
-  const lc=e.target.closest("[data-lotcolor]"); if(lc){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){const k=lc.dataset.lotcolor; if(k==="bleu")delete nc.node.color; else nc.node.color=k; save(); renderEditor(); renderPreview(); toast(`Couleur du lot ${nc.node.code} : ${LOT_COLORS[k].n.toLowerCase()}`);}}});
+  const lc=e.target.closest("[data-lotcolor]"); if(lc){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){const k=lc.dataset.lotcolor; if(k==="gris")delete nc.node.color; else nc.node.color=k; save(); renderEditor(); renderPreview(); toast(`Couleur du lot ${nc.node.code} : ${LOT_COLORS[k].n.toLowerCase()}`);}}});
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&msel.size){msClear();return;}
@@ -3379,7 +3392,8 @@ function libTargetText(){
   return `Point d'insertion : ${where}`;
 }
 function renderLib(){$("#libTarget").textContent=libTargetText();renderLibList();renderLibDetail();const st=$("#libStat");if(st){st.textContent=libStat.txt;st.className="lib-stat"+(libStat.ok?"":" bad");}}
-function renderLibList(){
+function renderLibList(keep){
+  const _st=$("#libList").scrollTop;
   $("#libLv").innerHTML=libLvHtml();
   const R=libRows(), q=$("#libQ").value.trim(); if(!R.some(r=>r.it.id===libSel)){const qq=norm(q),self=r=>[r.it.titre,plainTxt(r.it.texte)].join(" ").toLowerCase().includes(qq);const fa=q&&(R.find(r=>r.k==="article"&&!isTitle(r.it)&&self(r))||R.find(r=>r.k==="article"&&self(r))||R.find(r=>r.k==="article"));libSel=fa?fa.it.id:R[0]?R[0].it.id:null;}
   $("#libList").innerHTML=R.length?R.map(r=>{const it=r.it, closed=libClosed.has(it.id)&&!q;
@@ -3391,7 +3405,8 @@ function renderLibList(){
       <div class="lib-t"><b>${esc(it.titre)}</b><span class="hint">${info}</span></div>
       ${state?`<button class="btn sm" data-libins="${it.id}">Insérer</button>`:""}</div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond à la recherche.":"La bibliothèque est vide : créez un premier titre."}</p>`;
-  const on=$("#libList .lib-row.on"); if(on) on.scrollIntoView({block:"nearest"});
+  $("#libList").scrollTop=_st;
+  if(!keep){const on=$("#libList .lib-row.on"); if(on) on.scrollIntoView({block:"nearest"});}
 }
 function insLabel(f){
   if(f.kind==="titre"){const n=f.it.children.reduce((s,x)=>s+libArtCount(x.art),0);return `Insérer le titre complet (${f.it.children.length} sous-titre${f.it.children.length>1?"s":""}, ${n} article${n>1?"s":""})`;}
@@ -3467,12 +3482,17 @@ async function libDelete(id){
   const extra=f.kind==="titre"?` et tout son contenu (${f.it.children.length} sous-titres)`:f.kind==="sous-titre"?` et ses ${libArtCount(f.it.art)} articles`:"";
   const d=$("#libDlg"), wasOpen=d.open; if(wasOpen) d.close();
   const ok=await ask(`Supprimer « ${esc(f.it.titre)} »${extra} de la bibliothèque${AG?" partagée":""} ? Les éléments déjà insérés dans les affaires ne sont pas modifiés.`,"Supprimer",true);
-  if(wasOpen) d.showModal();
+  if(wasOpen) d.show();
   if(!ok) return;
   f.list.splice(f.list.indexOf(f.it),1); if(libSel===id)libSel=null; save(); renderLib(); if(state&&state.prev==="lib")renderLibPanel(true);
   toast(`« ${f.it.titre} » supprimé de la bibliothèque`);
 }
-function openLib(){$("#libQ").value="";libSel=null;renderLib();$("#libDlg").showModal();$("#libQ").focus();}
+function openLib(){$("#libQ").value="";libSel=null;renderLib();const d=$("#libDlg");if(!d.open)d.show();d.classList.add("floating");$("#libQ").focus();}
+(function libFloat(){const d=$("#libDlg"),h=d.querySelector(".opt-h");let sx,sy,ox,oy,on=false;
+  h.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;on=true;const r=d.getBoundingClientRect();sx=e.clientX;sy=e.clientY;ox=r.left;oy=r.top;h.setPointerCapture(e.pointerId);});
+  h.addEventListener("pointermove",e=>{if(!on)return;d.style.left=Math.max(0,Math.min(innerWidth-120,ox+e.clientX-sx))+"px";d.style.top=Math.max(0,Math.min(innerHeight-60,oy+e.clientY-sy))+"px";d.style.right="auto";});
+  h.addEventListener("pointerup",()=>{on=false;});
+})();
 $("#libBtn").onclick=openLib;
 $("#closeLib").onclick=()=>$("#libDlg").close();
 $("#libDlg").addEventListener("close",()=>{if(state&&state.prev==="lib")renderLibPanel(true);});
@@ -3483,7 +3503,7 @@ $("#libQ").addEventListener("keydown",e=>{
   if(e.key==="Enter"&&libSel){e.preventDefault();libInsert(libSel);}
 });
 $("#libDlg").addEventListener("click",async e=>{
-  const tg=e.target.closest("[data-libtg]"); if(tg){const k=tg.dataset.libtg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibList();return;}
+  const tg=e.target.closest("[data-libtg]"); if(tg){const k=tg.dataset.libtg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibList(true);return;}
   const ins=e.target.closest("[data-libins]"); if(ins){libInsert(ins.dataset.libins);return;}
   const add=e.target.closest("[data-libadd]");
   if(add){const f=libFind(libSel);if(!f)return;let n;
@@ -3982,7 +4002,7 @@ async function exportBpu(entId,info,opts){
 async function buildBpuStyled(E,en,info,opts){
   const withDesc=!!(opts&&opts.desc);
   const o=state.op||{}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{};
-  const BLUE="FF1961AC", INK="FF333333", PALE="FFE5F1FC", LINE="FFB6DDF7", GREY="FFEEF3F8", MUTED="FF6B7A8C";
+  const BLUE="FF555B63", INK="FF333333", PALE="FFEDEEF0", LINE="FFCDD0D4", GREY="FFF3F4F5", MUTED="FF6B7A8C";
   const F=(sz,o2={})=>({name:"Arial",size:sz,color:{argb:INK},...o2});
   const EUR='#,##0.00\\ "€";\\-#,##0.00\\ "€";;', EUR0='#,##0.00\\ "€";\\-#,##0.00\\ "€"';
   const thin=c=>({style:"thin",color:{argb:c}}), box={top:thin(LINE),left:thin(LINE),bottom:thin(LINE),right:thin(LINE)};
@@ -4281,7 +4301,7 @@ function portalSums(){
 function renderPortal(){
   const en=ents().find(e=>e.id===PD.id), o=state.op||{};
   let h="";
-  let bs=0,os=0,skipLot=false,curLc=LOT_COLORS.bleu;const sk=entSkip(en);
+  let bs=0,os=0,skipLot=false,curLc=LOT_COLORS.gris;const sk=entSkip(en);
   bpuFlat().forEach(r=>{
     if(r.k==='lot')skipLot=sk.has(r.nid); if(skipLot)return;
     const desc=r.texte?`<span class="pt-desc">${esc(r.texte)}</span>`:"", pad=`style="padding-left:${6+Math.min(r.d,4)*12}px"`;
