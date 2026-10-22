@@ -1,1 +1,1 @@
-Déploiement n°66 — Synthèse PDF : logo plus grand en haut à gauche, colonnes des lots non pourvus hachurées, bloc mieux-disant par lot remplacé par le seul total des meilleures offres
+Déploiement n°67 — PDF : téléphone retiré des pieds de page, mieux-disants surlignés en vert, lots non pourvus en gris léger avec espace entre colonnes (synthèse et tableau global), colonnes d'entreprises condensées jusqu'à 6 puis format paysage

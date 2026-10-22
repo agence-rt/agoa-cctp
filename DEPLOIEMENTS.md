@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°67** — v0.67.0 — 2026-10-22 — PDF : téléphone retiré des pieds de page, mieux-disants surlignés en vert, lots non pourvus en gris léger avec espace entre colonnes (synthèse et tableau global), colonnes d'entreprises condensées jusqu'à 6 puis format paysage
 - **n°66** — v0.66.0 — 2026-10-22 — Synthèse PDF : logo plus grand en haut à gauche, colonnes des lots non pourvus hachurées, bloc mieux-disant par lot remplacé par le seul total des meilleures offres
 - **n°65** — v0.65.0 — 2026-10-22 — Consultation : nom d'une entreprise modifiable (✎) ; PDF de synthèse sans « Note sur la consultation »
 - **n°64** — v0.64.0 — 2026-10-22 — Synthèse : entreprises consultées par lot avec adresses, mieux-disant par lot puis total des meilleures offres, calcul par copropriétaire en option d'affichage (écran et PDF)

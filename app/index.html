@@ -1060,7 +1060,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.66.0", deploiement: 66};
+const APP = {version: "0.67.0", deploiement: 67};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1101,7 +1101,7 @@ const ARCHS={
 const archCur=()=>ARCHS[(typeof state!=="undefined"&&state&&state.archi)||"rt"]||ARCHS.rt;
 const AGENCE={get nom(){return archCur().nom;},get marque(){return archCur().marque;},get tel(){return archCur().tel;},get adresse(){return archCur().adresse;},get web(){return archCur().web;},get email(){return archCur().email;}};
 const OP_DEF={get moe(){return AGENCE.nom;},get moeTel(){return AGENCE.tel;},get moeAdresse(){return AGENCE.adresse;},get moeWeb(){return AGENCE.web;},get moeEmail(){return AGENCE.email;}};
-const archFoot=()=>[AGENCE.marque.toUpperCase(),AGENCE.tel,AGENCE.adresse,AGENCE.web].filter(Boolean).join("   ·   ");
+const archFoot=()=>[AGENCE.marque.toUpperCase(),AGENCE.adresse,AGENCE.web].filter(Boolean).join("   ·   ");
 const archLogo=()=>{try{return ARCH_LOGOS[archCur().key]||null;}catch(e){return null;}};
 function coverInfo(o){
   const v=k=>String(o[k]||"").trim(), d=(k,def)=>v(k)||def;
@@ -2889,16 +2889,16 @@ async function exportSynth(){
 document.addEventListener("click",e=>{if(e.target.closest("#expSynth"))exportSynth();});
 function buildSynthPdf(J,info){
   const o=state.op||{}, M=anaModel(), A=M.A, E=M.E, n=E.length, BD=bilanData(M);
-  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90];
+  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90];
   const wa=t=>String(t==null?"":t).replace(/[  -​ ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/−/g,"-").replace(/★/g,"*").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
   const doc=new J({unit:"mm",format:"a4",orientation:"portrait",compress:true});
-  const PW=210,PH=297,L=12,R=PW-12,T=24,B=PH-17,W=R-L;
+  let PW=210,PH=297,R=PW-12,B=PH-17,W=R-12; const L=12,T=24; let land=false;
   const font=(st,sz,c)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);const k=c||INK;doc.setTextColor(k[0],k[1],k[2]);};
   const fill=c=>doc.setFillColor(c[0],c[1],c[2]);
   const ref=[o.ref,o.immeuble].filter(Boolean).join(" - ")||"Affaire";
   const nf=v=>wa(fmt(v,2)), sgn2=v=>wa((v>=0?"+":"-")+fmt(Math.abs(v),2)), pc=v=>v==null?"-":wa((v>=0?"+":"-")+fmt(Math.abs(v),1)+" %");
   let y=T;
-  const np=()=>{doc.addPage("a4","portrait");y=T;};
+  const np=()=>{doc.addPage("a4",land?"landscape":"portrait");PW=land?297:210;PH=land?210:297;R=PW-12;B=PH-17;W=R-L;y=T;};
   const need=h=>{if(y+h>B){np();return true;}return false;};
   const cut=(x,yy,w,h,c)=>{fill(RED);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,yy,[1,1],"F",true);};
   const h2=t=>{need(16);y+=3;cut(L,y,W,7,2.6);font("bold",10,WHITE);doc.text(wa(t),L+3.5,y+4.9);y+=11;};
@@ -2947,8 +2947,7 @@ function buildSynthPdf(J,info){
     const lines=doc.splitTextToSize(wa(lab),labW-4-(o2.ind||0)).slice(0,2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
     if(o2.fill){fill(o2.fill);doc.rect(L,y,W,h,"F");}
-    if(o2.out)o2.out.forEach((z,j)=>{if(!z)return;const x0=L+labW+cw*j;fill([240,240,238]);doc.rect(x0,y,cw,h,"F");doc.setDrawColor(205,205,200);doc.setLineWidth(0.12);
-      for(let k=-h;k<cw;k+=2.2){let xa=x0+Math.max(k,0),ya=y+h-(k<0?-k:0),xb=x0+Math.min(k+h,cw),yb=y+(k+h>cw?k+h-cw:0);if(xb>xa)doc.line(xa,ya,xb,yb);}});
+    if(o2.out)o2.out.forEach((z,j)=>{if(!z)return;const x0=L+labW+cw*j;fill(OUTG);doc.rect(x0+0.7,y,cw-1.4,h,"F");});
     font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
     vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;const best=o2.best===j;font(o2.b||best?"bold":"normal",o2.sz||8.5,best?GRN:o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
@@ -2975,8 +2974,9 @@ function buildSynthPdf(J,info){
    if(M.lots.length>1&&P.rows.length){
     y+=3;need(20);font("bold",9,RED);doc.text("Entreprises consultées par lot",L,y+3.5);y+=6;
     LO.filter(z=>z.list.length).forEach(z=>{need(12+z.list.length*8);fill(PALE);doc.rect(L,y,W,5.6,"F");font("bold",8.5,RED);doc.text(wa(`Lot ${pad(z.x.li+1)} - ${doc.splitTextToSize(wa(z.x.l.titre),W-60)[0]}`),L+2,y+3.9);font("normal",8,MUTED);doc.text(wa("MOE : "+nf(z.x.tot.est)+" HT"),R-1,y+3.9,{align:"right"});y+=5.6;
-      z.list.forEach(o=>{need(9);const a2=entAdr(o.e);font(o.e.id===z.best?"bold":"normal",8.5,o.e.id===z.best?GRN:INK);doc.text(wa(doc.splitTextToSize(o.e.nom+(o.e.id===z.best?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
-        font("normal",8.5,INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
+      z.list.forEach(o=>{need(9);const a2=entAdr(o.e);const bs=o.e.id===z.best;if(bs){fill([225,243,235]);doc.rect(L,y,W,4.6+(a2?3.8:0),"F");}
+        font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(doc.splitTextToSize(o.e.nom+(bs?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
+        font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
         if(a2){font("normal",7.5,MUTED);doc.text(wa(doc.splitTextToSize(a2,W-8)[0]),L+4,y+2.6);y+=3.8;}});y+=1.5;});
     y+=1;need(10);    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.line(L,y,R,y);fill(PALE);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nf(P.ht)+" HT"),R-34,y+4,{align:"right"});doc.text(wa(nf(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
    const Q=quoteCfg();
@@ -2984,13 +2984,13 @@ function buildSynthPdf(J,info){
     if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,RED);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
       Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(wa(nf(base*t/Q.base)),R-1,y+3.6,{align:"right"});y+=5;});}}}
   /* 3. tableau comparatif global */
-  np(); h2("2. Tableau comparatif global de tous les articles");
+  land=n>6; np(); h2("2. Tableau comparatif global de tous les articles");
   const showPU=n<=3, fs=n>4?6.6:7.2;
-  const cCode=15,cU=7,cQ=11,cMp=0,cMm=0, cEp=showPU?14:0,cEm=showPU?19:21;
+  const cCode=15,cU=7,cQ=11,cMp=0,cMm=0, cEp=showPU?14:0,cEm=showPU?19:Math.max(16,Math.min(24,(W-15-7-11-50)/n));
   const fixed=cCode+cU+cQ+cMp+cMm, cDes=Math.max(38,W-fixed-n*(cEp+cEm));
   const xs={code:L,des:L+cCode,u:L+cCode+cDes,q:L+cCode+cDes+cU};
   const xm=L+cCode+cDes+cU+cQ; const xe=j=>xm+cMp+cMm+j*(cEp+cEm);
-  const GB=[240,240,238], GL=[190,190,185]; const bandH=(yy,h)=>{E.forEach((e,j)=>{if(j%2){fill(GB);doc.rect(xe(j),yy,cEp+cEm,h,"F");}});};
+  const GB=[240,240,238], GL=[190,190,185]; let LOUT=[]; const bandH=(yy,h)=>{E.forEach((e,j)=>{if(LOUT[j]){fill(OUTG);doc.rect(xe(j)+0.7,yy,cEp+cEm-1.4,h,"F");}});};
   const sepV=(yy,h)=>{doc.setDrawColor(GL[0],GL[1],GL[2]);doc.setLineWidth(0.25);E.forEach((e,j)=>{doc.line(xe(j),yy,xe(j),yy+h);});doc.line(xe(n-1)+cEp+cEm,yy,xe(n-1)+cEp+cEm,yy+h);};
   const gh=()=>{fill(PALE);doc.rect(L,y,W,showPU?11:7,"F");font("bold",7.6,RED);
     const t1=showPU?y+4.3:y+4.6; doc.text("N°",xs.code+1,t1);doc.text("Désignation",xs.des+1,t1);doc.text("U",xs.u+cU-1,t1,{align:"right"});doc.text("Qté",xs.q+cQ-1,t1,{align:"right"});
@@ -2999,7 +2999,8 @@ function buildSynthPdf(J,info){
     sepV(y,showPU?11:7); y+=showPU?11:7;};
   gh();
   const gneed=h=>{if(y+h>B){np();gh();}};
-  M.lots.forEach(({l,li,rows})=>{
+  M.lots.forEach(({l,li,rows,tot})=>{
+    LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
     gneed(14); cut(L,y,W,6,2.2); font("bold",8.6,WHITE); doc.text(wa(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`),L+3.2,y+4.2); y+=6;
     rows.forEach((w,wi)=>{
       if(w.ex||anaOvOnly(rows,wi)) return;
@@ -3007,20 +3008,20 @@ function buildSynthPdf(J,info){
       font(w.k==="ch"?"bold":w.k==="par"?"bold":"normal",fs);
       const lines=doc.splitTextToSize(wa(w.o.titre),cDes-ind-2).slice(0,2), h=Math.max(5,lines.length*3.3+1.8);
       gneed(h);
-      if(w.k==="ch"){fill(PALE);doc.rect(L,y,W,h,"F");} else bandH(y,h);
+      if(w.k==="ch"){fill(PALE);doc.rect(L,y,W,h,"F");} bandH(y,h);
       font(w.k==="art"?"normal":"bold",fs,w.k==="ch"?RED:INK);
       doc.text(wa(w.o.code||""),xs.code+1,y+3.5);
       lines.forEach((t,i)=>doc.text(t,xs.des+1+ind,y+3.5+i*3.3));
       if(w.leaf){
         font("normal",fs); doc.text(wa(w.o.u||""),xs.u+cU-1,y+3.5,{align:"right"}); doc.text(wa(fq(w.q,w.o.u)),xs.q+cQ-1,y+3.5,{align:"right"});
-        E.forEach((e,j)=>{const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil, bst=w.best!=null&&p===w.best;
+        E.forEach((e,j)=>{if(LOUT[j])return;const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil, bst=w.best!=null&&p===w.best;
           if(fl){fill(d>0?UP:DN);doc.rect(xe(j),y,cEp+cEm,h,"F");}
           font(bst?"bold":"normal",fs,m?MUTED:bst?GRN:INK);
           if(m){doc.text("-",xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}
           else{if(showPU)doc.text(nf(p),xe(j)+cEp-1,y+3.5,{align:"right"});doc.text(nf(w.a[j]),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}});
       }else if(w.k==="ch"&&w.sub){
         font("bold",fs,RED);
-        E.forEach((e,j)=>doc.text(nf(w.sub.e[e.id].ht),xe(j)+cEp+cEm-1,y+3.5,{align:"right"}));}
+        E.forEach((e,j)=>{if(!LOUT[j])doc.text(nf(w.sub.e[e.id].ht),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});});}
       sepV(y,h);doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.1);doc.line(L,y+h,R,y+h);y+=h;});
   });
   y+=2; gneed(10); font("bold",8.5,RED); doc.text("TOTAL HT du marché de base",xs.des+1,y+4);
@@ -3031,15 +3032,15 @@ function buildSynthPdf(J,info){
   /* en-têtes et pieds */
   const N=doc.getNumberOfPages();
   for(let p=1;p<=N;p++){
-    doc.setPage(p); font("normal",8,MUTED);
+    doc.setPage(p); font("normal",8,MUTED); const PWp=doc.internal.pageSize.getWidth(), PHp=doc.internal.pageSize.getHeight(), Rp=PWp-12;
     if(p===1){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(20,283,190,283);
       doc.text(wa(ref),20,288); doc.text(`Page ${p} / ${N}`,190,288,{align:"right"});
       font("bold",7,RED); doc.text(wa(archFoot()),105,293,{align:"center"}); continue;}
-    doc.text(wa("SYNTHÈSE - "+(o.objet||"")).slice(0,100),L,13); if(info){font("bold",8,RED);doc.text(wa(docTag(info)),R,13,{align:"right"});font("normal",8,MUTED);}
-    doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,R,15.5);
-    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PH-14,R,PH-14);
-    doc.text(wa(ref),L,PH-9.5); doc.text(`Page ${p} / ${N}`,R,PH-9.5,{align:"right"});
-    font("bold",7,RED); doc.text(wa(archFoot()),L+(R-L)/2,PH-5.6,{align:"center"});
+    doc.text(wa("SYNTHÈSE - "+(o.objet||"")).slice(0,100),L,13); if(info){font("bold",8,RED);doc.text(wa(docTag(info)),Rp,13,{align:"right"});font("normal",8,MUTED);}
+    doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,Rp,15.5);
+    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PHp-14,Rp,PHp-14);
+    doc.text(wa(ref),L,PHp-9.5); doc.text(`Page ${p} / ${N}`,Rp,PHp-9.5,{align:"right"});
+    font("bold",7,RED); doc.text(wa(archFoot()),L+(Rp-L)/2,PHp-5.6,{align:"center"});
   }
   doc.setProperties({title:"Synthèse - "+wa(ref),subject:wa(o.objet||""),creator:"AGOA CCTP"});
   return doc.output("arraybuffer");
