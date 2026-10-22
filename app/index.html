@@ -115,7 +115,14 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree .art{padding-top:2px;padding-bottom:2px}
 .tree .ti::after{top:11px}.tree .ti:last-child::before{height:11px}
 .tree details.chd.ti::after{top:12px}.tree details.chd.ti:last-child::before{height:12px}
-.tree details.lotd>summary.lot{padding-top:6px;padding-bottom:6px}
+.tree details.lotd>summary.lot{padding-top:4px;padding-bottom:4px}
+.tree .kids .art{padding-top:0;padding-bottom:0;min-height:20px;font-size:12.5px;line-height:1.25}
+.tree .art-x,.tree .lot-mv .x,.tree .node-x{height:18px}.tree .atg{margin:0}
+.tree details.chd>summary.chs{padding-top:2px;padding-bottom:2px;line-height:1.25}
+.tree details.chd>summary.chs::before{margin-top:0}
+.tree details.chd[open]>summary.chs::after{top:16px}
+.tree .ti::after{top:11px}.tree .ti:last-child::before{height:11px}
+.tree details.chd.ti::after{top:11px}.tree details.chd.ti:last-child::before{height:11px}
 .tree .lot-name{cursor:pointer}
 .chk.sm{font-size:13px;margin:0}
 .tree .lot:first-child{margin-top:6px}
@@ -1023,7 +1030,7 @@ const ENTS = [
  {id:"C",nom:"Entreprise C",base:1.13,statut:"Offre reçue",date:"15/03/2024"},
  {id:"D",nom:"Entreprise D",base:null,statut:"En attente",date:"–"}
 ];
-const UNITS=["u","ens","ft","m²","ml","m³","mois","kg"];
+const UNITS=["u","ens","ft","PM","m²","ml","m³","mois","kg"];
 const OP_FIELDS=[["ref","Code travaux"],["immeuble","Immeuble"],["objet","Objet des travaux"],["adresse","Adresse"],["cp","Code postal"],["ville","Ville"],["mo","Maître d'ouvrage"],["syndic","Syndic"],["adresseSyndic","Adresse du syndic"],["telSyndic","Téléphone du syndic"],["gestionnaire","Gestionnaire"],["emailGest","E-mail du gestionnaire"],["moe","Maîtrise d'œuvre (architecte)"],["moeTel","Téléphone de l'architecte"],["moeAdresse","Adresse de l'architecte"],["moeWeb","Site web de l'architecte"],["moeEmail","E-mail de l'architecte"],["parcelle","Parcelle cadastrale"],["nbLots","Nombre de lots"],["amiante","Diagnostic amiante"],["plomb","Diagnostic plomb"],["dateEdition","Date d'édition"],["dateRemise","Date de remise des offres"]];
 const RAGIC={server:"Ragic",apname:"agoa",sheet:"/operations/10",codeField:"1000295"};
 let LIBWIN=null;
@@ -1032,7 +1039,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.55.0", deploiement: 55};
+const APP = {version: "0.56.0", deploiement: 56};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1346,7 +1353,7 @@ if(AG){
 }
 
 /* ---------- Outils ---------- */
-const INTU=["ft","mois","ens"], qd=u=>INTU.includes(u)?0:2, fq=(n,u)=>fmt(n,qd(u)), rq=(n,u)=>{const k=Math.pow(10,qd(u));return Math.round(n*k)/k;};
+const INTU=["ft","mois","ens","PM"], qd=u=>INTU.includes(u)?0:2, fq=(n,u)=>fmt(n,qd(u)), rq=(n,u)=>{const k=Math.pow(10,qd(u));return Math.round(n*k)/k;};
 const fmt=(n,d=2)=>Number.isFinite(n)?n.toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
 const pct=n=>fmt(n,n%1?1:0)+" %";
 const eur=n=>fmt(n,0)+" €";
@@ -4520,7 +4527,7 @@ const DV_CODE=/^[A-Za-z]?\d{1,3}(?:[.\-]\d{1,3}){0,5}[.)]?$/;
 const dvNum=v=>{if(typeof v==="number")return Number.isFinite(v)?v:null;if(v==null)return null;
   let s=String(v).replace(/[\s  €]|eur/gi,"").replace(/%$/,"");if(!/^-?[\d.,]+$/.test(s))return null;
   if(s.includes(",")&&s.includes("."))s=s.replace(/\./g,"");s=s.replace(",",".");const n=parseFloat(s);return Number.isFinite(n)?n:null;};
-const DV_UNITS={"m2":"m²","m²":"m²","ml":"ml","m":"ml","ml.":"ml","m3":"m³","m³":"m³","u":"u","un":"u","unité":"u","unite":"u","ens":"ens","ens.":"ens","ensemble":"ens","ft":"ft","fft":"ft","fg":"ft","forfait":"ft","f":"ft","mois":"mois","kg":"kg"};
+const DV_UNITS={"m2":"m²","m²":"m²","ml":"ml","m":"ml","ml.":"ml","m3":"m³","m³":"m³","u":"u","un":"u","unité":"u","unite":"u","ens":"ens","ens.":"ens","ensemble":"ens","ft":"ft","fft":"ft","fg":"ft","forfait":"ft","f":"ft","mois":"mois","kg":"kg","pm":"PM","p.m":"PM","p.m.":"PM","pour mémoire":"PM","pour memoire":"PM"};
 const dvUnit=u=>{const k=String(u||"").trim().toLowerCase();return k?(DV_UNITS[k]||(k.length<=5?k:"")):"";};
 const dvIsUnit=s=>/^(u|un|unité|ens\.?|ensemble|ft|fft|fg|f|forfait|ml\.?|m|m2|m²|m3|m³|mois|kg|h|j)$/i.test(String(s).trim());
 const dvTitleCase=s=>{s=String(s||"").replace(/\s+/g," ").trim();const l=s.replace(/[^A-Za-zÀ-ÿ]/g,"");

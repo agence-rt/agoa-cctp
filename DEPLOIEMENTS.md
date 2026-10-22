@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°56** — v0.56.0 — 2026-10-22 — Arborescence plus compacte, unité PM (pour mémoire)
 - **n°55** — v0.55.0 — 2026-10-22 — Logo agrandi (PDF CCTP), descriptif BPU limité à la colonne désignation, aperçu BPU+CCTP suit l'article, bibliothèque sans descriptif sous le titre
 - **n°54** — v0.54.0 — 2026-10-22 — Sous-totaux de chapitre (détail), pastilles compris/non compris/sans objet, historique des événements, retrait du lien de dépôt, arborescence compacte
 - **n°53** — v0.53.0 — 2026-10-21 — Aperçu BPU+CCTP+Bibliothèque simultanés, descriptif en bibliothèque, bibliothèque en fenêtre séparée, cadrage d'image, ordre des entreprises par glisser-déposer, en-tête = nom seul
