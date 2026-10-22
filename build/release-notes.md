@@ -1,1 +1,1 @@
-Déploiement n°60 — Colonne centrale : textes d'aide retirés, couleur du lot en carré, quantité plus étroite, boutons d'action retirés
+Déploiement n°61 — Recherche dans les articles, hachures plus discrètes, retrait de 2 lignes de pied, offres retenues par lot et montant global

@@ -86,6 +86,10 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:6px}
 .tree{max-height:calc(100vh - 120px);overflow:auto;position:sticky;top:12px;display:flex;flex-direction:column}
 .tree-body{padding:8px 0;flex:1}
+.tree-q{padding:8px 10px 0;background:var(--surface);position:sticky;top:0;z-index:3}.tree-q input{width:100%;padding:6px 10px;font-size:13px}
+.tree-res{padding:4px 0 10px}.tree-res .sr{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--ink)}.tree-res .sr:hover,.tree-res .sr.cur{background:var(--accent-soft)}
+.tree-res .sr b{font-weight:650}.tree-res .sr .sc{color:var(--muted);margin-right:6px}.tree-res .sr .sn{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;white-space:normal}.tree-res mark{background:#fff1a8;color:inherit;padding:0 1px;border-radius:2px}.tree-res .hint{padding:8px 10px}
+.tree.searching .tree-body,.tree.searching .ms-bar{display:none}
 .tree{--tl:color-mix(in srgb,var(--muted) 55%,var(--line))}
 .tree details.lotd{margin:8px 8px 6px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
 .tree details.lotd>summary.lot{margin:0;padding:8px 10px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;background:transparent;border-left:3px solid transparent}
@@ -662,7 +666,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 #cmpTable tr.xc td{color:var(--muted);text-decoration:line-through}
 #cmpTable tr.xc td.c1{text-decoration:none}
 #cmpTable td.n{text-align:right;font-variant-numeric:tabular-nums}
-#cmpTable td.hatch{background:repeating-linear-gradient(135deg,#dcdcd8 0 3px,#f4f4f2 3px 7px)!important}
+#cmpTable td.hatch{background:repeating-linear-gradient(135deg,#ecece9 0 2px,#fafaf8 2px 7px)!important}
+#cmpTable button.pk{font:inherit;font-size:12.5px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;font-variant-numeric:tabular-nums}#cmpTable button.pk.best{border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e}#cmpTable button.pk.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+#cmpTable tr.pickh td{padding-top:14px;border-top:2px solid var(--line)}#cmpTable tr.pickt td{font-size:13.5px;text-align:left;border-top:1px solid var(--line)}#cmpTable td.pk-tot{white-space:normal}
 #cmpTable tr.lotgap td{height:16px;padding:0;background:var(--paper)!important;border:0}
 #cmpTable td.cg1,#cmpTable th.cg1,#cmpTable th.ent.cg{border-left:2px solid var(--gline,#c9c9c4)}
 #cmpTable td.cg:last-child,#cmpTable th.cg:last-child{border-right:2px solid var(--gline,#c9c9c4)}
@@ -766,7 +772,9 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   </section>
   <section class="view redac" id="v-redaction">
     <aside class="pane tree" aria-label="Arborescence du CCTP"><div class="tree-grip" id="treeGrip" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne de gauche" title="Glisser pour élargir ou réduire (double-clic : largeur d'origine)"></div>
+      <div class="tree-q"><input type="search" id="treeQ" placeholder="Rechercher dans les articles rédigés…" aria-label="Rechercher dans le CCTP" autocomplete="off"></div>
       <div class="tree-top" id="treeTop"></div>
+      <div class="tree-res" id="treeRes" hidden></div>
       <div class="ms-bar" id="msBar" hidden></div>
       <div class="tree-body" id="tree"></div>
       <div class="tree-foot"><button class="btn sm" id="addLotBtn">Ajouter un lot</button><button class="btn sm" id="trashBtn">Corbeille</button></div>
@@ -1051,7 +1059,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.60.0", deploiement: 60};
+const APP = {version: "0.61.0", deploiement: 61};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1756,6 +1764,23 @@ function renderTree(){
   $("#trashBtn").textContent=state.trash.length?`Corbeille (${state.trash.length})`:"Corbeille";
   const c=$("#tree .cur"); if(c) c.scrollIntoView({block:"nearest"});
 }
+
+/* ---------- Recherche dans la colonne de gauche ---------- */
+function treeSearch(){
+  const q=($("#treeQ").value||"").trim(), box=$("#treeRes"), aside=$("#treeQ").closest("aside.tree");
+  if(q.length<2){box.hidden=true;box.innerHTML="";aside.classList.remove("searching");return;}
+  const nq=norm(q), out=[], hl=(t)=>{const T=String(t),i=norm(T).indexOf(nq);if(i<0||norm(T).length!==T.length)return esc(T);return esc(T.slice(0,i))+"<mark>"+esc(T.slice(i,i+q.length))+"</mark>"+esc(T.slice(i+q.length));};
+  const snip=(t)=>{const T=plainTxt(t||"").replace(/\s+/g," ").trim(),N=norm(T);if(N.length!==T.length)return N.includes(nq)?T.slice(0,140):"";const i=N.indexOf(nq);if(i<0)return"";const a=Math.max(0,i-40);return (a?"…":"")+T.slice(a,a+140)+(a+140<T.length?"…":"");};
+  const test=(o)=>[o.code,o.titre,o.loc,plainTxt(o.texte||"")].some(x=>x&&norm(x).includes(nq));
+  const art=(a,ctx)=>{if(test(a))out.push({id:a.id,kind:"art",code:a.code,titre:a.titre,ctx,sn:snip(a.texte)||snip(a.loc)});(a.sub||[]).forEach(x=>art(x,ctx));};
+  state.data.forEach(lot=>{const lc="Lot "+lot.code;if(test(lot))out.push({id:lot.nid,kind:"node",code:"Lot "+lot.code,titre:lot.titre,ctx:"",sn:snip(lot.texte)});
+    (function walk(chs){(chs||[]).forEach(ch=>{if(test(ch))out.push({id:ch.nid,kind:"node",code:ch.code,titre:ch.titre,ctx:lc,sn:snip(ch.texte)});(ch.art||[]).forEach(a=>art(a,lc));walk(ch.children);});})(lot.children);});
+  aside.classList.add("searching");box.hidden=false;
+  box.innerHTML=out.length?`<div class="hint">${out.length>100?"100 premiers résultats sur "+out.length:out.length+" résultat"+(out.length>1?"s":"")}</div>`+out.slice(0,100).map(r=>`<button type="button" class="sr${r.id===state.sel?" cur":""}" data-sres="${esc(r.id)}" data-skind="${r.kind}"><span class="sc">${esc(r.code)}</span><b>${hl(r.titre)}</b>${r.sn?`<span class="sn">${hl(r.sn)}</span>`:""}</button>`).join(""):`<div class="hint">Aucun résultat pour « ${esc(q)} ».</div>`;
+}
+$("#treeQ").addEventListener("input",treeSearch);
+$("#treeQ").addEventListener("keydown",e=>{if(e.key==="Escape"){e.target.value="";treeSearch();}});
+$("#treeRes").addEventListener("click",e=>{const b=e.target.closest("[data-sres]");if(!b)return;const id=b.dataset.sres;msel.clear();msAnchor=id;if(b.dataset.skind==="node")selectNode(id);else select(id);treeSearch();});
 
 /* ---------- Éditeur ---------- */
 function renderEditor(){
@@ -3853,9 +3878,21 @@ function renderAnalyse(){
   const rates=Object.keys(T.rt).map(Number).sort((a,b)=>b-a);
   const trow=(lab,get,cls="")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(get(e))}</td>`).join("")}</tr>`;
   const tvaRows=rates.map(tx=>{const R=T.rt[tx];return (rates.length>1?trow(`Base HT soumise à ${pct(tx)}`,e=>e?R.e[e.id]:R.est):"")+trow(`TVA à ${pct(tx)}`,e=>(e?R.e[e.id]:R.est)*tx/100);}).join("");
-  const foot=`<tfoot>${ovFrameRows(frow("Total HT",T,"")+(V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):"")+tvaRows+frow("Total TTC",T,"T","tot"),BLUEC,"bot")}${ovFoot(M,Ev,E)}
-    <tr><td class="c1"></td><td class="c2">Prix unitaires avec écart ≥ ${A.seuil} %</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1">${M.flags[e.id]||"–"}</td><td></td>`).join("")}</tr>
-    <tr><td class="c1"></td><td class="c2">Prix manquants</td><td></td><td></td><td class="e1 mo"></td><td class="mo"></td>${Ev.map(e=>`<td class="n e1 ${M.miss[e.id]?"miss":""}">${M.miss[e.id]||"–"}</td><td></td>`).join("")}</tr></tfoot>`;
+  let pickRows="";
+  if(M.lots.length>1){
+    A.pick=A.pick||{};
+    const nEv=Ev.length, blank2=`<td class="n e1 mo"></td><td class="n mo"></td>`;
+    const lotInfo=M.lots.map(x=>{const ok=Ev.filter(e=>!x.out[e.id]&&x.tot.e[e.id].ht>0&&!x.rows.some(w=>w.leaf&&!w.ex&&w.miss[E.indexOf(e)]));
+      let best=null;ok.forEach(e=>{if(best==null||x.tot.e[e.id].ht<x.tot.e[best].ht)best=e.id;});return {x,best,ok:new Set(ok.map(e=>e.id))};});
+    let selHt=0,selTtc=0,selEst=0,nSel=0;
+    const lr=lotInfo.map(({x,best,ok})=>{const pk=A.pick[x.l.id], valid=pk&&ok.has(pk);if(valid){selHt+=x.tot.e[pk].ht;selTtc+=x.tot.e[pk].ttc;selEst+=x.tot.est;nSel++;}
+      return `<tr class="pickr"><td class="c1">Lot ${pad(x.li+1)}</td><td class="c2">${esc(x.l.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(x.tot.est)}</td>${Ev.map(e=>{const v=x.tot.e[e.id].ht,can=ok.has(e.id);
+        return `<td class="n e1"></td><td class="n">${x.out[e.id]?"":can?`<button type="button" class="pk${pk===e.id?" on":""}${best===e.id?" best":""}" data-apick="${esc(x.l.id)}|${esc(e.id)}" aria-pressed="${pk===e.id}" title="${best===e.id?"Mieux-disant du lot : ":""}retenir ${esc(e.nom)} pour ce lot">${eur2(v)}</button>`:`<span class="hint" title="Offre incomplète pour ce lot">${v>0?eur2(v):"–"}</span>`}</td>`;}).join("")}</tr>`;}).join("");
+    const totTd=`<td colspan="${2*nEv}" class="pk-tot">${nSel?`<b>${eur2(selHt)} HT</b> · TVA ${eur2(selTtc-selHt)} · <b>${eur2(selTtc)} TTC</b>${selEst?` · estimation des lots retenus ${eur2(selEst)}${ec(selHt,selEst)}`:""}`:`<span class="hint">Aucun lot retenu</span>`}</td>`;
+    pickRows=`<tr class="pickh"><td class="c1"></td><td class="c2" colspan="3"><b>Offres retenues par lot</b> <button type="button" class="btn sm" data-apickauto="1" title="Retenir automatiquement le mieux-disant de chaque lot">Mieux-disants</button> <button type="button" class="btn sm" data-apickclr="1">Effacer</button></td><td class="n e1 mo"></td><td class="n mo">Estimation</td><td colspan="${2*nEv}"></td></tr>`+lr
+      +`<tr class="pickt"><td class="c1"></td><td class="c2">Montant global retenu</td><td></td><td></td>${blank2}${totTd}</tr>`;
+  }
+  const foot=`<tfoot>${ovFrameRows(frow("Total HT",T,"")+(V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):"")+tvaRows+frow("Total TTC",T,"T","tot"),BLUEC,"bot")}${ovFoot(M,Ev,E)}${pickRows}</tfoot>`;
   tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${ovFrameRows(body,BLUEC,"top")}</tbody>`+foot; cmpBands(tbl,Ev.length,M,Ev);
   leg.innerHTML=det?`${col?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span>`:""}<span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
     :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
@@ -3916,6 +3953,10 @@ function renderAnalyse(){
   V.addEventListener("click",e=>{const c=e.target.closest("[data-amark]");if(!c)return;const [eid,aid]=c.dataset.amark.split("|"),en=ents().find(x=>x.id===eid);if(!en||!en.offre)return;
     const ord=["","inc","ninc","so"],cur=markOf(en,aid),nx=ord[(ord.indexOf(cur)+1)%ord.length];en.offre.marks=en.offre.marks||{};if(nx)en.offre.marks[aid]=nx;else delete en.offre.marks[aid];
     let code="";lists(li=>{});leaves(ar=>{if(ar.id===aid)code=ar.code||"";});histAdd(en,`Pastille ${nx?"« "+MARKS[nx][0]+" »":"retirée"} sur l'article ${code}`);save();renderAnalyse();});
+  V.addEventListener("click",e=>{const a=state&&state.ana;if(!a)return;
+    const pk=e.target.closest("[data-apick]");if(pk){const [lid,eid]=pk.dataset.apick.split("|");a.pick=a.pick||{};if(a.pick[lid]===eid)delete a.pick[lid];else a.pick[lid]=eid;save();renderAnalyse();return;}
+    if(e.target.closest("[data-apickclr]")){a.pick={};save();renderAnalyse();return;}
+    if(e.target.closest("[data-apickauto]")){const M=anaModel();a.pick={};M.lots.forEach(x=>{let best=null;M.E.forEach((en,j)=>{if(a.hide.includes(en.id)||x.out[en.id]||!(x.tot.e[en.id].ht>0)||x.rows.some(w=>w.leaf&&!w.ex&&w.miss[j]))return;if(best==null||x.tot.e[en.id].ht<x.tot.e[best].ht)best=en.id;});if(best)a.pick[x.l.id]=best;});save();renderAnalyse();return;}});
   V.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="anaSeuil"){e.preventDefault();$("#anaValid").click();}});
   V.addEventListener("dragstart",e=>{const g=e.target.closest("[data-agrip]");if(!g){return;}drag=idx(g.dataset.agrip);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ana");g.closest("tr").classList.add("dragx");});
   V.addEventListener("dragend",()=>{drag=null;V.querySelectorAll(".dragx,.dropb,.dropa").forEach(x=>x.classList.remove("dragx","dropb","dropa"));});
