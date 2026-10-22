@@ -1,1 +1,1 @@
-Déploiement n°57 — Option Multi-fenêtre pour le volet de droite (affichage unique ou combiné BPU / CCTP / Bibliothèque)
+Déploiement n°58 — Bibliothèque : quantité importée seulement si 1 ; duplication sans quantité ; clic droit : ajouter un sous-article

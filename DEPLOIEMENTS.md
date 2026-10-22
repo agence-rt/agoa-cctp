@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°58** — v0.58.0 — 2026-10-22 — Bibliothèque : quantité importée seulement si 1 ; duplication sans quantité ; clic droit : ajouter un sous-article
 - **n°57** — v0.57.0 — 2026-10-22 — Option Multi-fenêtre pour le volet de droite (affichage unique ou combiné BPU / CCTP / Bibliothèque)
 - **n°56** — v0.56.0 — 2026-10-22 — Arborescence plus compacte, unité PM (pour mémoire)
 - **n°55** — v0.55.0 — 2026-10-22 — Logo agrandi (PDF CCTP), descriptif BPU limité à la colonne désignation, aperçu BPU+CCTP suit l'article, bibliothèque sans descriptif sous le titre
