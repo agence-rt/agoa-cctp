@@ -118,6 +118,12 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree details.lotd>summary.lot{padding-top:4px;padding-bottom:4px}
 .tree .kids .art{padding-top:0;padding-bottom:0;min-height:20px;font-size:12.5px;line-height:1.25}
 .tree .art-x,.tree .lot-mv .x,.tree .node-x{height:18px}.tree .atg{margin:0}
+/* commandes (flèches, croix) : hors flux, visibles seulement au survol */
+.tree summary.lot,.tree summary.chs{position:relative}
+.tree summary .lot-mv,.tree summary .lot-x,.tree summary .node-x,.tree .art .art-x,.tree .art .lot-mv{position:absolute;top:50%;transform:translateY(-50%);margin:0;display:none;background:var(--surface);border-radius:4px;z-index:2;box-shadow:0 0 0 1px var(--line)}
+.tree summary .lot-mv,.tree .art .lot-mv{right:24px}.tree summary .lot-x,.tree summary .node-x{right:3px;width:20px;height:18px}.tree .art .art-x{right:3px;opacity:.8}
+.tree .art:hover .lot-mv,.tree summary:hover .lot-mv,.tree summary:hover .lot-x,.tree summary:hover .node-x,.tree .art:hover .art-x,.tree .art.cur:hover .art-x{display:inline-flex}
+.tree summary .lot-mv .x{width:20px;height:18px}
 .tree details.chd>summary.chs{padding-top:2px;padding-bottom:2px;line-height:1.25}
 .tree details.chd>summary.chs::before{margin-top:0}
 .tree details.chd[open]>summary.chs::after{top:16px}
@@ -158,6 +164,9 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree .art.drop-in{outline:1.5px dashed var(--accent);outline-offset:-2px}
 .tree .art.drop-in::after{content:"en sous-article";margin-left:auto;font-size:11px;color:var(--accent);flex:none}
 .tree .art:hover{background:var(--paper)}
+.ms-bar[hidden]{display:none}
+.lv-sm{display:inline-flex;align-items:center;gap:2px;font-size:12px;cursor:pointer}.lv-sm input{margin:0;width:13px;height:13px}.lv-ico{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.tree-top{padding:4px 10px!important}
 .ms-bar{margin:0 10px 8px;padding:7px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ms-bar b{color:var(--accent)}
 .tree .art.msel{background:var(--accent-soft);border-left-color:var(--accent)}
 .tree .art.cur,.tree summary.cur,.tree .sub.cur{background:var(--accent-soft);border-left-color:var(--accent)}
@@ -488,6 +497,7 @@ dialog.lib.floating .lib-body{height:calc(100% - 64px)}
 @media (max-width:820px){.lib-body{grid-template-columns:1fr;height:auto}}
 .jr{padding:8px 0;border-bottom:1px solid var(--line)}.jr ul{margin:4px 0 0 18px;padding:0;font-size:13px}.jr-list{max-height:60vh;overflow:auto}.chk-row .btn{margin-left:auto}
 .undo-grp{display:inline-flex;gap:2px}.undo-grp .btn{padding:6px 10px;font-size:16px;line-height:1}.undo-grp .btn:disabled{opacity:.35;cursor:default}
+#saveBtn.pulse{animation:savePulse 1.2s ease-out}@keyframes savePulse{0%{box-shadow:0 0 0 0 rgba(46,139,110,.55);border-color:#2e8b6e;color:#2e8b6e}70%{box-shadow:0 0 0 8px rgba(46,139,110,0)}100%{box-shadow:0 0 0 0 rgba(46,139,110,0)}}
 #saveBtn.dirty{border-color:var(--ochre);color:var(--ochre)}
 #saveBtn.dirty::after{content:" •"}
 .pl-top{padding:10px 14px;border-bottom:1px solid var(--line);display:grid;gap:4px}
@@ -721,6 +731,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 <header class="top">
   <img class="logo" id="logoHome" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAT9UlEQVR4nO2deZRcVZ3HP79736vqqt6SdHdY0kmj6SwkImDEsAybowiKQtBEUY/74IgHxX2dE5hx3AZGPR4dd2QJS7eCoDK4DeBRUTblIJFGkO5OQsjWW3qpevXe/c0f71V1V3d6odPYCPU9p0jz6r5f3fv7/u7v/u7vvnevcJBQkEtA1oI0nYocrLx/BOy5E30I9BJQAT0YWbNVmLSBAdgE0cFU4B8dbWABNoKbDRlPlQBp24jZ1D6q9LY1pJpoXuZCsyyvbnGkZEXEOdVnVW8wIqqqxkAujewRa7vzkdf5ykcfzRfLtIF9qkTMWEltYIvWfntLS1WY0Zc5lXMUToxUn++LVHkis+9T/yhQCFUJVXMGuhG526C3DDN027kd+/ZDua6mw4zUVRR4a2trOuVF73Lq3mNE1hogiCuDAxXF6UH6xH8AiArGgngipERQIFJ91Ih+Z1CHvn5ux779ic4c0+hjSgKKA+yl4H65quV00Ms9Y4/NO0de1aGoCJLIebbb/ngooKqxgn0jNiNCwWkHuI+9/JFtNwOiwFQuaVKlafKdgP5sdcsnRPkMYHJOQxEMySBcQQlOFZcy4tlYq5f1Ptz18U0QKchkJEymRLkEhM3Ibatavl0l8tmcquRUnQjeFPc9l2FE8AJVl3MapcV8eMHqlht+19ycgVGDHo8JFxWkPYl0bl3V8u0aa97VWwhDEbHPgSF2zqBKod4z/ohzN3XVNL1+4X33uQNFSBMsuZ1Y+T9dsfSTNUbe1VcIC0bEqyj/qUEEvz90hayxG5r3775sE0TtGyfqu0ypGzdi29uJfrKi+ZSUsbcHTlVjf19R/uygqkQ11nh59LVnPdx14/gQtUyxCnJHS0t6JK33eEZekHPqpOLvDxbOExHQHZ6Ex/zm4Sd6LxmTwigptw2sgAZpfWfWmheMRBpVlD8nMIHTKGNMc8HZiy8FN9YVFXuAKNB+fHNVdY/5oyeyMlBVKgTMFZwVRJXd1nNrzty6vacYmhqANjACWrvPvDRlzKq8qyh/jmFCh8tac4iL7LkAd5waJ/HKlWxkQzKJcH/nCj7rIQJOUVE9F+C0O2MdF1MI2raGVHW07AEPWR2oOio9YE6hoF7shnZpjiPP7u7uVRCzORkH6vLNyxR9XiFOblTCzjmGAKGCEVmcysqq4mWzdmOsbGdNSwqTjuIQqULA3ENEiVJGJHBuGcAdp2JM0+5Y2aFzh1gjSMX/P23QJOoxcHjx2th4tEriUs/2fP68QgBrTKb4/yUCngMLKc8YjNV1JdKZZ1QImGdUCJhnVAiYZ1QImGdUCJhnVAiYZ1QImGdUCJhnVAiYZ1QImGdUCJhnVAiYZ3gHK0CMiRc8x0GdA51dgnUymajGcqe67yBRki+CHKgOE6qkpbrNBrMjQAQxFo1CwpFhtBCiLoqTrCKINRg/hU2nwRg0msG7CiKIMahzRCMjuEJhlMTkO+P7mKqquNw4meocUS43q+aMVkEwqRSIwQXBjOotxiCeh/E8EJlZW8fgKRMg1uKCgMJgH35dHXWrjiTbvIx0QyMm5RPlcuR272K4u4uhzsdxQYBXV4cgxGv9B2pETGbQ34eXraamdSXZpUupamrCpNJE+Tz5vXsY3tbN0N8eozAygl9XVyIM5/CyWTKtK2ZtiYigYcjw9u24sEB2STNebR3qoinXZ6N8nqCnh3zPXjRycb2maOt4PCUCxFoKAwOkGxtpffeFLHn1BmpbVyDeRDHh8DD9Dz5A13XXsP3mG2MLTqUmuBCxlnBwEK+mhhX/ehHNG15L3eo1sSWOgwvy9D/0Z7rbr6e7/fqY3Opqgr4+Fh23nhO3tMfyD+A6xl6ZQJEqYgy5vXu481UvZ3hbF2s//U0Oe8Ur0bAQG8gkOnH5PPl9exl4+C/suPlGdvz0llJPmspdFjFjAsR6FPp7aTr5NI754peoXtYS19051Lky/6vO4WUyNKw/gYb1J7DkNRv444cuIujvx6bTpYoVCV1w9DG86PKvUrf6yClliuez8Nh1LDx2Hc0bXsd977+Q3JM7EWuTSsro31O1ZbLrxoz5TooNh7Lr5bBVVWSbl5JtXsqhLzuDpa/dxH0feC+FgYHYiKYhYUajVqyofppOPo3jr7yO6mUtaBj7fTEmtp7duxjevo3cnt2lQVTDEA1DDnnpy1j/vWtiq4ii0hgSDg2y4KgXcuKWdupWHxmXj0Zl5vfsjmXuerJ0TaMIDUMajlvPiVffQGrRIlwQlPyvCwJcoVD2KSkhcU8aReVlEn+vYXiA1ie271xcpvRJyia9TaO4rYtPeynHfe3b8X3J+DUVpu8BIrggoGrxYtZ9+WuxBYdhye10brmS7huuZXjbNlwQYNIpapa38ry3vJMlrz4HVHFBwMJj17HqfR/kz5f+G6nGRrRQwGayrPvK10ktWBg33lpEhO0/+gGPX30lQ4//DZfPI75PdcsRtLzxzbS8/k2xPoKAmuWtrPnop7j3oncz8Jet3Hn2GUmji1U3hCNDHPPFL9Nw3HpcGGJ8n8evuoLHvvsNUvULy4IHjULC4SHE2FGyXIRYS+f11/DoN7+GX78AoggFrJ8i23IEy99xAQuOPiaO0sKQxhP/iSVnn8u29uvwFyyccmCelgAxlmCwl1UXf5iqQw+LFWUMqsoDH/8Qj33nG3g1tZhUChEhCnLs/f1d7Lrjdo780MdY8/FPl/z5igvfR9cN1zLyxA7CoUFaL7iQ2pWrSzJFhK1f+Ax/uezzeJkMJpWOrT7I0/un+9jz21/Te/+9HP25y0syl206n84tV9Fz/z0EvT1lfleMIRwcJBwcjC8kSs3v2UXfnx8k3dBYZvUigs1my6026QC5Xbvo+9MfSTU2ld2z567fsPO2n3LKTbdSt2YtqoqoctgZZ7Gt/brp1Ds9ARoWSDc00nzOhphhwBhD9w9u4LHvfZPMYYejkSuN+oLBr03h19bS8aX/omH9CSxa92L23f17eu65G5fPgypeJsvS8zbFMlUxxrDr9l/S8aXLqGpaHP92cawAvOoa/No6HvvOt2g4bj2HnXk2PffdQ8+9fyDo7cGm05hUuiwKEmPAuQnjgvg+XjaLl81O4nYmwvg+XnX1hHv8+gXkntzJ9h/fxJo1a0tuJ7NkCSaTnXYgnpKAogU1HH0M2eZloIqxccjYefX38bLVsT8c9yNFP+/V1vLAJz6MGMNQdyeuEOLX1aFRRM3yVupWrS4bOB+/8grEs6MyxslU50gtWsTWL/wnHV/5bwY7H0eDAFtdPTq+jMMBJ4TJhK74KWvzZIP4ZPeEBYzvUejrSwTEvcd4XmwA04TFU/cAEVxYoGb5ivjvKMJ4HsM7drD/0Q5sump0JniACovnkd+zG0Xxa+vjh+CBwtAQNctbMel0POhaS9DbQ/9DD2KrMpNbjWpSthd1+/BrakYnerON/2cIEYNYGxM0tpf58dynpnVFqY6oEvT34/J5vOrqKXvBNC5IQJWqQw5NhMeCRrZ1Ew4O4WUykxOQVEZ8P3782kXgYgtT50g3NiUiYxeR272LoL9vQgMPKNPzEplu2jBvrhDlRwh6e8HaMhfk8nka1p/A0g0bE/cTR4C999+LC/JQU8tUT3vOaB7g19TEfyR6KewfiK3OGJhu6j1BmXEv8LLZsqvh/v1ooYCk09Nb89Ns7WVIXErdmqM44s1vwaupTdxaPC7UrlxFyxvehF9XH/dmzxKNDNP9wxuwmWzJaCfDNC4o/mdCF5Jk+nAQipjge415Rj6TXZwMHn7Wqzj8rFdNWm5saP7nz2xm/yOPkFqwYNrc0NQEJPoNxg0w6UUNGH+Gk+gkkTaayYzj9HD//rJi/oKFE6KYaWUycbCeL4jnEfTsY+vnP0PnlqtI1dfPqG7TaDH2aSM7tsc/khBQ3XIEfv0CwqGhqX12MhsOh4YQz2Kra5BkFjyy84m4SBJ1VC0+hHRjEyNP7Ihj/KlkRhGFgX7EWLzq6tGk3NOIoK+XYN++Ce2NciOM7NzJ3rt+w46f3MJQV2es/BnWZ5oeoNh0moGOrfEs148TTOnFTSw8+lie/NXP8esXHDCWFmsp7N9P4wknsfS8jXS3X0/fn+4nzOWwmQz7/9pBYaC/5Du9mhoaXnI8XdddjZfJ4sLCRJnGEI4MU796Lc9/x7+w/eYb6bnnD4RDQ9NGG7NFMUrr3HIVWz/776QaGmHsIBzGs2cNQ2w2OyO3MxZT5oLUOUxVFfsfeYT+hx4ENBl0hdYL3hO/dRZFse8TKX3E85IIJWL1Bz5CyxvexMk/uIWTb7qVxae9FA1DRp54gn33/KFskWX5Oy/AZrJEQR7x/HKZ1oII0fAwKy96P8s2nc+JW9o55ZbbaD7nvLiXmekTcbNGFKFhAQ0LuDEfBPzaWlKLGiadi0yFaZNxYgxRLkfnNVeWlKHO0XjSKRy1+T8IBwYo9PXignxcuSCg0NdHYaCfoy79LI0nnBQnu5xjwQuPjtMCySZHnVd/v2whpn7tURz9uctwQZ6gZx8un0eTZFlhYID8vr0c+ZFPcvirzikl0upWryHK5eIw9+mESBz1jf+QZG+jcFZByfSpiCjCr69n2w/bWHreRhpPOjnOMALL3/1e6l5wFJ1XXcFAx18Ih4YxVVXUrVzF89/2LppOPrWUnxdr+ev/fJXdv76DdGMTVh1P/uLn7LjlRyx5zbklmS2vfyN1q1bzt+9+i76HHiQc3I/xU9Q8fzlHvOmtHHbmK0s9xvg+3e3Xs+PHN5Fa2PD0k5BMsuYyDJ5RKCMJ+/defCEnXftDalesjFO6YYGmk06h6aRTCIeHiEZGsKk0Xm0tAK5QwFiL+D67fvULHr7s86QWLiwpymaqeOATHyazZAmL1h2HOocrFFh4zItY99VvEI2MEA4PYXwfv64+1kEYggjG9+m9/14e3PypeOVqqnh7rOJmqrzZ3DMLzGg9QJ3DVlUR7NnDb88/j50/uxWxFuP58fdRhJetJt3QiFdbW/KDxvfBGDq3XMk973nn6EJ30ijj+4Qjw9z11vPZ9oMbSuu+RZk2kyHd0BgP1Alp4nmItWy/+Ubueuv5RLmReD12CiUVx4/iWDWTxfbx90yX158tZrwiVlRI0NvD3Re8jUP/+QyWvu4NLHzROjKHHlZWVmwcZu77w110XXcNe35zJ7a6BuP5ZZaqzmHTaVw+z30Xv5fuG9tp2XQ+i178ErLNS8tlGktu925677ubrhuu5clf/RybripbYTsgRAgH9xMODsY9NJshyueZdBOxZG0gHBocvSeTibO4U+7+NjvI7afinX4n4S2tzW+v8b3vDYYuTLYlm+QOg0icjgCoWnwo2aVLSS1qiJUZBOR79jHU1Ul+9y4wFr+2OH2fPLYXYygMDIA60o2LyS6LF/ptVRWuUCDo7WV4W1dp/uDX1sV5qBmkLfy6ekw6Xh4UYykMDRIND09u1ap4tXXYqjQ4BWMIh4bixZqD6AmqhHWe8XKqnzjz4a7P334qB1hNn1aKQ5WSTy4M9NP7xz2J24n3CBRrMalUvHqkOn1olpTxa+viWfLwEH0P/ClZrSrKjBf1/dr62BBnGu6JEPT1JsFAXEWxdupniEQo9PcR9D6Fe2aJWT+YVVSAeB6e749bRYoXWZ5qTFzy8zae4R5Q5iwinWL2tPzHpu45s7lnNjjoJ+OKiplTzLXM2cj6O2VcK8+GzjMqBMwzKgTMMyoEzDMqBMwzKgTMMyoEzDMqBMwzKgTMMyoEzDMqBMwzKgTMMyoEzDPGblv5DHww8NmJsboe2wPyo99X8HRBgQhKLzSbPYuTc7CQ3aFCcmRJBU8PxAEuip4sXjAPtScE2Ki74FxgS4twFcwxFMEUnJIV0w3xqazm0kTZJud3CdLtSbKBcQVzCgU8kNDpPqHQAfAQ8V7S2gb29K6unAi/TxlRtLKB91xDwKWMqCfce/ojO/duBnMpOFNeSH+kimglPJ1zqIIVEYfcklwypf9sTF5iStuan+Wc60wZESrb2M8l1BoxI5HrcXluBLgkOUvMQPyYTdtG7Olbtw5awzeqktOL57HCzyo4xVUbERGuOrur68m2jfGRYVAe88tmkLNaW2v6TOF+hOWBVg5yO1goqAeIsM+iR7+8Y9tOGH3IcaxydS3I8Y8+OqCq7/dEEJ3+QOIKpoESZYwRQT56Rse2J9qTI8OKX5dZ9yaI2sCe9dfunwbOXV7vWU+Vmb3LX8EExCeqWm9E9aozO7quONBR5xPcy0ZwbWAzhz3v4yPqfljvGV+ViS9sVTAlVLVQ5xk/79z/La4J3qNgNh4gsDlg3qe4y83vjm+uGug1WzLGbhgIo4j4+PLKmDAFFBRVV+9ZGzj9VWSjTWOPLhxf/oDKTF6h4MTfbx9Jd3RvykXuK1lrrCdiVAkr581MhIKqauiJSK21dsS5K3uHolefuXV7z+Zxfn8spsx8jtnvSf935dJN1sgXUmKOGHZK6DRKKDXF/ZHmtknPfMS5S1wyybLVVshFbrfAJ1/xSPd3AYoz3slkzERp0pYccX7bmuZFNjQfjJC3p40c7oC8KqEqApE+d47AEgTriZASwQqMRNrji1xViAqXv/LRHduTbIJOZvmjgmaIsSP4ra2HNqX81GvCSM5R9DhFDqmKJxrP+m6gxP45UMU53SvC/WkjN4fqfnRGx7YnoFxX0+Ep6UtB2sGMFf6To5YtzIZmZT6KWhQOt8ZkFHEx+c8eGEQVNQ7yURTtzIrpFgodpz+yc2+xTBvYjeDm/k2ycVCQNrCbKxERm8G0bcTqLDv/QVtp8sNyx6nPLTL23InOhbX/PwuDpkGLx5Q0AAAAAElFTkSuQmCC" alt="AGOA CCTP" title="AGOA CCTP : retour aux affaires">
   <button class="btn" id="homeBtn">← Affaires</button>
+  <button class="btn" id="optBtn" title="Options de l'opération et import d'un devis"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span></button>
   <div class="brand">
     <b id="hdrSub"></b>
     <span id="hdrTitle"></span>
@@ -733,10 +744,9 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   </nav>
   <span class="undo-grp"><button class="btn" id="undoBtn" title="Annuler (Ctrl+Z)" aria-label="Annuler" disabled>↶</button><button class="btn" id="redoBtn" title="Rétablir (Ctrl+Y)" aria-label="Rétablir" disabled>↷</button></span>
   <button class="btn" id="saveBtn" title="Enregistrer le fichier de l'affaire (.cctp)">Enregistrer</button>
-  <button class="btn" id="libBtn">Bibliothèque</button>
-  <button class="btn" id="optBtn" title="Options de l'opération et import d'un devis"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Options</span></button>
-  <button class="btn" id="ovBtn" title="Définir les options et variantes de l'opération">Options / variantes</button>
-  <div class="total">
+  <button class="btn" id="libBtn" style="display:none" tabindex="-1" aria-hidden="true">Bibliothèque</button>
+  <button class="btn" id="ovBtn" style="display:none" tabindex="-1" aria-hidden="true">Options / variantes</button>
+  <div class="total" style="display:none" aria-hidden="true">
     <small>Montant des travaux HT</small>
     <strong class="num" id="totEst">–</strong>
     <small class="tot-ov" id="totOv"></small>
@@ -1040,7 +1050,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.58.0", deploiement: 58};
+const APP = {version: "0.59.0", deploiement: 59};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1097,7 +1107,7 @@ const EMPTY_OP=()=>Object.fromEntries([["ref",""],["immeuble",""],["objet",""],[
 function newAffaire(){
   const bt=lib().find(t=>t.base)||baseTitre(); // départ : base commune à tout projet
   const children=bt.children.map(s=>({titre:s.titre,texte:s.texte||"",art:s.art.map(fromLib)}));
-  if(!children.length) children.push({titre:"Nouveau chapitre",texte:"",art:[blank()]});
+  if(!children.length) children.push({titre:"Nouveau chapitre",texte:"",art:[blank("",1)]});
   const first=children[0].art[0]||null;
   return {id:"aff-"+nid(),updated:Date.now(),tvaDef:"t10",sel:first&&first.id,view:"redaction",retenue:"B",trash:[],prev:"bpu",op:EMPTY_OP(),tvas:DEF_TVAS(),ents:[],
     data:[{code:"01",titre:"Travaux de ?",texte:"",charge:"Commune",children}]};
@@ -1434,7 +1444,7 @@ function migrate(){
   });
 }
 function addChapter(lot,after){
-  const a=blank(), ch={titre:"Nouveau chapitre",texte:"",art:[a]}; const i=after?lot.children.indexOf(after)+1:lot.children.length;
+  const a=blank("",1), ch={titre:"Nouveau chapitre",texte:"",art:[a]}; const i=after?lot.children.indexOf(after)+1:lot.children.length;
   lot.children.splice(i,0,ch); ensureNodeIds(); renumberAll(); state.sel=ch.nid; save(); renderTree(); renderEditor(); toast(`Chapitre ${ch.code} ajouté`);
 }
 function moveLot(i,dir){
@@ -1451,7 +1461,7 @@ function artDup(id){const f=locate(id);if(!f)return;const c=noQty(reid(JSON.pars
 function artSub(id){const f=locate(id);if(!f)return;const ar=f.art,n=blank(ar.u),first=!ar.sub.length;
   if(first&&!isTitle(ar)){Object.assign(n,{pu:ar.pu,tva:ar.tva,qman:ar.qman,lignes:ar.lignes,titre:"Nouveau sous-article"});ar.lignes=[];ar.qman=null;}
   ar.sub.push(n);openIds.add(ar.id);state.sel=n.id;refresh();toast(first&&!isTitle(ar)?`Sous-article ${n.code} créé, le chiffrage de ${ar.code} y a été reporté`:`Sous-article ${n.code} créé`);const t=$("#fTitre");if(t)t.select();}
-function artNew(id){const f=locate(id);if(!f)return;const n=blank(f.art.u);f.list.splice(f.i+1,0,n);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
+function artNew(id){const f=locate(id);if(!f)return;const n=blank(f.art.u,f.top);f.list.splice(f.i+1,0,n);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
 document.addEventListener("contextmenu",e=>{
   const a=e.target.closest("#tree .art[data-id]"); if(!a){artMenuClose();return;}
   e.preventDefault(); artMenuClose();
@@ -1473,7 +1483,7 @@ function moveChapter(nidK,dir){
   else if(dir<0&&li>0){L[li].children.splice(ci,1);L[li-1].children.push(ch);openIds.add(L[li-1].nid);}
   else if(dir>0&&li<L.length-1){L[li].children.splice(ci,1);L[li+1].children.unshift(ch);openIds.add(L[li+1].nid);}
   else{toast(dir<0?"Déjà en première position":"Déjà en dernière position");return;}
-  if(!L.every(l=>l.children.length)){const e=L.find(l=>!l.children.length);if(e){const a=blank();e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[a],nid:nid()});}}
+  if(!L.every(l=>l.children.length)){const e=L.find(l=>!l.children.length);if(e){const a=blank("",1);e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[a],nid:nid()});}}
   state.sel=sel; refresh();
 }
 function moveChapterTo(k,tk,pos){
@@ -1486,7 +1496,7 @@ function moveChapterTo(k,tk,pos){
   L[li].children.splice(ci,1);
   if(dl===li&&di===ci){L[li].children.splice(ci,0,ch);return;}
   L[dl].children.splice(di,0,ch); openIds.add(L[dl].nid);
-  const e=L.find(l=>!l.children.length); if(e)e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[blank()],nid:nid()});
+  const e=L.find(l=>!l.children.length); if(e)e.children.push({code:"",titre:"Nouveau chapitre",texte:"",art:[blank("",1)],nid:nid()});
   ensureNodeIds(); state.sel=sel; refresh(); toast(`Chapitre déplacé en ${ch.code}`);
 }
 let dragCh=null;
@@ -1515,7 +1525,7 @@ document.addEventListener("click",e=>{
   const a=e.target.closest("[data-armv]"); if(a){e.preventDefault();e.stopPropagation();const [k,d]=a.dataset.armv.split("|");moveTitleArt(k,+d);}
 },true);
 function addLot(){
-  const code=pad(state.data.length+1), a=blank();
+  const code=pad(state.data.length+1), a=blank("",1);
   state.data.push({code,titre:"Nouveau lot",texte:"",charge:"Commune",children:[{code:code+".1",titre:"Nouveau chapitre",texte:"",art:[a]}]});
   ensureNodeIds(); state.sel=a.id; refresh(); return code;
 }
@@ -1589,7 +1599,7 @@ function imgsField(ar,after){
     <input type="file" id="imgFile" accept="image/*" multiple hidden>
     <button class="btn sm" data-imgadd>Ajouter une image</button></div>`;
 }
-const blank=(u="")=>({id:nid(),code:"",titre:"Nouvel article",u,pu:0,tva:null,qman:null,texte:"",loc:"",lignes:[],sub:[]});
+const blank=(u="",top=false)=>({id:nid(),code:"",titre:"Nouvel article",...(top?{type:"titre"}:{}),u:top?"":u,pu:0,tva:null,qman:null,texte:"",loc:"",lignes:[],sub:[]});
 
 const ents=()=>state.ents||(state.ents=[]);
 const hasOffer=e=>!!(e.offre||e.base!=null);
@@ -1645,9 +1655,7 @@ function levelIds(){
 }
 function renderTreeTop(){
   const L=levelIds(), lv=Object.keys(L).map(Number).filter(k=>L[k].length).sort((a,b)=>a-b);
-  const miss=missingQty().length;
-  $("#treeTop").innerHTML=`<div class="lv-row"><span class="hint">Déplier :</span>${lv.map(k=>`<label class="lv-chk" title="Déplier tous les éléments de niveau ${k}"><input type="checkbox" data-lv="${k}" ${lvActive(L,lv)===k?"checked":""}> ${k}</label>`).join("")}</div>
-    <button class="btn sm${miss?" warn":""}" id="chkQty">${miss?`Vérifier les quantités (${miss} manquante${miss>1?"s":""})`:"Vérifier les quantités"}</button>`;
+  $("#treeTop").innerHTML=`<div class="lv-row lv-ico"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Déplier jusqu'au niveau"><title>Déplier jusqu'au niveau</title><path d="M7 8l5 5 5-5M7 13l5 5 5-5"/></svg>${lv.map(k=>`<label class="lv-chk lv-sm" title="Déplier tous les éléments jusqu'au niveau ${k}"><input type="checkbox" data-lv="${k}" ${lvActive(L,lv)===k?"checked":""}><span>${k}</span></label>`).join("")}</div>`;
 }
 function lvActive(L,lv){ // niveau k actif : niveaux 1..k ouverts, niveaux suivants fermés
   for(const k of lv){if(lv.every(j=>j<=k?L[j].every(id=>openIds.has(id)):L[j].every(id=>!openIds.has(id))))return k;}return 0;}
@@ -1815,7 +1823,7 @@ function renderNodeEditor(nc){
 function ovBox(it){
   const L=ovl(), c=ovOf(it), inh=c.in&&it.ovIn!==c.in?ovById(c.in):null;
   const hd=`<h4 class="sec">Option / variante</h4>`;
-  if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie. Utilisez le bouton « Options / variantes » en haut de l'écran pour en créer.</p></div>`;
+  if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie. Utilisez le bouton « Options » en haut à gauche, rubrique Options et variantes, pour en créer.</p></div>`;
   return `<div class="ovbox">${hd}
     <div class="field"><span class="flabel">Cet ouvrage fait partie de</span>
       <div class="ov-in"><label class="chk sm"><input type="checkbox" data-ovin="" ${it.ovIn&&ovById(it.ovIn)?"":"checked"}> Marché de base</label>${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovin="${o.id}" ${it.ovIn===o.id?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
@@ -2383,8 +2391,8 @@ $("#editor").addEventListener("click",e=>{
   if(act==="delLotEd"){const nc=nodeCtx(state.sel);if(nc)delLot(state.data.indexOf(nc.lot));return;}
   if(act==="addChap"){const nc=nodeCtx(state.sel);if(nc)addChapter(nc.lot,null);return;}
   if(act==="addChapAfter"){const nc=nodeCtx(state.sel);if(nc)addChapter(nc.lot,nc.ch);return;}
-  if(act==="addInNode"){const nc=nodeCtx(state.sel);if(nc&&nc.node.art){const n=blank();nc.node.art.push(n);state.sel=n.id;refresh();$("#fTitre").select();toast(`Article ${n.code} ajouté`);}return;}
-  if(act==="addFirst"){const l=firstList();const n=blank();l.push(n);state.sel=n.id;refresh();return;}
+  if(act==="addInNode"){const nc=nodeCtx(state.sel);if(nc&&nc.node.art){const n=blank("",1);nc.node.art.push(n);state.sel=n.id;refresh();$("#fTitre").select();toast(`Article ${n.code} ajouté`);}return;}
+  if(act==="addFirst"){const l=firstList();const n=blank("",1);l.push(n);state.sel=n.id;refresh();return;}
   if(act==="addLine"||act==="delLine"){const ci=curItem();if(!ci)return;const o=ci.it;
     if(act==="addLine"){o.lignes.push({expr:"",note:""});save();renderEditor();const ins=document.querySelectorAll('#editor input[data-f="expr"]');ins[ins.length-1].focus();}
     else{o.lignes.splice(+b.dataset.line,1);save();renderEditor();}return;}
@@ -2401,7 +2409,7 @@ $("#editor").addEventListener("click",e=>{
       ar.sub.push(n); state.sel=n.id; refresh();
       toast(first?`Sous-article ${n.code} créé, le chiffrage de ${ar.code} y a été reporté`:`Sous-article ${n.code} créé`);
       $("#fTitre").select(); break;}
-    case "addAfter":{const n=blank(ar.u);list.splice(i+1,0,n);state.sel=n.id;refresh();$("#fTitre").select();toast(`Article ${n.code} ajouté`);break;}
+    case "addAfter":{const n=blank(ar.u,f.top);list.splice(i+1,0,n);state.sel=n.id;refresh();$("#fTitre").select();toast(`Article ${n.code} ajouté`);break;}
     case "del": delArt(); break;
     case "addLine":{ar.lignes.push({expr:"",note:""});save();renderEditor();const ins=document.querySelectorAll('#editor input[data-f="expr"]');ins[ins.length-1].focus();break;}
     case "delLine":{ar.lignes.splice(+b.dataset.line,1);save();renderEditor();break;}
@@ -3018,7 +3026,11 @@ function buildSynthPdf(J,info){
 
 function renderOptions(){
   const o=state.op, tvSel=v=>state.tvas.map(t=>`<option value="${t.id}" ${t.id===v?"selected":""}>${pct(t.taux)}</option>`).join("");
+  const nOv=ovl().length;
   $("#optBody").innerHTML=`
+  <div class="dev-imp"><h4 style="margin-top:0">Options et variantes</h4>
+    <p class="hint">Une option ajoute des ouvrages éventuels ; une variante propose une solution alternative. Elles sont chiffrées à part du marché de base.</p>
+    <button class="btn" id="optOvBtn">Gérer les options / variantes${nOv?` (${nOv})`:""}</button></div>
   <div class="dev-imp"><h4 style="margin-top:0">Importer un devis existant</h4>
     <p class="hint">Importez le devis d'une entreprise (PDF ou Excel) : l'application reconstitue les lots, chapitres et articles, pour le transformer en CCTP et en BPU selon notre arborescence.</p>
     <button class="btn" id="devBtn">Importer un PDF ou un Excel…</button><input type="file" id="devFile" accept=".pdf,.xlsx,.xls,.ods,.csv" hidden></div>
@@ -3059,6 +3071,7 @@ function renderOptions(){
   mlLoad();
 }
 $("#optBtn").onclick=()=>{renderOptions();$("#optDlg").showModal();};
+$("#optBody").addEventListener("click",e=>{if(e.target.closest("#optOvBtn"))openOv();});
 $("#closeOpt").onclick=()=>$("#optDlg").close();
 $("#optDlg").addEventListener("close",()=>{renderHeader();renderTree();renderEditor();show(state.view);});
 $("#optBody").addEventListener("change",e=>{const t=e.target; if(t.name==="archi"){state.archi=t.value;save();renderOptions();renderHeader();toast("Architecte : "+archCur().court);}});
@@ -3524,7 +3537,7 @@ const libMk={
   article:f=>fromLib(f.it),
   "sous-titre":f=>({titre:f.it.titre,texte:f.it.texte||"",art:f.it.art.map(fromLib)}),
   titre:f=>{const l={titre:f.it.titre,texte:f.it.texte||"",charge:"Commune",children:f.it.children.map(s=>({titre:s.titre,texte:s.texte||"",art:s.art.map(fromLib)}))};
-    if(!l.children.length)l.children.push({titre:"Nouveau chapitre",texte:"",art:[blank()]});return l;}};
+    if(!l.children.length)l.children.push({titre:"Nouveau chapitre",texte:"",art:[blank("",1)]});return l;}};
 // t : {art,zone} | {chCode} | {lotNid}
 function libDropAt(id,t){
   const f=libFind(id); if(!f||!state) return; let lot,ch,loc=null;
@@ -3560,7 +3573,7 @@ function libInsert(id){
     ensureNodeIds(); state.sel=ch.nid; refresh(); toast(`Sous-titre « ${f.it.titre} » inséré en ${ch.code} avec ${libArtCount(f.it.art)} articles`);
   }else{
     const lot={titre:f.it.titre,texte:f.it.texte||"",charge:"Commune",children:f.it.children.map(s=>({titre:s.titre,texte:s.texte||"",art:s.art.map(fromLib)}))};
-    if(!lot.children.length) lot.children.push({titre:"Nouveau chapitre",texte:"",art:[blank()]});
+    if(!lot.children.length) lot.children.push({titre:"Nouveau chapitre",texte:"",art:[blank("",1)]});
     state.data.splice(state.data.indexOf(curLot)+1,0,lot);
     ensureNodeIds(); state.sel=lot.nid; refresh(); toast(`Titre « ${f.it.titre} » inséré comme lot ${lot.code}`);
   }
@@ -4732,7 +4745,7 @@ document.querySelector("nav.steps").addEventListener("click",e=>{const b=e.targe
 document.addEventListener("click",e=>{if(e.target.closest("#expCctp")){exportCctp();return;}const b=e.target.closest("[data-todo]");if(b)toast(b.dataset.todo+" : prévu dans une prochaine version");});
 let tt; function toast(m,kind,ms){const t=$("#toast");t.textContent=m;t.classList.toggle("ok",kind==="ok");t.classList.add("on");clearTimeout(tt);tt=setTimeout(()=>t.classList.remove("on"),ms||3200);}
 let autoTT=null;
-function autoToast(n){const t=document.getElementById("toast"); if(t&&t.classList.contains("on")&&!t.classList.contains("ok")&&(n||0)<5){clearTimeout(autoTT);autoTT=setTimeout(()=>autoToast((n||0)+1),1100);return;} const d=new Date(); toast("✓ Sauvegarde automatique effectuée à "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"),"ok",2200);}
+function autoToast(){const b=document.getElementById("saveBtn");if(!b)return;b.classList.remove("pulse");void b.offsetWidth;b.classList.add("pulse");clearTimeout(autoTT);autoTT=setTimeout(()=>b.classList.remove("pulse"),1400);}
 
 /* ---------- Affaires ---------- */
 function openAffaire(id){

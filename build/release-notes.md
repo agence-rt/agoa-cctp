@@ -1,1 +1,1 @@
-Déploiement n°58 — Bibliothèque : quantité importée seulement si 1 ; duplication sans quantité ; clic droit : ajouter un sous-article
+Déploiement n°59 — Colonne de gauche compacte (niveaux en icônes, commandes au survol, niveau 3 non chiffré), en-tête allégé, options/variantes dans Options, sauvegarde auto discrète
