@@ -302,6 +302,7 @@ input:disabled{opacity:1;color:var(--muted);background:repeating-linear-gradient
 .prev-h{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px;position:sticky;top:0;background:var(--surface);z-index:1}
 .prev-h b{font-size:13px}
 .preview.multi{display:flex;flex-direction:column;overflow:hidden;height:calc(100vh - 120px)}.preview.multi .pv-secs{flex:1;min-height:0;display:flex;flex-direction:column}.preview.multi .pv-sec{flex:1 1 0;min-height:120px;overflow:auto;border-top:2px solid var(--line)}.preview.multi .pv-sec .prev-h{top:0}
+.prev-ctl button[data-prevmulti][aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .seg{display:flex;background:var(--paper);border-radius:6px;padding:2px}
 .seg button{border:0;background:none;padding:4px 10px;border-radius:4px;font-size:12.5px;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
@@ -1039,7 +1040,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.56.0", deploiement: 56};
+const APP = {version: "0.57.0", deploiement: 57};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1955,7 +1956,8 @@ function coverHtml(){
     <div class="cv-cols">${card("ARCHITECTE",[{t:C.arch.nom,b:1},{t:C.arch.adresse},{t:C.arch.tel&&"Tél. : "+C.arch.tel},{t:C.arch.web},{t:C.arch.email}].filter(x=>x.t))}${card("SYNDIC",C.syndic)}${card("IMMEUBLE",C.immeuble)}</div>
 </div>`;
 }
-const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${prevModes().includes(k)}" title="Afficher ou masquer ce volet (plusieurs possibles)">${l}</button>`).join("")}</div><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
+const prevMulti=()=>state.prevMulti!==undefined?!!state.prevMulti:prevModes().length>1;
+const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${prevModes().includes(k)}" title="${prevMulti()?"Afficher ou masquer ce volet (plusieurs possibles)":"Afficher ce volet"}">${l}</button>`).join("")}</div><button class="btn sm" data-prevmulti="1" aria-pressed="${prevMulti()}" title="Multi-fenêtre : afficher plusieurs volets en même temps">Multi-fenêtre</button><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
 function renderLibPanel(force,sec,q0){
   const el=sec||$("#preview"), multi=!!sec;
   if(!force&&el.querySelector("#plQ")){$("#plTarget").textContent=libTargetText();return;}
@@ -2416,7 +2418,8 @@ $("#preview").addEventListener("dblclick",e=>{const r=e.target.closest("[data-pl
 $("#preview").addEventListener("dragstart",e=>{const r=e.target.closest("[data-plib]");if(!r)return;libDragId=r.dataset.plib;r.classList.add("dragging");e.dataTransfer.effectAllowed="copy";e.dataTransfer.setData("text/plain","agoa-lib:"+libDragId);});
 $("#preview").addEventListener("dragend",()=>{libDragId=null;clearDrop();document.querySelectorAll(".pl-row.dragging").forEach(x=>x.classList.remove("dragging"));});
 $("#preview").addEventListener("click",e=>{
-  const p=e.target.closest("[data-prev]"); if(p){const k=p.dataset.prev;let M=prevModes();if(M.includes(k)){if(M.length>1)M=M.filter(x=>x!==k);}else M=[...M,k];state.prevs=M;state.prev=M[0];save();const el=$("#preview");if(M.length===1&&M[0]==="lib"){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";renderLibPanel(true);}else renderPreview();return;}
+  const pm=e.target.closest("[data-prevmulti]"); if(pm){state.prevMulti=!prevMulti();let M=prevModes();if(!state.prevMulti)M=[M[0]];state.prevs=M;state.prev=M[0];save();const el=$("#preview");if(M.length===1){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";}if(M.length===1&&M[0]==="lib")renderLibPanel(true);else renderPreview();return;}
+  const p=e.target.closest("[data-prev]"); if(p){const k=p.dataset.prev;let M=prevModes();if(!prevMulti())M=[k];else if(M.includes(k)){if(M.length>1)M=M.filter(x=>x!==k);}else M=[...M,k];state.prevs=M;state.prev=M[0];save();const el=$("#preview");if(M.length===1&&M[0]==="lib"){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";renderLibPanel(true);}else renderPreview();return;}
   const tg=e.target.closest("[data-pltg]"); if(tg){const k=tg.dataset.pltg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibPanelList();return;}
   const pi=e.target.closest("[data-plins]"); if(pi){libInsert(pi.dataset.plins);return;}
   if(e.target.closest('[data-act="libManage"]')){openLib();return;}
