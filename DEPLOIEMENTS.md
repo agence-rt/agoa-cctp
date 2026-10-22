@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°65** — v0.65.0 — 2026-10-22 — Consultation : nom d'une entreprise modifiable (✎) ; PDF de synthèse sans « Note sur la consultation »
 - **n°64** — v0.64.0 — 2026-10-22 — Synthèse : entreprises consultées par lot avec adresses, mieux-disant par lot puis total des meilleures offres, calcul par copropriétaire en option d'affichage (écran et PDF)
 - **n°63** — v0.63.0 — 2026-10-22 — Offres retenues : une offre incomplète reste sélectionnable (astérisque), hors mieux-disant automatique
 - **n°62** — v0.62.0 — 2026-10-22 — Synthèse : entreprises retenues par lot et montant global (écran et PDF)

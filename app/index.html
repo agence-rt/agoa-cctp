@@ -1060,7 +1060,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.64.0", deploiement: 64};
+const APP = {version: "0.65.0", deploiement: 65};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2985,16 +2985,8 @@ function buildSynthPdf(J,info){
    if(Q.on){const retE=E.find(e=>e.id===state.retenue)||E[0], base=(M.lots.length>1&&P.rows.length)?P.cttc:(retE?T0[retE.id+"T"]*0+C0[retE.id+"T"]:0);
     if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,RED);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
       Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(wa(nf(base*t/Q.base)),R-1,y+3.6,{align:"right"});y+=5;});}}}
-  /* 2. note sur la consultation */
-  h2("2. Note sur la consultation");
-  String(txt("cons")).split("\n").forEach((l,i,a)=>{if(l.trim())para(l,9.5,/^Estimation de la maîtrise/.test(l)?"bold":"normal");});
-  if(String(txt("retours")).trim()){font("bold",9.5,RED); need(8); doc.text("Retour des entreprises",L,y+3.5); y+=6;
-    String(txt("retours")).split("\n").forEach(l=>{if(l.trim())bullet(l.replace(/^\s*[-•]\s+/,""));});}
-  if(String(txt("ecarts")).trim()){y+=1.5;font("bold",9.5,RED);need(8);doc.text("Principaux écarts poste par poste (par rapport à l'estimation)",L,y+3.5);y+=6;
-    String(txt("ecarts")).split("\n").forEach(l=>{if(l.trim())bullet(l.replace(/^\s*[-•]\s+/,""),8.8);});}
-
   /* 3. tableau comparatif global */
-  np(); h2("3. Tableau comparatif global de tous les articles");
+  np(); h2("2. Tableau comparatif global de tous les articles");
   const showPU=n<=3, fs=n>4?6.6:7.2;
   const cCode=15,cU=7,cQ=11,cMp=0,cMm=0, cEp=showPU?14:0,cEm=showPU?19:21;
   const fixed=cCode+cU+cQ+cMp+cMm, cDes=Math.max(38,W-fixed-n*(cEp+cEm));
@@ -3344,7 +3336,7 @@ function renderConsult(){
   const E=ents(); $("#dbxPath").value=state.dropbox||"";
   {const e0=E[0]||{nom:"Entreprise"};$("#dbxEx1").textContent=dbxFile(e0,"BPU")+".xlsx";$("#dbxEx2").textContent=dbxFile(e0,"DEVIS")+".pdf";}
   $("#entTable").innerHTML=E.length?`<tr><th>Entreprise</th><th>État</th><th></th></tr>`+E.map((e,i)=>`<tr>
-    <td><b>${esc(e.nom)}</b>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><details class="ent-lots"><summary>Lots répondus : <b>${esc(entLotsLabel(e))}</b></summary><div>${entLotsBoxes(e,"data-entlot")}<span class="hint">Les lots non cochés (hors compétence) ne sont pas comptés comme incomplets.</span></div></details><span class="ent-act"><button class="lnk" data-entportal="${i}">Saisie manuelle</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
+    <td><b class="entnm">${esc(e.nom)}</b> <button class="lnk" data-entren="${i}" title="Modifier le nom" aria-label="Modifier le nom de ${esc(e.nom)}">✎</button>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><details class="ent-lots"><summary>Lots répondus : <b>${esc(entLotsLabel(e))}</b></summary><div>${entLotsBoxes(e,"data-entlot")}<span class="hint">Les lots non cochés (hors compétence) ne sont pas comptés comme incomplets.</span></div></details><span class="ent-act"><button class="lnk" data-entportal="${i}">Saisie manuelle</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
     <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${histHtml(e)}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
@@ -3358,6 +3350,10 @@ $("#entTable").addEventListener("input",e=>{const s=e.target.closest("[data-ents
 $("#entTable").addEventListener("click",async e=>{const b=e.target.closest("[data-delent]");if(!b)return;const en=ents()[+b.dataset.delent];
   if(await ask(`Retirer <b>${esc(en.nom)}</b> de la liste des entreprises consultées ?${hasOffer(en)?"<br><span class=\"hint\">Son offre ne sera plus prise en compte dans l'analyse.</span>":""}`,"Retirer",true)){
     state.ents=ents().filter(x=>x!==en);if(state.retenue===en.id)state.retenue=null;save();renderConsult();toast(`${en.nom} retirée de la consultation`);}});
+$("#entTable").addEventListener("click",e=>{const b=e.target.closest("[data-entren]");if(!b)return;const en=ents()[+b.dataset.entren],nm=b.parentNode.querySelector(".entnm");
+  const inp=document.createElement("input");inp.type="text";inp.value=en.nom;inp.style.cssText="width:70%;font-weight:600";nm.replaceWith(inp);b.remove();inp.focus();inp.select();let done=false;
+  const ok=v=>{if(done)return;done=true;v=inp.value.trim();if(v&&v!==en.nom){histAdd(en,"Renommée : "+en.nom+" → "+v);en.nom=v;save();}renderConsult();};
+  inp.onkeydown=ev=>{if(ev.key==="Enter")ok();else if(ev.key==="Escape"){inp.value=en.nom;ok();}};inp.onblur=ok;});
 let entRows=[];
 function entMsg(html,err){$("#entRes").innerHTML=`<p class="rg-msg${err?" err":""}">${html}</p>`;}
 async function entSearch(){
@@ -4076,7 +4072,6 @@ function renderSynth(){
    <div class="syn-b"><label>N° de devis des entreprises</label><div class="syn-dv">${ents.map(e=>`<span>${esc(e.nom)} <input type="text" data-sydv="${esc(e.id)}" value="${esc(S.devis[e.id]||"")}" placeholder="n° de devis" style="max-width:110px"></span>`).join("")}</div></div>
    ${edit(["intro","obs","reco","pj","conclu","sign"])}
    <p class="hint">Les n° de devis renseignés sont repris dans le texte automatique de l'introduction ; une fois l'introduction modifiée à la main, elle n'est plus mise à jour (bouton « Rétablir »).</p></details>
-   <details class="syn-ed"><summary>Rédiger la note sur la consultation (section 2 du PDF)</summary>${edit(["cons","retours","ecarts"])}</details>
    <h3>Montants TTC des parties communes</h3>
    <div class="bars">${bar("Chiffrage MOE",com.estT,"est")}${ents.map(e=>bar(e.nom,com[e.id+"T"],e.id===ret.id?"ret":"")).join("")}</div>
    ${(()=>{const P=pickSummary(M);if(M.lots.length<2||!P.rows.length)return "";const LO=lotOffers(M);
