@@ -1,1 +1,1 @@
-Déploiement n°53 — Aperçu BPU+CCTP+Bibliothèque simultanés, descriptif en bibliothèque, bibliothèque en fenêtre séparée, cadrage d'image, ordre des entreprises par glisser-déposer, en-tête = nom seul
+Déploiement n°54 — Sous-totaux de chapitre (détail), pastilles compris/non compris/sans objet, historique des événements, retrait du lien de dépôt, arborescence compacte

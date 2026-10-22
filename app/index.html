@@ -105,6 +105,17 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree .ti:last-child::before{bottom:auto;height:15px}
 .tree .ti::after{content:"";position:absolute;left:0;top:15px;width:14px;border-top:1.5px solid var(--tl)}
 .tree .ti>.art,.tree .ti>summary{margin-left:0}
+/* arborescence compacte, case − reliée à la ligne des articles */
+.tree details.chd{padding-bottom:0}
+.tree details.chd>summary.chs{padding:4px 10px 4px 2px;position:relative}
+.tree details.chd>summary.chs::before{margin-top:1px}
+.tree details.chd[open]>summary.chs::after{content:"";position:absolute;left:8px;top:19px;bottom:0;border-left:1.5px solid var(--tl)}
+.tree details.chd>.kids{margin-left:10px;padding:0}
+.tree .kids{padding:0}
+.tree .art{padding-top:2px;padding-bottom:2px}
+.tree .ti::after{top:11px}.tree .ti:last-child::before{height:11px}
+.tree details.chd.ti::after{top:12px}.tree details.chd.ti:last-child::before{height:12px}
+.tree details.lotd>summary.lot{padding-top:6px;padding-bottom:6px}
 .tree .lot-name{cursor:pointer}
 .chk.sm{font-size:13px;margin:0}
 .tree .lot:first-child{margin-top:6px}
@@ -663,6 +674,13 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 .ana-lots summary.part{color:var(--ochre);font-weight:600}
 .ana-lots>div{position:absolute;z-index:30;top:100%;left:0;margin-top:3px;min-width:260px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;box-shadow:0 6px 20px rgba(0,0,0,.14);display:flex;flex-direction:column;gap:5px;color:var(--ink)}
 #cmpTable.nomoe .mo{display:none}
+.mk{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:10px;border:1px solid transparent;line-height:1.5;white-space:nowrap;font-family:inherit}
+.mk-inc{background:#DDF1E7;color:#1F6B4F;border-color:#8FCDB3}.mk-ninc{background:#FBE0DD;color:#A32A1F;border-color:#E6A39B}.mk-so{background:#E6E9ED;color:#4D5964;border-color:#B6BEC7}
+.mk-bar{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}.mk-bar button.mk{cursor:pointer;opacity:.45;background:var(--surface);color:var(--muted);border-color:var(--line)}.mk-bar button.mk:hover{opacity:.85}
+.mk-bar button.mk.on{opacity:1}.mk-bar button.mk-inc.on{background:#DDF1E7;color:#1F6B4F;border-color:#8FCDB3}.mk-bar button.mk-ninc.on{background:#FBE0DD;color:#A32A1F;border-color:#E6A39B}.mk-bar button.mk-so.on{background:#E6E9ED;color:#4D5964;border-color:#B6BEC7}
+#cmpTable td.mkcell{cursor:pointer}#cmpTable td.mkcell:hover{outline:1px dashed var(--muted);outline-offset:-2px}
+#cmpTable td.st-v{font-weight:700}
+.ent-hist{list-style:none;margin:6px 0 0;padding:0;font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:2px}.ent-hist time{color:var(--ink,#333);font-weight:600;margin-right:4px}
 .ent-sub.offer-ok{color:#2e7d32;font-weight:600}
 select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:600}
 .rte-bar{display:flex;flex-wrap:wrap;gap:3px;align-items:center;padding:5px 6px;border:1px solid var(--line);border-bottom:0;border-radius:6px 6px 0 0;background:var(--paper)}
@@ -1014,7 +1032,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.53.0", deploiement: 53};
+const APP = {version: "0.54.0", deploiement: 54};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3268,8 +3286,8 @@ function renderConsult(){
   const E=ents(); $("#dbxPath").value=state.dropbox||"";
   {const e0=E[0]||{nom:"Entreprise"};$("#dbxEx1").textContent=dbxFile(e0,"BPU")+".xlsx";$("#dbxEx2").textContent=dbxFile(e0,"DEVIS")+".pdf";}
   $("#entTable").innerHTML=E.length?`<tr><th>Entreprise</th><th>État</th><th></th></tr>`+E.map((e,i)=>`<tr>
-    <td><b>${esc(e.nom)}</b>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><span class="dbx-lk"><input type="url" class="dbx-link" data-entlink="${i}" value="${esc(e.depot||"")}" placeholder="Lien de dépôt Dropbox (https://www.dropbox.com/request/…)" aria-label="Lien de dépôt de ${esc(e.nom)}" autocomplete="off"><button class="btn sm" data-entcopy="${i}" ${depotUrl(e)?"":"disabled"}>Copier</button></span><details class="ent-lots"><summary>Lots répondus : <b>${esc(entLotsLabel(e))}</b></summary><div>${entLotsBoxes(e,"data-entlot")}<span class="hint">Les lots non cochés (hors compétence) ne sont pas comptés comme incomplets.</span></div></details><span class="ent-act"><button class="lnk" data-entportal="${i}">Saisie manuelle</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
-    <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${hasOffer(e)?`<span class="hint ent-sub offer-ok">✓ ${esc(offerInfo(e))}</span>`:""}</td>
+    <td><b>${esc(e.nom)}</b>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><details class="ent-lots"><summary>Lots répondus : <b>${esc(entLotsLabel(e))}</b></summary><div>${entLotsBoxes(e,"data-entlot")}<span class="hint">Les lots non cochés (hors compétence) ne sont pas comptés comme incomplets.</span></div></details><span class="ent-act"><button class="lnk" data-entportal="${i}">Saisie manuelle</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
+    <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${histHtml(e)}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
   dbxStatus(); dbxWatchSt(); dbxScanNew("auto");
@@ -3278,7 +3296,7 @@ function renderConsult(){
 $("#qtyWarn").addEventListener("click",e=>{if(e.target.id==="qwGo")openQtyCheck();});
 $("#entAddBtn").onclick=()=>{const p=$("#entAdd");p.hidden=!p.hidden;if(!p.hidden)$("#entQ").focus();};
 $("#entTable").addEventListener("change",e=>{const c=e.target.closest("[data-entlot]");if(!c)return;const [id,ln]=c.dataset.entlot.split("|"),en=ents().find(x=>x.id===id);if(!en)return;entSetLot(en,ln,c.checked);save();const d=c.closest("details");const idx=ents().indexOf(en);renderConsult();const nd=document.querySelectorAll("#entTable details.ent-lots")[idx];if(nd)nd.open=true;});
-$("#entTable").addEventListener("input",e=>{const s=e.target.closest("[data-entst]");if(s){const en=ents()[+s.dataset.entst];en.statut=s.value;save();s.classList.toggle("st-ok",hasOffer(en)||en.statut==="Offre reçue");}});
+$("#entTable").addEventListener("input",e=>{const s=e.target.closest("[data-entst]");if(s){const en=ents()[+s.dataset.entst];if(en.statut!==s.value)histAdd(en,"État : "+s.value);en.statut=s.value;save();s.classList.toggle("st-ok",hasOffer(en)||en.statut==="Offre reçue");}});
 $("#entTable").addEventListener("click",async e=>{const b=e.target.closest("[data-delent]");if(!b)return;const en=ents()[+b.dataset.delent];
   if(await ask(`Retirer <b>${esc(en.nom)}</b> de la liste des entreprises consultées ?${hasOffer(en)?"<br><span class=\"hint\">Son offre ne sera plus prise en compte dans l'analyse.</span>":""}`,"Retirer",true)){
     state.ents=ents().filter(x=>x!==en);if(state.retenue===en.id)state.retenue=null;save();renderConsult();toast(`${en.nom} retirée de la consultation`);}});
@@ -3652,8 +3670,8 @@ function anaModel(){
       w.ex=exD!==null;
       if(!w.leaf) return;
       const ar=w.o, k=1+tvaOf(ar,null)/100; w.q=qty(ar); w.est=w.q*ar.pu; w.estT=w.est*k;
-      E.forEach(e=>{const out=!!lotObj&&entSkip(e).has(lotObj.nid), m=!out&&!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0, p=(m||out)?null:puEnt(ar,e);
-        w.miss.push(m); w.p.push(p); w.a.push(p==null?null:w.q*p);});
+      E.forEach(e=>{const out=!!lotObj&&entSkip(e).has(lotObj.nid), mk=out?"":markOf(e,ar.id), m=!out&&!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0&&!mk, p=(m||out||(mk&&(e.offre.pus||{})[ar.id]==null))?null:puEnt(ar,e);
+        (w.mk=w.mk||[]).push((e.offre&&(e.offre.pus||{})[ar.id]==null)?mk:"");w.miss.push(m); w.p.push(p); w.a.push(p==null?null:w.q*p);});
       if(!w.ex&&w.q>0){
         const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]);
         const ref=A.ref==="moe"?(ar.pu>0?ar.pu:null):(vals.length>=2?medianOf(vals):null);
@@ -3780,7 +3798,7 @@ function renderAnalyse(){
       body+=`<tr class="lot" style="${lotStyle(lotById(l.id))}"><td class="c1"><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
         <td class="c2"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span> <select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select>
           ${l.rows.length?"":`<button class="x" data-lotdel="${li}" title="Supprimer le lot vide" aria-label="Supprimer le lot vide">×</button>`}</td>
-        <td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td>`).join("")}</tr>`;
+        <td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
       let hide=null;
       rows.forEach((w,i)=>{
         if(anaOvOnly(rows,i)) return;
@@ -3796,10 +3814,12 @@ function renderAnalyse(){
           body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
             const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=col&&!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
-            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`;
-            body+=`<td class="n e1 ${c}">${m?"–":eur2(p)}</td><td class="n ${m?"miss":""}">${m?"–":eur2(w.a[j])}</td>`;});
+            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`, mk=(w.mk&&w.mk[j])||"", can=e.offre&&p==null&&!entSkip(e).has(l.id)?` data-amark="${esc(e.id)}|${esc(w.o.id)}" title="Cliquer pour indiquer : compris / non compris / sans objet"`:"";
+            body+=`<td class="n e1 ${c}${can?" mkcell":""}"${can}>${mk?markPill(mk):m?"–":eur2(p)}</td><td class="n ${m?"miss":""}">${m||mk?"–":eur2(w.a[j])}</td>`;});
         }else{
-          body+=`<td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(()=>`<td class="n e1"></td><td class="n"></td>`).join("")}`;
+          const st=w.k==="ch"&&!w.ex&&w.sub?w.sub:null;
+          body+=st?`<td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(st.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n st-v">${eur2(st.e[e.id].ht)}${ec(st.e[e.id].ht,st.est)}</td>`).join("")}`
+            :`<td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(()=>`<td class="n e1"></td><td class="n"></td>`).join("")}`;
         }
         body+=`</tr>`;
       });
@@ -3877,6 +3897,9 @@ function renderAnalyse(){
   V.addEventListener("dragover",e=>{if(!chipDrag)return;const c=e.target.closest("[data-achipd]");if(!c)return;e.preventDefault();V.querySelectorAll(".achip.over").forEach(x=>x.classList.remove("over"));if(c.dataset.achipd!==chipDrag)c.classList.add("over");});
   V.addEventListener("dragend",()=>{chipDrag=null;V.querySelectorAll(".achip.over,.achip.dragging").forEach(x=>x.classList.remove("over","dragging"));});
   V.addEventListener("drop",e=>{if(!chipDrag)return;const c=e.target.closest("[data-achipd]");if(!c)return;e.preventDefault();const to=c.dataset.achipd,from=chipDrag;chipDrag=null;if(to===from)return;const L=ents(),a=L.findIndex(x=>x.id===from),b=L.findIndex(x=>x.id===to);if(a<0||b<0)return;const [it]=L.splice(a,1);L.splice(b,0,it);save();renderAnalyse();});
+  V.addEventListener("click",e=>{const c=e.target.closest("[data-amark]");if(!c)return;const [eid,aid]=c.dataset.amark.split("|"),en=ents().find(x=>x.id===eid);if(!en||!en.offre)return;
+    const ord=["","inc","ninc","so"],cur=markOf(en,aid),nx=ord[(ord.indexOf(cur)+1)%ord.length];en.offre.marks=en.offre.marks||{};if(nx)en.offre.marks[aid]=nx;else delete en.offre.marks[aid];
+    let code="";lists(li=>{});leaves(ar=>{if(ar.id===aid)code=ar.code||"";});histAdd(en,`Pastille ${nx?"« "+MARKS[nx][0]+" »":"retirée"} sur l'article ${code}`);save();renderAnalyse();});
   V.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="anaSeuil"){e.preventDefault();$("#anaValid").click();}});
   V.addEventListener("dragstart",e=>{const g=e.target.closest("[data-agrip]");if(!g){return;}drag=idx(g.dataset.agrip);e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain","ana");g.closest("tr").classList.add("dragx");});
   V.addEventListener("dragend",()=>{drag=null;V.querySelectorAll(".dragx,.dropb,.dropa").forEach(x=>x.classList.remove("dragx","dropb","dropa"));});
@@ -4015,15 +4038,27 @@ function bpuFlat(){
   });
   return rows;
 }
-const missingFor=e=>{if(!e.offre)return 0;let m=0;leavesE(e,ar=>{if(qty(ar)>0&&(e.offre.pus||{})[ar.id]==null)m++;});return m;};
+const MARKS={inc:["Compris","mk-inc"],ninc:["Non compris","mk-ninc"],so:["Sans objet","mk-so"]};
+const markOf=(e,id)=>{const m=e&&e.offre&&e.offre.marks&&e.offre.marks[id];return MARKS[m]?m:"";};
+const markPill=k=>MARKS[k]?`<span class="mk ${MARKS[k][1]}">${MARKS[k][0]}</span>`:"";
+const histAdd=(en,t)=>{(en.hist=en.hist||[]).push({d:new Date().toISOString(),t});};
+const fdt=d=>{const x=new Date(d);return isNaN(x)?"":x.toLocaleDateString("fr-FR")+" "+x.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});};
+const histHtml=e=>{const H=e.hist||[];if(!H.length)return hasOffer(e)?`<span class="hint ent-sub offer-ok">✓ ${esc(offerInfo(e))}</span>`:"";
+  const m=missingFor(e);return `<ul class="ent-hist">${H.map(h=>`<li><time>${esc(fdt(h.d))}</time> ${esc(h.t)}</li>`).join("")}</ul>${m?`<span class="hint ent-sub" style="color:var(--ochre)">${m} prix manquant${m>1?"s":""} actuellement</span>`:""}`;};
+const missingFor=e=>{if(!e.offre)return 0;let m=0;leavesE(e,ar=>{if(qty(ar)>0&&(e.offre.pus||{})[ar.id]==null&&!markOf(e,ar.id))m++;});return m;};
 function offerInfo(e){
   if(!e.offre) return e.date&&e.date!=="–"?`Offre reçue le ${e.date}`:"Offre enregistrée";
   const d=new Date(e.offre.recu), m=missingFor(e);
   return `Reçue le ${isNaN(d)?"–":d.toLocaleDateString("fr-FR")}${e.offre.devis?` · devis ${e.offre.devis.nom}`:" · sans devis PDF"}${m?` · ${m} prix manquant${m>1?"s":""}`:""}${Object.keys(e.offre.qents||{}).length?` · ${Object.keys(e.offre.qents).length} quantité${Object.keys(e.offre.qents).length>1?"s":""} modifiée${Object.keys(e.offre.qents).length>1?"s":""} par l'entreprise`:""}`;
 }
-function registerOffer(en,{pus,notes,qents,devis}){
-  en.offre={pus,notes:notes||{},qents:qents||{},devis:devis||(en.offre&&en.offre.devis)||null,recu:new Date().toISOString(),lots:state.data.filter(l=>!l.noBpu&&!(en.skip||[]).includes(l.nid)).map(l=>l.nid)};
-  en.statut="Offre reçue"; en.date=new Date().toLocaleDateString("fr-FR"); save();
+function registerOffer(en,{pus,notes,qents,devis,marks}){
+  const had=!!en.offre, prevM=JSON.stringify((en.offre&&en.offre.marks)||{});
+  en.offre={pus,notes:notes||{},qents:qents||{},marks:marks||(en.offre&&en.offre.marks)||{},devis:devis||(en.offre&&en.offre.devis)||null,recu:new Date().toISOString(),lots:state.data.filter(l=>!l.noBpu&&!(en.skip||[]).includes(l.nid)).map(l=>l.nid)};
+  en.statut="Offre reçue"; en.date=new Date().toLocaleDateString("fr-FR");
+  const dv=en.offre.devis&&en.offre.devis.nom, mm=missingFor(en);
+  histAdd(en,(had?"Offre modifiée":"Offre reçue")+(dv?` · devis ${dv}`:"")+(mm?` · ${mm} prix manquant${mm>1?"s":""}`:""));
+  if(had&&JSON.stringify(en.offre.marks)!==prevM)histAdd(en,"Pastilles (compris / non compris / sans objet) mises à jour");
+  save();
 }
 /* --- export Excel : mise en page du BPU Nicolet8 (un onglet par lot), palette du PDF de référence --- */
 function loadScripts(urls){
@@ -4364,11 +4399,11 @@ $("#portalPrev").onclick=()=>{const E=ents();if(!E.length){toast("Ajoutez d'abor
 let PD=null;
 function openPortal(entId,manual){
   const en=ents().find(e=>e.id===entId); if(!en) return;
-  PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null,manual:!!manual};
+  PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null,marks:{...((en.offre&&en.offre.marks)||{})},manual:!!manual};
   renderPortal(); $("#portalDlg").showModal();
 }
 function portalTotals(){let ht=0,tva=0,miss=0,n=0;const O={};ovl().forEach(o=>O[o.id]={ht:0,ttc:0});
-  leavesE(ents().find(x=>x.id===PD.id),ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0)miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
+  leavesE(ents().find(x=>x.id===PD.id),ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0&&!PD.marks[ar.id])miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
     if(!c.in){ht+=m;tva+=m*k;}else if(O[c.in]){O[c.in].ht+=m;O[c.in].ttc+=m*(1+k);}
     c.base.forEach(id=>{if(O[id]){O[id].ht-=m;O[id].ttc-=m*(1+k);}});});
   return{ht,tva,ttc:ht+tva,miss,n,O};}
@@ -4401,9 +4436,9 @@ function renderPortal(){
         +`<tr class="ovtot2 occ" ${sy}><td colspan="6">TVA ${esc(ovShort(r.o).toUpperCase())}</td><td class="n" data-psum="v" ${at}></td><td></td></tr>`
         +`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;
       h=h.slice(0,os)+ovFrameRows(h.slice(os),c.fg);}
-    else{const p=PD.pus[r.id], miss=p==null&&r.q>0;
+    else{const p=PD.pus[r.id], miss=p==null&&r.q>0&&!PD.marks[r.id];
       h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre.toUpperCase())}${desc}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
-        <td><input type="text" inputmode="decimal" class="pu" data-ppu="${r.id}" value="${p==null?"":money(p)}" placeholder="0,00 €" autocomplete="off" aria-label="Prix unitaire HT de ${esc(r.titre)}"></td>
+        <td><input type="text" inputmode="decimal" class="pu" data-ppu="${r.id}" value="${p==null?"":money(p)}" placeholder="0,00 €" autocomplete="off" aria-label="Prix unitaire HT de ${esc(r.titre)}"><span class="mk-bar" data-mkbar="${r.id}">${p==null?mkBar(PD.marks[r.id]):""}</span></td>
         <td class="n" data-pm="${r.id}">${p==null?"":eur2(r.q*p)}</td>
         <td><input type="text" class="nt" data-pnt="${r.id}" value="${esc(PD.notes[r.id]||"")}" placeholder="Annotation" aria-label="Annotation sur ${esc(r.titre)}"></td></tr>`;}
   });
@@ -4421,6 +4456,7 @@ function renderPortal(){
       ${depotUrl(ents().find(x=>x.id===PD.id))?`<a class="btn sm" href="${esc(depotUrl(ents().find(x=>x.id===PD.id)))}" target="_blank" rel="noopener noreferrer">Déposer sur Dropbox</a>`:""}<button class="btn primary" id="pSubmit">${PD.manual?"Enregistrer l'offre":"Soumettre mon offre"}</button></div>`;
   portalFoot();
 }
+function mkBar(cur){return Object.keys(MARKS).map(k=>`<button type="button" class="mk ${MARKS[k][1]}${cur===k?" on":""}" data-pmk="${k}" aria-pressed="${cur===k}" title="${MARKS[k][0]}">${MARKS[k][0]}</button>`).join("");}
 function portalFoot(){
   const t=portalTotals();portalSums();
   $("#ptTot").innerHTML=`<span>Total HT <b>${eur2(t.ht)}</b></span><span>TVA <b>${eur2(t.tva)}</b></span><span>Total TTC <b>${eur2(t.ttc)}</b></span>${ovl().map(o=>`<span title="Hors marché de base : ${esc(ovLab(o))}">${esc(ovShort(o))} <b>${sgn(t.O[o.id].ht)} HT</b></span>`).join("")}${t.miss?`<span style="color:var(--ochre)">${t.miss} prix manquant${t.miss>1?"s":""}</span>`:`<span style="color:var(--accent)">Tous les prix sont renseignés</span>`}`;
@@ -4430,9 +4466,10 @@ function portalFoot(){
 $("#ptBody").addEventListener("input",e=>{
   const t=e.target; if(!PD) return;
   if(t.dataset.ppu){const id=t.dataset.ppu, v=t.value.trim();
-    if(v==="") delete PD.pus[id]; else PD.pus[id]=Math.round(parseMoney(v)*100)/100;
+    if(v==="") delete PD.pus[id]; else{PD.pus[id]=Math.round(parseMoney(v)*100)/100;delete PD.marks[id];}
+    {const mb=t.closest("td").querySelector("[data-mkbar]");if(mb)mb.innerHTML=PD.pus[id]==null?mkBar(PD.marks[id]):"";}
     const tr=t.closest("tr"), q=(()=>{let r=0;leaves(ar=>{if(ar.id===id)r=qty(ar);});return r;})();
-    tr.querySelector("[data-pm]").textContent=PD.pus[id]==null?"":eur2(q*PD.pus[id]); tr.classList.toggle("miss",PD.pus[id]==null&&q>0); portalFoot();}
+    tr.querySelector("[data-pm]").textContent=PD.pus[id]==null?"":eur2(q*PD.pus[id]); tr.classList.toggle("miss",PD.pus[id]==null&&q>0&&!PD.marks[id]); portalFoot();}
   else if(t.dataset.pnt){const id=t.dataset.pnt; if(t.value.trim()) PD.notes[id]=t.value; else delete PD.notes[id];}
 });
 $("#ptBody").addEventListener("focusout",e=>{const t=e.target;if(t.dataset&&t.dataset.ppu&&PD&&PD.pus[t.dataset.ppu]!=null)t.value=money(PD.pus[t.dataset.ppu]);});
@@ -4445,11 +4482,14 @@ $("#ptBody").addEventListener("change",async e=>{
 $("#ptBody").addEventListener("click",async e=>{
   if(!PD) return;
   if(e.target.closest("[data-pclose]")){$("#portalDlg").close();return;}
+  {const mk=e.target.closest("[data-pmk]");if(mk){const tr=mk.closest("tr"),id=tr.dataset.pid,k=mk.dataset.pmk;if(PD.marks[id]===k)delete PD.marks[id];else PD.marks[id]=k;
+    tr.querySelector("[data-mkbar]").innerHTML=mkBar(PD.marks[id]);let q=0;leaves(ar=>{if(ar.id===id)q=qty(ar);});tr.classList.toggle("miss",PD.pus[id]==null&&q>0&&!PD.marks[id]);portalFoot();return;}}
   if(e.target.closest("[data-pxl]")){exportBpu(PD.id,docInfoDefault());return;}
   if(e.target.closest("#pSubmit")){
     const en=ents().find(x=>x.id===PD.id), t=portalTotals(); if(!en||(!PD.devis&&!PD.manual)) return;
     if(t.miss&&!await ask(`Il manque <b>${t.miss}</b> prix unitaire${t.miss>1?"s":""} sur des articles chiffrés. ${PD.manual?"Enregistrer":"Soumettre"} l'offre en l'état ?`,PD.manual?"Enregistrer quand même":"Soumettre quand même")) return;
-    registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},devis:PD.devis});
+    registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},devis:PD.devis,marks:{...PD.marks}});
+    if(t.miss)histAdd(en,`Prix manquants validés par l'architecte (${t.miss})`);save();
     const dv=PD.devisBuf, manual=PD.manual; $("#portalDlg").close(); PD=null; renderConsult(); toast(manual?`Offre de ${en.nom} enregistrée : l'analyse des offres est à jour`:`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
     try{const files=[{name:dbxFile(en,"BPU")+".xlsx",bytes:await bpuBytes(en)}]; if(dv)files.push({name:dbxFile(en,"DEVIS")+".pdf",bytes:dv}); await depositFiles(en,files);}catch(err){console.error(err);toast("Offre enregistrée, mais le dépôt dans Dropbox a échoué.");}
   }
