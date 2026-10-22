@@ -1060,7 +1060,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.65.0", deploiement: 65};
+const APP = {version: "0.66.0", deploiement: 66};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2909,7 +2909,7 @@ function buildSynthPdf(J,info){
   const RET=synthRet(M), SD=synthDefaults(M,BD,RET), SY=synObj(), txt=k=>synText(k,SD);
   {
     const lx=20, lw=170; let yy=22; const LG=archLogo();
-    if(LG){const lh=LG.w>LG.h?16:22, lw2=lh*LG.w/LG.h; try{doc.addImage(LG.src,"JPEG",190-lw2,12,lw2,lh,undefined,"FAST");}catch(e){console.error(e);}}
+    if(LG){let lh=LG.w>LG.h?26:32, lw2=lh*LG.w/LG.h; if(lw2>80){lw2=80;lh=lw2*LG.h/LG.w;} try{doc.addImage(LG.src,"JPEG",lx,10,lw2,lh,undefined,"FAST");}catch(e){console.error(e);} yy=Math.max(22,10+lh+9);}
     font("bold",10,INK);
     [["Code travaux",o.ref],["Objet",(o.objet||"").toUpperCase()],["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Gestionnaire",o.gestionnaire]].forEach(([k,v])=>{
       if(!v)return; font("normal",9.5,MUTED); doc.text(wa(k+" :"),lx,yy); font("bold",10,INK);
@@ -2947,17 +2947,19 @@ function buildSynthPdf(J,info){
     const lines=doc.splitTextToSize(wa(lab),labW-4-(o2.ind||0)).slice(0,2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
     if(o2.fill){fill(o2.fill);doc.rect(L,y,W,h,"F");}
+    if(o2.out)o2.out.forEach((z,j)=>{if(!z)return;const x0=L+labW+cw*j;fill([240,240,238]);doc.rect(x0,y,cw,h,"F");doc.setDrawColor(205,205,200);doc.setLineWidth(0.12);
+      for(let k=-h;k<cw;k+=2.2){let xa=x0+Math.max(k,0),ya=y+h-(k<0?-k:0),xb=x0+Math.min(k+h,cw),yb=y+(k+h>cw?k+h-cw:0);if(xb>xa)doc.line(xa,ya,xb,yb);}});
     font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
-    vals.forEach((v,j)=>{if(v==null||v==="")return;const best=o2.best===j;font(o2.b||best?"bold":"normal",o2.sz||8.5,best?GRN:o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
+    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;const best=o2.best===j;font(o2.b||best?"bold":"normal",o2.sz||8.5,best?GRN:o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.15);doc.line(L,y+h,R,y+h);y+=h;};
   const bestOf=vals=>{let b=-1,m=Infinity;vals.forEach((v,j)=>{if(v>0&&v<m){m=v;b=j;}});return b;};
   M.lots.forEach(({l,li,rows,tot})=>{
-    const lv=E.map(e=>tot.e[e.id].ht);
-    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,lv.map(nf),{b:true,fill:PALE,best:bestOf(lv)});
+    const lv=E.map(e=>tot.e[e.id].ht), OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
+    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,lv.map(nf),{b:true,fill:PALE,best:bestOf(lv),out:OUT});
     rows.forEach((w,wi)=>{if((w.k!=="ch"&&w.k!=="par")||w.d>1||w.ex||!w.sub||anaOvOnly(rows,wi))return;const t=w.sub, cv=E.map(e=>t.e[e.id].ht);
       if(w.k==="par"&&!cv.some(v=>v>0))return;
-      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nf),{ind:3+w.d*4,b:w.d===0,sz:w.d?8:8.5,best:bestOf(cv)});});
+      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nf),{ind:3+w.d*4,b:w.d===0,sz:w.d?8:8.5,best:bestOf(cv),out:OUT});});
   });
   const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
   const vals=(o3,sfx)=>E.map(e=>nf(o3[e.id+(sfx||"")]));
@@ -2976,11 +2978,7 @@ function buildSynthPdf(J,info){
       z.list.forEach(o=>{need(9);const a2=entAdr(o.e);font(o.e.id===z.best?"bold":"normal",8.5,o.e.id===z.best?GRN:INK);doc.text(wa(doc.splitTextToSize(o.e.nom+(o.e.id===z.best?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
         font("normal",8.5,INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
         if(a2){font("normal",7.5,MUTED);doc.text(wa(doc.splitTextToSize(a2,W-8)[0]),L+4,y+2.6);y+=3.8;}});y+=1.5;});
-    y+=2;need(24+P.rows.length*8);font("bold",9,RED);doc.text("Entreprise mieux-disante / proposée par lot",L,y+3.5);y+=6;
-    fill(PALE);doc.rect(L,y,W,5.6,"F");font("bold",8.5,INK);doc.text("Lot / entreprise",L+2,y+3.9);doc.text("MOE HT",R-64,y+3.9,{align:"right"});doc.text("Montant HT",R-33,y+3.9,{align:"right"});doc.text("Montant TTC",R-1,y+3.9,{align:"right"});y+=5.6;
-    P.rows.forEach(r=>{need(10);font("normal",8.5,INK);doc.text(wa(`Lot ${pad(r.li+1)} - ${doc.splitTextToSize(wa(r.lot.titre),70)[0]}`),L+2,y+3.6);doc.text(wa(nf(r.est)),R-64,y+3.6,{align:"right"});doc.text(wa(nf(r.ht)),R-33,y+3.6,{align:"right"});doc.text(wa(nf(r.ttc)),R-1,y+3.6,{align:"right"});y+=4.6;
-      font("bold",8.5,GRN);doc.text(wa(doc.splitTextToSize(r.ent.nom,W-8)[0]),L+4,y+3);y+=4;const a3=entAdr(r.ent);if(a3){font("normal",7.5,MUTED);doc.text(wa(doc.splitTextToSize(a3,W-8)[0]),L+4,y+2.6);y+=3.8;}y+=0.8;});
-    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.line(L,y,R,y);fill(PALE);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES",L+2,y+4);doc.text(wa(nf(P.est)),R-64,y+4,{align:"right"});doc.text(wa(nf(P.ht)),R-33,y+4,{align:"right"});doc.text(wa(nf(P.ttc)),R-1,y+4,{align:"right"});y+=8;}
+    y+=1;need(10);    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.line(L,y,R,y);fill(PALE);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nf(P.ht)+" HT"),R-34,y+4,{align:"right"});doc.text(wa(nf(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
    const Q=quoteCfg();
    if(Q.on){const retE=E.find(e=>e.id===state.retenue)||E[0], base=(M.lots.length>1&&P.rows.length)?P.cttc:(retE?T0[retE.id+"T"]*0+C0[retE.id+"T"]:0);
     if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,RED);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
@@ -4077,10 +4075,7 @@ function renderSynth(){
    ${(()=>{const P=pickSummary(M);if(M.lots.length<2||!P.rows.length)return "";const LO=lotOffers(M);
      return `<h3>Entreprises consultées par lot</h3>`+LO.filter(z=>z.list.length).map(z=>`<table class="syn-lot"><tr><th colspan="4">Lot ${pad(z.x.li+1)} ${esc(z.x.l.titre)} <span class="hint">· chiffrage MOE ${eur(z.x.tot.est)} HT</span></th></tr>
        ${z.list.map(o=>`<tr class="${o.e.id===z.best?"best":""}"><td><b>${esc(o.e.nom)}</b>${o.e.id===z.best?` <span class="tag">mieux-disant</span>`:""}${o.inc?` <span class="hint">(offre incomplète)</span>`:""}<span class="hint ent-sub">${esc(entAdr(o.e))}</span></td><td class="n">${eur(o.ht)} HT</td><td class="n">${eur(o.ttc)} TTC</td><td class="n">${z.x.tot.est?((o.ht/z.x.tot.est-1)*100>=0?"+":"−")+fmt(Math.abs((o.ht/z.x.tot.est-1)*100),1)+" %":""}</td></tr>`).join("")}</table>`).join("")
-     +`<h3>Entreprise mieux-disante / proposée par lot</h3><p class="hint">${P.auto?"Mieux-disant de chaque lot. Dans l'analyse des offres, la sélection « Offres retenues par lot » permet de choisir une autre entreprise.":"Entreprises retenues dans l'analyse des offres."}</p>
-   <table><tr><th>Lot</th><th>Entreprise</th><th class="n">Chiffrage MOE HT</th><th class="n">Montant HT</th><th class="n">Montant TTC</th></tr>
-     ${P.rows.map(r=>`<tr><td>Lot ${pad(r.li+1)} ${esc(r.lot.titre)}</td><td><b>${esc(r.ent.nom)}</b><span class="hint ent-sub">${esc(entAdr(r.ent))}</span></td><td class="n">${eur(r.est)}</td><td class="n">${eur(r.ht)}</td><td class="n">${eur(r.ttc)}</td></tr>`).join("")}
-     <tr><td colspan="2"><b>Total des meilleures offres</b></td><td class="n"><b>${eur(P.est)}</b></td><td class="n"><b>${eur(P.ht)}</b></td><td class="n"><b>${eur(P.ttc)}</b></td></tr></table>`;})()}
+     +`<table><tr><td><b>Total des meilleures offres</b>${P.auto?` <span class="hint">(mieux-disant de chaque lot ; modifiable dans l'analyse des offres)</span>`:""}</td><td class="n"><b>${eur(P.ht)} HT</b></td><td class="n"><b>${eur(P.ttc)} TTC</b></td></tr></table>`;})()}
    ${(()=>{const Q=quoteCfg(),P=pickSummary(M),base=P.rows.length?P.cttc:rT;
      return `<h3>Calcul par copropriétaire</h3><label class="chk"><input type="checkbox" id="sy-quote" ${Q.on?"checked":""}> Afficher le calcul de la quote-part par copropriétaire (module optionnel)</label>`
       +(Q.on?`<div class="syn-b" style="margin-top:8px"><label for="sy-base">Total des tantièmes</label> <input type="number" id="sy-base" value="${Q.base}" style="max-width:110px"> <label for="sy-tant" style="margin-left:10px">Tantièmes à présenter (séparés par des virgules)</label> <input type="text" id="sy-tant" value="${esc(Q.tant.join(", "))}" style="max-width:240px"></div>
