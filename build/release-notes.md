@@ -1,1 +1,1 @@
-Déploiement n°54 — Sous-totaux de chapitre (détail), pastilles compris/non compris/sans objet, historique des événements, retrait du lien de dépôt, arborescence compacte
+Déploiement n°55 — Logo agrandi (PDF CCTP), descriptif BPU limité à la colonne désignation, aperçu BPU+CCTP suit l'article, bibliothèque sans descriptif sous le titre

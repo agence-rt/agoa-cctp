@@ -1032,7 +1032,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.54.0", deploiement: 54};
+const APP = {version: "0.55.0", deploiement: 55};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1910,7 +1910,7 @@ function renderPreview(){
   const keep=el.querySelector("#plQ")?{q:$("#plQ").value,st:$("#plList")?$("#plList").scrollTop:0}:null;
   const sc={};el.querySelectorAll(".pv-sec").forEach(x=>sc[x.dataset.pv]=x.scrollTop);
   el.innerHTML=`<div class="prev-h"><b>Aperçu</b>${prevSeg()}</div><div class="pv-secs">${M.map(m=>`<section class="pv-sec" data-pv="${m}"></section>`).join("")}</div>`;
-  M.forEach(m=>{const s=el.querySelector(`[data-pv="${m}"]`); if(m==="lib")renderLibPanel(true,s,keep&&keep.q); else renderPreviewOne(s,m,true); if(sc[m])s.scrollTop=sc[m];});
+  M.forEach(m=>{const s=el.querySelector(`[data-pv="${m}"]`); if(m==="lib")renderLibPanel(true,s,keep&&keep.q); else renderPreviewOne(s,m,true); if(sc[m])s.scrollTop=sc[m]; if(m!=="lib"){const c=s.querySelector(".cur");if(c){const r=c.getBoundingClientRect(),q=s.getBoundingClientRect();if(r.top<q.top+30||r.bottom>q.bottom-30)s.scrollTop+=r.top-q.top-q.height/4;}}});
   if(keep&&$("#plList"))$("#plList").scrollTop=keep.st;
 }
 function renderPreviewOne(el,mode,multi){
@@ -1970,7 +1970,7 @@ function renderLibPanelList(){
     const tip=esc(plainTxt(it.texte).slice(0,280));
     return `<div class="pl-row lv${Math.min(r.d,3)}" style="--ld:0px" draggable="true" data-plib="${it.id}" title="${tip}">${libGuides(R,R.indexOf(r))}
       ${hasKids?`<button class="tg bx" data-pltg="${it.id}" aria-label="${closed?"Déplier":"Replier"}">${closed?"+":"−"}</button>`:`<span class="tg"></span>`}
-      <span class="pl-t">${esc(it.titre)}${libDesc(it,"pl-d")}</span><span class="hint pl-i">${info}</span>
+      <span class="pl-t">${esc(it.titre)}</span><span class="hint pl-i">${info}</span>
       <button class="x pl-ed" data-pled="${it.id}" aria-label="Modifier ${esc(it.titre)}" title="Modifier dans la bibliothèque">✎</button><button class="x pl-del" data-pldel="${it.id}" aria-label="Supprimer ${esc(it.titre)}" title="Supprimer de la bibliothèque">×</button><button class="x pl-add" data-plins="${it.id}" aria-label="Insérer ${esc(it.titre)}" title="Insérer au point d'insertion">+</button></div>`;}).join("")
     :`<p class="hint" style="padding:14px">${lib().length?"Aucun élément ne correspond.":"La bibliothèque est vide."}</p>`;
 }
@@ -2632,7 +2632,7 @@ function buildCctpPdf(J,info){
   let LC={s:RED,p:PALE,l:LINE}; const lotRgb=l=>{const c=lotCol(l);return {s:hexRgb(c.strong),p:hexRgb(c.pale),l:hexRgb(c.mid)};};
   const cut=(x,y,w,h,c,col)=>{col=col||RED;doc.setFillColor(col[0],col[1],col[2]);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,y,[1,1],"F",true);};
   const C=coverInfo(o);
-  {const LG=archLogo(); if(LG){const lh=LG.w>LG.h?15:20, lw2=lh*LG.w/LG.h; try{doc.addImage(LG.src,"JPEG",R-lw2,10,lw2,lh,undefined,"FAST");}catch(e){console.error(e);}}}
+  {const LG=archLogo(); if(LG){let lh=LG.w>LG.h?22:26, lw2=lh*LG.w/LG.h; if(lw2>75){lw2=75;lh=lw2*LG.h/LG.w;} try{doc.addImage(LG.src,"JPEG",R-lw2,7,lw2,lh,undefined,"FAST");}catch(e){console.error(e);}}}
   let cy=32; font("bold",10.5,RED); doc.text("CAHIER DES CLAUSES TECHNIQUES PARTICULIÈRES",L,cy);
   doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(L,cy+3,R,cy+3);
   cy+=15; font("bold",21,INK);
@@ -4190,7 +4190,7 @@ async function buildBpuStyled(E,en,info,opts){
         const m=set(9,{formula:`IF(ISNUMBER(H${x.row}),IF(ISNUMBER(F${x.row}),ROUND(H${x.row}*F${x.row},2),ROUND(H${x.row}*D${x.row},2)),0)`,result:x.m},F(10,{italic:true}),{horizontal:"right"},EUR); m.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};
         const ob=set(10,nts[x.id]||null,F(9),{wrapText:true,horizontal:"left"}); ob.border=box; ob.protection={locked:false};
         set(11,x.ovIn||"B",F(8,{color:{argb:MUTED}}),{}); set(12,x.ovB.length?","+x.ovB.join(",")+",":null,F(8,{color:{argb:MUTED}}),{});
-        (x.dsc||[]).forEach((t,k)=>{const rr=x.row+1+x.metre.length+k;ws.mergeCells(rr,3,rr,10);const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{color:{argb:MUTED}});c.alignment={vertical:"top",wrapText:true,indent:x.d+1};ws.getRow(rr).height=Math.max(14,12.5*Math.ceil(t.length/135)+3);});
+        (x.dsc||[]).forEach((t,k)=>{const rr=x.row+1+x.metre.length+k;const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{color:{argb:MUTED}});c.alignment={vertical:"top",wrapText:true,indent:x.d+1};ws.getRow(rr).height=Math.max(14,12*Math.ceil(t.length/Math.max(30,64-2*(x.d+1)))+3);});
         x.metre.forEach((t,k)=>{const rr=x.row+1+k;const a=ws.getCell(rr,1);a.value=k?null:"Métré";a.font=F(9,{italic:true,color:{argb:MUTED}});const c=ws.getCell(rr,3);c.value=t;c.font=F(9,{italic:true,color:{argb:MUTED}});c.alignment={indent:x.d+1};ws.getRow(rr).height=14;});
       }
       else if(x.k==="ovh"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1),cc=ovC(x.o);c.value=ovLab(x.o).toUpperCase();c.font=F(12,{bold:true,color:{argb:ARGB(cc.fg)}});c.alignment={vertical:"middle"};R.height=26;}
