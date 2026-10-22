@@ -262,7 +262,7 @@ input[type=text],input[type=number],select,textarea{width:100%;background:var(--
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;background:var(--surface)}
 textarea{min-height:130px;resize:vertical;line-height:1.5}
 h4.sec{font-size:15px;font-weight:650;margin:24px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
-.chif{display:grid;grid-template-columns:78px minmax(96px,1.1fr) minmax(0,1fr) minmax(0,1.15fr) 72px minmax(0,.9fr) minmax(0,1.05fr);gap:8px;align-items:start}
+.chif{display:grid;grid-template-columns:78px 84px minmax(0,1fr) minmax(0,1.15fr) 72px minmax(0,.9fr) minmax(0,1.05fr);gap:8px;align-items:start}
 .chif .field>label,.chif .flabel{font-size:12.5px}
 .chif input,.chif select,.chif .ro{padding:8px 6px;font-size:13px}
 .chif input,.chif select{background:var(--field-bg)}
@@ -550,6 +550,7 @@ dialog.portal[open]{display:flex;flex-direction:column}
 .pt-tbl th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:11.5px;color:var(--muted);padding:8px 6px;border-bottom:1px solid var(--line);z-index:1}
 .pt-tbl td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
 .pt-tbl .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.lotsw-w{position:relative;flex:none}.lotsw{width:26px;height:26px;border-radius:6px;border:2px solid;cursor:pointer;padding:0;display:block}.lotpop{position:absolute;top:32px;left:0;z-index:20;display:flex;gap:6px;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2)}.lotpop[hidden]{display:none}.lotpop .lc{width:26px;height:26px;border-radius:6px;border:2px solid;cursor:pointer;padding:0}.lotpop .lc.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink,#333)}
 .lotcol{display:flex;align-items:center;gap:7px;margin:6px 0 10px;font-size:13px}.lotcol .lc{width:26px;height:26px;border-radius:6px;border:2px solid;cursor:pointer;padding:0}.lotcol .lc.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink)}
 .pt-tbl tr.lot td{background:var(--accent);color:#fff;font-weight:650}
 .pt-tbl tr.node td{background:var(--accent-soft);font-weight:650}
@@ -1050,7 +1051,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.59.0", deploiement: 59};
+const APP = {version: "0.60.0", deploiement: 60};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1592,7 +1593,7 @@ async function addImages(files){
 const imgsHtml=ar=>(ar.imgs&&ar.imgs.length)?`<div class="cimgs">${ar.imgs.map(i=>`<div class="cimg" data-imgid="${i.id}" data-aid="${ar.id}" style="width:${clampW(i.w)}cm"><img src="${i.src}" alt="${esc(i.name||"Illustration")}"></div>`).join("")}</div>`:"";
 function imgsField(ar,after){
   const L=ar.imgs||[];
-  return `<div class="field imgs"><span class="flabel">${after?"Photos":"Images"} <span class="hint">· ${after?"affichées après la description dans le CCTP":"affichées à droite du texte dans le CCTP"}, taille fixe, 7 cm de large</span></span>
+  return `<div class="field imgs"><span class="flabel">${after?"Photos":"Images"}</span>
     ${L.length?`<div class="img-list">${L.map(i=>`<div class="img-it" data-imgid="${i.id}"><span class="th" style="width:${Math.round(clampW(i.w)*14)}px"><img src="${i.src}" alt=""></span>
       <div class="img-ctl"><span class="nm">${esc(i.name||"Image")}</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" data-imgann="${i.id}" title="Ajouter une flèche ou un carré sur la photo">Annoter${(i.shapes||[]).length?` (${i.shapes.length})`:""}</button><button class="btn sm" data-imgcrop="${i.id}" title="Rogner ou cadrer l'image à un format fixe">Cadrer${i.crop?" ✓":""}</button><button class="btn sm danger" data-imgdel="${i.id}">Retirer</button></div></div></div>`).join("")}</div>`:""}
@@ -1767,18 +1768,6 @@ function renderEditor(){
   ${hlBar(ar)}
   <div class="tools" role="toolbar" aria-label="Actions sur l'article">
     <label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>
-    <span class="sep"></span>
-    <button class="btn sm" data-act="up" ${i===0?"disabled":""} title="Alt + ↑">Monter</button>
-    <button class="btn sm" data-act="down" ${i===list.length-1?"disabled":""} title="Alt + ↓">Descendre</button>
-    <span class="sep"></span>
-    <button class="btn sm" data-act="outdent" ${owner.id?"":"disabled"} title="Alt + ←">Remonter d'un niveau</button>
-    <button class="btn sm" data-act="artToLot" title="L'article devient un nouveau lot, placé après son lot actuel ; ses sous-articles deviennent les articles de son chapitre">Passer en lot</button>
-    <button class="btn sm" data-act="artToCh" title="L'article devient un chapitre du lot, placé après son chapitre actuel ; ses sous-articles deviennent les articles du chapitre">Passer en chapitre</button>
-    <button class="btn sm" data-act="indent" ${prev?"":"disabled"} title="Alt + →${prev?` : devient sous-article de ${prev.code}`:""}">Passer en sous-article</button>
-    <span class="sep"></span>
-    <button class="btn sm" data-act="dup">Dupliquer</button>
-    <button class="btn sm" data-act="addSub">Ajouter un sous-article</button>
-    <button class="btn sm danger" data-act="del">Supprimer</button>
   </div>
   ${rteField("Description de l'ouvrage",ar.texte,"Décrire la prestation : matériaux, mise en œuvre, sujétions…")}
   <div class="field"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}"></div>
@@ -1810,11 +1799,10 @@ function renderNodeEditor(nc){
   const n=nc.node, lot=nc.lot, isLot=nc.level==="lot";
   const kids=isLot?n.children.map(c=>({code:c.code,titre:c.titre,t:nodeTotal(c),k:`data-seln="${c.nid}"`})):(n.art||[]).map(a=>({code:a.code,titre:a.titre,t:total(a),k:`data-sel="${a.id}"`}));
   $("#editor").innerHTML=`
-  <div class="art-head"><span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
+  <div class="art-head">${isLot?`<span class="lotsw-w"><button type="button" class="lotsw" data-lotpick="1" title="Couleur du lot : cliquer pour choisir" aria-label="Couleur du lot" aria-haspopup="true" style="background:${lotCol(n).pale};border-color:${lotCol(n).frame}"></button><span class="lotpop" hidden>${Object.entries(LOT_COLORS).map(([k,c])=>`<button type="button" class="lc${(n.color||"gris")===k?" on":""}" data-lotcolor="${k}" title="${c.n}" aria-label="${c.n}" aria-pressed="${(n.color||"gris")===k}" style="background:${c.pale};border-color:${c.frame}"></button>`).join("")}</span></span>`:""}<span class="art-code">${isLot?"Lot "+n.code:n.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(n.titre)}" aria-label="Intitulé du ${nc.level}"></div>
   ${hlBar(n)}
-  <p class="hint" style="margin:-2px 0 14px">${isLot?`Titre de lot (niveau 1), charge ${lot.charge.toLowerCase()} : description seulement, sans quantité ni chiffrage.`:`Sous-titre (niveau 2) du lot ${lot.code} : description seulement, sans quantité ni chiffrage.`} La description apparaît dans le CCTP sous le titre.</p>
   ${rteField("Description",n.texte,isLot?"Généralités du lot : objet, limites de prestation, prescriptions communes…":"Texte d'introduction : prescriptions communes, phasage, précautions…")}
-  ${isLot?`<div class="lotcol" role="group" aria-label="Couleur du lot"><span>Couleur du lot</span>${Object.entries(LOT_COLORS).map(([k,c])=>`<button type="button" class="lc${(n.color||"gris")===k?" on":""}" data-lotcolor="${k}" title="${c.n}" aria-label="${c.n}" aria-pressed="${(n.color||"gris")===k}" style="background:${c.pale};border-color:${c.frame}"></button>`).join("")}</div><label class="chk" style="margin:6px 0 12px"><input type="checkbox" id="lotNoBpu" ${n.noBpu?"checked":""}> Masquer ce lot dans le BPU publié (Excel et page de saisie des entreprises)</label>`:imgsField(n,true)}
+  ${isLot?`<label class="chk" style="margin:6px 0 12px"><input type="checkbox" id="lotNoBpu" ${n.noBpu?"checked":""}> Masquer ce lot dans le BPU publié (Excel et page de saisie des entreprises)</label>`:imgsField(n,true)}
   ${ovBox(n)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
     <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
@@ -2521,6 +2509,7 @@ tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(a
   msel.clear();msAnchor=id;select(id);}});
 document.addEventListener("change",e=>{const t=e.target; if(t&&t.id==="lotNoBpu"){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){if(t.checked)nc.node.noBpu=true; else delete nc.node.noBpu; save(); renderTree(); toast(t.checked?`Lot ${nc.node.code} masqué dans le BPU publié`:`Lot ${nc.node.code} de nouveau présent dans le BPU publié`);}}});
 document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();
+  {const pk=e.target.closest("[data-lotpick]");if(pk){const pp=pk.parentNode.querySelector(".lotpop");pp.hidden=!pp.hidden;return;}else if(!e.target.closest(".lotpop")){document.querySelectorAll(".lotpop").forEach(x=>x.hidden=true);}}
   const lc=e.target.closest("[data-lotcolor]"); if(lc){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){const k=lc.dataset.lotcolor; if(k==="gris")delete nc.node.color; else nc.node.color=k; save(); renderEditor(); renderPreview(); toast(`Couleur du lot ${nc.node.code} : ${LOT_COLORS[k].n.toLowerCase()}`);}}});
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{

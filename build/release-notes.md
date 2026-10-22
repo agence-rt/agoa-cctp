@@ -1,1 +1,1 @@
-Déploiement n°59 — Colonne de gauche compacte (niveaux en icônes, commandes au survol, niveau 3 non chiffré), en-tête allégé, options/variantes dans Options, sauvegarde auto discrète
+Déploiement n°60 — Colonne centrale : textes d'aide retirés, couleur du lot en carré, quantité plus étroite, boutons d'action retirés

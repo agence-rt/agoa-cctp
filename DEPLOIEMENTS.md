@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°60** — v0.60.0 — 2026-10-22 — Colonne centrale : textes d'aide retirés, couleur du lot en carré, quantité plus étroite, boutons d'action retirés
 - **n°59** — v0.59.0 — 2026-10-22 — Colonne de gauche compacte (niveaux en icônes, commandes au survol, niveau 3 non chiffré), en-tête allégé, options/variantes dans Options, sauvegarde auto discrète
 - **n°58** — v0.58.0 — 2026-10-22 — Bibliothèque : quantité importée seulement si 1 ; duplication sans quantité ; clic droit : ajouter un sous-article
 - **n°57** — v0.57.0 — 2026-10-22 — Option Multi-fenêtre pour le volet de droite (affichage unique ou combiné BPU / CCTP / Bibliothèque)
