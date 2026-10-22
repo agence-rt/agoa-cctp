@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°63** — v0.63.0 — 2026-10-22 — Offres retenues : une offre incomplète reste sélectionnable (astérisque), hors mieux-disant automatique
 - **n°62** — v0.62.0 — 2026-10-22 — Synthèse : entreprises retenues par lot et montant global (écran et PDF)
 - **n°61** — v0.61.0 — 2026-10-22 — Recherche dans les articles, hachures plus discrètes, retrait de 2 lignes de pied, offres retenues par lot et montant global
 - **n°60** — v0.60.0 — 2026-10-22 — Colonne centrale : textes d'aide retirés, couleur du lot en carré, quantité plus étroite, boutons d'action retirés

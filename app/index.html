@@ -1059,7 +1059,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.62.0", deploiement: 62};
+const APP = {version: "0.63.0", deploiement: 63};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3792,7 +3792,7 @@ function pickSummary(M){
   const pk=(M.A&&M.A.pick)||{}, rows=[]; let ht=0,ttc=0,est=0,estT=0,cht=0,cttc=0;
   if(M.lots.length<2) return {rows,ht,ttc,est,estT,cht,cttc};
   M.lots.forEach(x=>{const eid=pk[x.l.id], j=M.E.findIndex(e=>e.id===eid); if(j<0)return; const e=M.E[j], t=x.tot.e[e.id];
-    if(x.out[e.id]||!(t.ht>0)||x.rows.some(w=>w.leaf&&!w.ex&&w.miss[j]))return;
+    if(x.out[e.id]||!(t.ht>0))return;
     rows.push({lot:x.l,li:x.li,ent:e,ht:t.ht,ttc:t.ttc,est:x.tot.est,estT:x.tot.estT});ht+=t.ht;ttc+=t.ttc;est+=x.tot.est;estT+=x.tot.estT;
     if(x.l.charge==="Commune"){cht+=t.ht;cttc+=t.ttc;}});
   return {rows,ht,ttc,est,estT,cht,cttc};
@@ -3897,14 +3897,15 @@ function renderAnalyse(){
   if(M.lots.length>1){
     A.pick=A.pick||{};
     const nEv=Ev.length, blank2=`<td class="n e1 mo"></td><td class="n mo"></td>`;
-    const lotInfo=M.lots.map(x=>{const ok=Ev.filter(e=>!x.out[e.id]&&x.tot.e[e.id].ht>0&&!x.rows.some(w=>w.leaf&&!w.ex&&w.miss[E.indexOf(e)]));
-      let best=null;ok.forEach(e=>{if(best==null||x.tot.e[e.id].ht<x.tot.e[best].ht)best=e.id;});return {x,best,ok:new Set(ok.map(e=>e.id))};});
+    const incomp=(x,e)=>x.rows.some(w=>w.leaf&&!w.ex&&w.miss[E.indexOf(e)]);
+    const lotInfo=M.lots.map(x=>{const ok=Ev.filter(e=>!x.out[e.id]&&x.tot.e[e.id].ht>0), full=ok.filter(e=>!incomp(x,e));
+      let best=null;full.forEach(e=>{if(best==null||x.tot.e[e.id].ht<x.tot.e[best].ht)best=e.id;});return {x,best,ok:new Set(ok.map(e=>e.id))};});
     let selHt=0,selTtc=0,selEst=0,nSel=0;
     const lr=lotInfo.map(({x,best,ok})=>{const pk=A.pick[x.l.id], valid=pk&&ok.has(pk);if(valid){selHt+=x.tot.e[pk].ht;selTtc+=x.tot.e[pk].ttc;selEst+=x.tot.est;nSel++;}
       return `<tr class="pickr"><td class="c1">Lot ${pad(x.li+1)}</td><td class="c2">${esc(x.l.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(x.tot.est)}</td>${Ev.map(e=>{const v=x.tot.e[e.id].ht,can=ok.has(e.id);
-        return `<td class="n e1"></td><td class="n">${x.out[e.id]?"":can?`<button type="button" class="pk${pk===e.id?" on":""}${best===e.id?" best":""}" data-apick="${esc(x.l.id)}|${esc(e.id)}" aria-pressed="${pk===e.id}" title="${best===e.id?"Mieux-disant du lot : ":""}retenir ${esc(e.nom)} pour ce lot">${eur2(v)}</button>`:`<span class="hint" title="Offre incomplète pour ce lot">${v>0?eur2(v):"–"}</span>`}</td>`;}).join("")}</tr>`;}).join("");
+        return `<td class="n e1"></td><td class="n">${x.out[e.id]?"":can?`<button type="button" class="pk${pk===e.id?" on":""}${best===e.id?" best":""}" data-apick="${esc(x.l.id)}|${esc(e.id)}" aria-pressed="${pk===e.id}" title="${best===e.id?"Mieux-disant du lot : ":""}retenir ${esc(e.nom)} pour ce lot${incomp(x,e)?" (offre incomplète : prix manquants)":""}">${eur2(v)}${incomp(x,e)?" *":""}</button>`:`<span class="hint" title="Aucun chiffrage pour ce lot">–</span>`}</td>`;}).join("")}</tr>`;}).join("");
     const totTd=`<td colspan="${2*nEv}" class="pk-tot">${nSel?`<b>${eur2(selHt)} HT</b> · TVA ${eur2(selTtc-selHt)} · <b>${eur2(selTtc)} TTC</b>${selEst?` · estimation des lots retenus ${eur2(selEst)}${ec(selHt,selEst)}`:""}`:`<span class="hint">Aucun lot retenu</span>`}</td>`;
-    pickRows=`<tr class="pickh"><td class="c1"></td><td class="c2" colspan="3"><b>Offres retenues par lot</b> <button type="button" class="btn sm" data-apickauto="1" title="Retenir automatiquement le mieux-disant de chaque lot">Mieux-disants</button> <button type="button" class="btn sm" data-apickclr="1">Effacer</button></td><td class="n e1 mo"></td><td class="n mo">Estimation</td><td colspan="${2*nEv}"></td></tr>`+lr
+    pickRows=`<tr class="pickh"><td class="c1"></td><td class="c2" colspan="3"><b>Offres retenues par lot</b> <button type="button" class="btn sm" data-apickauto="1" title="Retenir automatiquement le mieux-disant de chaque lot">Mieux-disants</button> <button type="button" class="btn sm" data-apickclr="1">Effacer</button> <span class="hint">* offre incomplète</span></td><td class="n e1 mo"></td><td class="n mo">Estimation</td><td colspan="${2*nEv}"></td></tr>`+lr
       +`<tr class="pickt"><td class="c1"></td><td class="c2">Montant global retenu</td><td></td><td></td>${blank2}${totTd}</tr>`;
   }
   const foot=`<tfoot>${ovFrameRows(frow("Total HT",T,"")+(V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):"")+tvaRows+frow("Total TTC",T,"T","tot"),BLUEC,"bot")}${ovFoot(M,Ev,E)}${pickRows}</tfoot>`;

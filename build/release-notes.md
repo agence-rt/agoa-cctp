@@ -1,1 +1,1 @@
-Déploiement n°62 — Synthèse : entreprises retenues par lot et montant global (écran et PDF)
+Déploiement n°63 — Offres retenues : une offre incomplète reste sélectionnable (astérisque), hors mieux-disant automatique
