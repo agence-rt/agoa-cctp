@@ -1,1 +1,1 @@
-Déploiement n°63 — Offres retenues : une offre incomplète reste sélectionnable (astérisque), hors mieux-disant automatique
+Déploiement n°64 — Synthèse : entreprises consultées par lot avec adresses, mieux-disant par lot puis total des meilleures offres, calcul par copropriétaire en option d'affichage (écran et PDF)
