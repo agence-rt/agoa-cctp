@@ -1,1 +1,1 @@
-Déploiement n°70 — Duplication : la quantité est supprimée sauf si elle vaut 1
+Déploiement n°71 — Noms de fichiers BPU et CCTP : CODE TRAVAUX + BPU / CCTP

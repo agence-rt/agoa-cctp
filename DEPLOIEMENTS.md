@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°71** — v0.71.0 — 2026-10-23 — Noms de fichiers BPU et CCTP : CODE TRAVAUX + BPU / CCTP
 - **n°70** — v0.70.0 — 2026-10-23 — Duplication : la quantité est supprimée sauf si elle vaut 1
 - **n°69** — v0.69.0 — 2026-10-23 — Arborescence : clic droit sur lot et chapitre (dupliquer, nouveau, ajouter), flèches et croix ne se chevauchent plus
 - **n°68** — v0.68.0 — 2026-10-23 — Éditeur d'article : case chiffré et surlignage sous le numéro, libellés Description/Images/Chiffrage retirés, localisation en ligne, erreur rouge de la quantité corrigée, métré compacté

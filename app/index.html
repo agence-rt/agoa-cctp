@@ -1067,7 +1067,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.70.0", deploiement: 70};
+const APP = {version: "0.71.0", deploiement: 71};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1318,6 +1318,7 @@ document.addEventListener("click",async e=>{
 const AGOA_FMT="cctp", AGOA_VER=1, AGOA_FMT_OLD=["cctp","dce","agoacctp"];
 function markDirty(){const b=document.getElementById("saveBtn");if(b&&state)b.classList.toggle("dirty",!state.fileSaved||state.updated>state.fileSaved);}
 function fileBase(a){const o=a.op||{};return ([o.ref,o.immeuble].filter(Boolean).join("-")||"Nouvelle affaire").replace(/[\\/:*?"<>|]+/g,"-").replace(/\s+/g," ").trim();}
+const codeTrav=a=>(String((a.op||{}).ref||"").trim()||fileBase(a)).replace(/[\\/:*?"<>|]+/g,"-");
 function serializeAffaire(a){const {view,filePath,fileSaved,fileName,...aff}=a;return JSON.stringify({format:AGOA_FMT,version:AGOA_VER,application:"AGOA-CCTP",enregistre_le:new Date().toISOString(),affaire:aff},null,1);}
 async function saveAffaireFile(quiet){
   if(!state) return;
@@ -2666,7 +2667,7 @@ async function exportCctp(){
     const info=await askDocInfo("le CCTP"); if(!info) return;
     toast("Préparation du CCTP…");
     const buf=buildCctpPdf(J,info);
-    await saveFile(buf,safeName(fileBase(state)+" - CCTP"+(info?" - V"+info.ver:""))+".pdf","CCTP");
+    await saveFile(buf,safeName(codeTrav(state)+" - CCTP"+(info?" - V"+info.ver:""))+".pdf","CCTP");
   }catch(err){console.error(err);toast("L'export du CCTP a échoué.");}
 }
 function buildCctpPdf(J,info){
@@ -4216,7 +4217,7 @@ function lotItems(lot){
 async function exportBpu(entId,info,opts){
   const en=entId?ents().find(e=>e.id===entId):null;
   if(info===undefined){if(!await confirmExport(opts&&opts.desc?"le BPU avec descriptif":"le BPU")) return; info=await askDocInfo(opts&&opts.desc?"le BPU avec descriptif":"le BPU"); if(!info) return;}
-  const name=safeName(fileBase(state)+" - BPU"+(opts&&opts.desc?" avec descriptif":"")+(en?" - "+en.nom:"")+(info?" - V"+info.ver:""))+".xlsx";
+  const name=safeName(codeTrav(state)+" - BPU"+(opts&&opts.desc?" avec descriptif":"")+(en?" - "+en.nom:"")+(info?" - V"+info.ver:""))+".xlsx";
   let E=null; try{E=await loadExcelJS();}catch(e){}
   if(E){ try{ const buf=await buildBpuStyled(E,en,info,opts); await saveXlsx(buf,name); return; }catch(err){ console.error(err); toast("La mise en page détaillée a échoué ("+((err&&err.message)||err)+") : export simplifié.",null,9000); } }
   else toast("Mise en page détaillée indisponible (module non chargé) : export simplifié.");
