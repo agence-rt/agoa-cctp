@@ -1,1 +1,1 @@
-Déploiement n°67 — PDF : téléphone retiré des pieds de page, mieux-disants surlignés en vert, lots non pourvus en gris léger avec espace entre colonnes (synthèse et tableau global), colonnes d'entreprises condensées jusqu'à 6 puis format paysage
+Déploiement n°68 — Éditeur d'article : case chiffré et surlignage sous le numéro, libellés Description/Images/Chiffrage retirés, localisation en ligne, erreur rouge de la quantité corrigée, métré compacté
