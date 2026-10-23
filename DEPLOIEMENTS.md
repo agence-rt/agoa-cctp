@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°69** — v0.69.0 — 2026-10-23 — Arborescence : clic droit sur lot et chapitre (dupliquer, nouveau, ajouter), flèches et croix ne se chevauchent plus
 - **n°68** — v0.68.0 — 2026-10-23 — Éditeur d'article : case chiffré et surlignage sous le numéro, libellés Description/Images/Chiffrage retirés, localisation en ligne, erreur rouge de la quantité corrigée, métré compacté
 - **n°67** — v0.67.0 — 2026-10-22 — PDF : téléphone retiré des pieds de page, mieux-disants surlignés en vert, lots non pourvus en gris léger avec espace entre colonnes (synthèse et tableau global), colonnes d'entreprises condensées jusqu'à 6 puis format paysage
 - **n°66** — v0.66.0 — 2026-10-22 — Synthèse PDF : logo plus grand en haut à gauche, colonnes des lots non pourvus hachurées, bloc mieux-disant par lot remplacé par le seul total des meilleures offres

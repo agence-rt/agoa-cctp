@@ -127,6 +127,7 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .tree summary.lot,.tree summary.chs{position:relative}
 .tree summary .lot-mv,.tree summary .lot-x,.tree summary .node-x,.tree .art .art-x,.tree .art .lot-mv{position:absolute;top:50%;transform:translateY(-50%);margin:0;display:none;background:var(--surface);border-radius:4px;z-index:2;box-shadow:0 0 0 1px var(--line)}
 .tree summary .lot-mv,.tree .art .lot-mv{right:24px}.tree summary .lot-x,.tree summary .node-x{right:3px;width:20px;height:18px}.tree .art .art-x{right:3px;opacity:.8}
+.tree summary .lot-mv .x,.tree .art .lot-mv .x{width:20px!important;min-width:0;padding:0}.tree .lot-x,.tree .node-x,.tree .art-x{width:20px!important;min-width:0;padding:0}.tree summary .lot-mv,.tree .art .lot-mv{right:26px!important}
 .tree .art:hover .lot-mv,.tree summary:hover .lot-mv,.tree summary:hover .lot-x,.tree summary:hover .node-x,.tree .art:hover .art-x,.tree .art.cur:hover .art-x{display:inline-flex}
 .tree summary .lot-mv .x{width:20px;height:18px}
 .tree details.chd>summary.chs{padding-top:2px;padding-bottom:2px;line-height:1.25}
@@ -1066,7 +1067,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.68.0", deploiement: 68};
+const APP = {version: "0.69.0", deploiement: 69};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1478,16 +1479,26 @@ function artSub(id){const f=locate(id);if(!f)return;const ar=f.art,n=blank(ar.u)
   if(first&&!isTitle(ar)){Object.assign(n,{pu:ar.pu,tva:ar.tva,qman:ar.qman,lignes:ar.lignes,titre:"Nouveau sous-article"});ar.lignes=[];ar.qman=null;}
   ar.sub.push(n);openIds.add(ar.id);state.sel=n.id;refresh();toast(first&&!isTitle(ar)?`Sous-article ${n.code} créé, le chiffrage de ${ar.code} y a été reporté`:`Sous-article ${n.code} créé`);const t=$("#fTitre");if(t)t.select();}
 function artNew(id){const f=locate(id);if(!f)return;const n=blank(f.art.u,f.top);f.list.splice(f.i+1,0,n);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
+const stripNid=n=>{delete n.nid;(n.children||[]).forEach(stripNid);(n.art||[]).forEach(reid);return n;};
+function nodeDup(k){const nc=nodeCtx(k);if(!nc)return;const c=noQty(stripNid(JSON.parse(JSON.stringify(nc.node))));(c.art||[]).forEach(noQty);c.titre+=" (copie)";
+  if(nc.level==="lot"){state.data.splice(state.data.indexOf(nc.lot)+1,0,c);}else{nc.lot.children.splice(nc.lot.children.indexOf(nc.ch)+1,0,c);}
+  ensureNodeIds();renumberAll();state.sel=c.nid;openIds.add(c.nid);save();refresh();toast("Copie créée : "+(c.code||""));}
+function nodeNew(k){const nc=nodeCtx(k);if(!nc)return;if(nc.level==="lot"){addLot();toast("Lot ajouté");}else addChapter(nc.lot,nc.ch);}
+function nodeAddIn(k){const nc=nodeCtx(k);if(!nc)return;
+  if(nc.level==="lot"){addChapter(nc.lot,null);openIds.add(nc.lot.nid);return;}
+  const n=blank("",true);nc.ch.art.push(n);ensureNodeIds();openIds.add(nc.ch.nid);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
 document.addEventListener("contextmenu",e=>{
-  const a=e.target.closest("#tree .art[data-id]"); if(!a){artMenuClose();return;}
+  const a=e.target.closest("#tree .art[data-id]"), nd=!a&&e.target.closest("#tree summary.lot,#tree summary.chs");
+  if(!a&&!nd){artMenuClose();return;}
   e.preventDefault(); artMenuClose();
   const m=document.createElement("div"); m.id="artMenu"; m.setAttribute("role","menu");
-  m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">Nouvel article</button><button role="menuitem" data-amact="sub">Ajouter un sous-article</button>`;
-  m.dataset.id=a.dataset.id; document.body.appendChild(m);
+  if(a){m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">Nouvel article</button><button role="menuitem" data-amact="sub">Ajouter un sous-article</button>`;m.dataset.id=a.dataset.id;}
+  else{const isLot=nd.matches(".lot"), k=isLot?nd.querySelector("[data-lotnid]").dataset.lotnid:nd.dataset.chnid;
+    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un article"}</button>`;m.dataset.id=k;} document.body.appendChild(m);
   const w=m.offsetWidth,h=m.offsetHeight; m.style.left=Math.min(e.clientX,innerWidth-w-6)+"px"; m.style.top=Math.min(e.clientY,innerHeight-h-6)+"px";
 });
 document.addEventListener("click",e=>{const b=e.target.closest("#artMenu button");
-  if(b){const m=b.parentNode,id=m.dataset.id,k=b.dataset.amact;m.remove();k==="dup"?artDup(id):k==="sub"?artSub(id):artNew(id);return;}
+  if(b){const m=b.parentNode,id=m.dataset.id,k=b.dataset.amact;m.remove();({dup:artDup,sub:artSub,new:artNew,ndup:nodeDup,nnew:nodeNew,nin:nodeAddIn})[k](id);return;}
   artMenuClose();},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")artMenuClose();});
 addEventListener("blur",artMenuClose);

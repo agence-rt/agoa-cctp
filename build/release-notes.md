@@ -1,1 +1,1 @@
-Déploiement n°68 — Éditeur d'article : case chiffré et surlignage sous le numéro, libellés Description/Images/Chiffrage retirés, localisation en ligne, erreur rouge de la quantité corrigée, métré compacté
+Déploiement n°69 — Arborescence : clic droit sur lot et chapitre (dupliquer, nouveau, ajouter), flèches et croix ne se chevauchent plus
