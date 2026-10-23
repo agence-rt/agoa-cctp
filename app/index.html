@@ -1067,7 +1067,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.69.0", deploiement: 69};
+const APP = {version: "0.70.0", deploiement: 70};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1581,7 +1581,7 @@ async function delLot(i){
 }
 const isInside=(ar,id)=>ar.sub.some(x=>x.id===id||isInside(x,id));
 const reid=x=>{x.id=nid();(x.imgs||[]).forEach(i=>i.id=nid());x.sub.forEach(reid);return x;};
-const noQty=x=>{x.qman=null;x.lignes=[];(x.sub||[]).forEach(noQty);return x;};
+const noQty=x=>{if(Number(x.qman)!==1||(x.lignes||[]).length)x.qman=null;x.lignes=[];(x.sub||[]).forEach(noQty);return x;};
 /* Images d'article : largeur en cm, 7 cm maximum */
 const IMG_MAX=7, IMG_MIN=2, PX_CM=96/2.54;
 const clampW=w=>IMG_MAX;
