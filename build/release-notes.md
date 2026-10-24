@@ -1,1 +1,1 @@
-Déploiement n°71 — Noms de fichiers BPU et CCTP : CODE TRAVAUX + BPU / CCTP
+Déploiement n°72 — Bibliothèque : fichier unique BIBLIOTHEQUE.cctp (ouvrable et modifiable comme une affaire), verrou d'ouverture avec message d'alerte, fenêtre Bibliothèque en consultation

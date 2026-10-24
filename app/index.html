@@ -236,6 +236,7 @@ tr.ovtot td{font-weight:700}
 .dcard-h label{margin:0;font-weight:650;font-size:13.5px}
 .dcard .rte-bar{border:0;border-bottom:1px solid var(--line);border-radius:0}
 .dcard .rte{border:0;border-radius:0}
+#libDetail.ro input:disabled,#libDetail.ro select:disabled{background:var(--paper);opacity:.8}#libDetail.ro input[readonly],#libDetail.ro textarea[readonly]{background:var(--paper)}
 .hl-bar{display:flex;align-items:center;gap:6px;margin:0 0 0 28px}
 .art-opts{display:flex;align-items:center;flex-wrap:wrap;margin:-6px 0 12px}
 .field.inl{display:flex;align-items:center;gap:12px}.field.inl>label{margin:0;flex:none}.field.inl>input{flex:1}
@@ -876,7 +877,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
   <div class="opt-h"><div><h3 id="libTitle">Bibliothèque d'articles</h3><span id="libTarget" class="hint"></span></div><span style="display:flex;gap:6px"><button class="btn" id="detachLib" title="Ouvrir la bibliothèque dans une fenêtre séparée (à placer sur un second écran)">Fenêtre séparée ⧉</button><button class="btn" id="closeLib">Fermer</button></span></div>
   <div class="lib-body">
     <div class="lib-left">
-      <div class="rg-row"><input type="search" id="libQ" placeholder="Rechercher (flèches et Entrée pour insérer)" aria-label="Rechercher dans la bibliothèque" autocomplete="off"><button class="btn" id="libNew">Nouveau titre</button></div>
+      <div class="rg-row"><input type="search" id="libQ" placeholder="Rechercher (flèches et Entrée pour insérer)" aria-label="Rechercher dans la bibliothèque" autocomplete="off"><button class="btn" id="libNew">Nouveau titre</button><button class="btn" id="libOpenFile" hidden>Ouvrir la bibliothèque</button></div>
       <div class="lv-row" id="libLv" style="margin:8px 0 2px"></div>
       <div id="libList" class="lib-list" role="listbox" aria-label="Articles de la bibliothèque"></div>
       <p class="lib-stat" id="libStat"></p>
@@ -1067,7 +1068,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.71.0", deploiement: 71};
+const APP = {version: "0.72.0", deploiement: 72};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1086,7 +1087,7 @@ function nativeLoad(){
   const paths=[...(d.recent||[])];
   old.forEach(x=>{if(x&&x.filePath&&!paths.includes(x.filePath))paths.push(x.filePath);});
   (paths.length?AG.readFiles(paths):[]).forEach(f=>{if(!f)return;const a=parseCctp(f.text);
-    if(a){a.filePath=f.path;a.fileName=baseName(f.path);a.fileSaved=Date.now()+1;out.affaires.push(a);}});
+    if(a&&!a.lib){a.filePath=f.path;a.fileName=baseName(f.path);a.fileSaved=Date.now()+1;out.affaires.push(a);}});
   old.forEach(x=>{if(x&&Array.isArray(x.data)&&!x.filePath&&!out.affaires.some(y=>y.id===x.id)){x.fileSaved=0;out.affaires.push(x);}});
   return out;
 }
@@ -1359,6 +1360,12 @@ async function importAffaireText(text,fname,fpath){
   if(!a){toast("Ce fichier n'est pas un fichier d'affaire .cctp lisible.");return;}
   let p; try{p=JSON.parse(text);}catch(e){p={};}
   if(p.version>AGOA_VER){toast("Ce fichier a été créé par une version plus récente de l'application.");return;}
+  if(a.lib){
+    if(store.affaires.some(x=>x.lib)){await alertLib("La bibliothèque est <b>déjà ouverte</b> dans l'application (elle figure dans la liste des affaires). Elle ne peut être ouverte qu'une seule fois à la fois.");return;}
+    if(AG){const L=AG.libLock("acquire",fpath||(AG.libState()||{}).path);
+      if(!L.ok){await alertLib(L.by?`La bibliothèque est <b>déjà ouverte</b> par <b>${esc(L.by)}</b> sur ${esc(L.host)}. Une seule personne à la fois peut la modifier : réessayez quand elle l'aura fermée.`:`Ouverture de la bibliothèque impossible : ${esc(L.err||"verrou indisponible")}`);return;}}
+    a.libVer=3;
+  }
   const ex=store.affaires.find(x=>x.id===a.id);
   if(ex){
     // même fichier : on relit simplement le fichier (c'est lui qui fait foi), sans question
@@ -2009,7 +2016,7 @@ function renderLibPanel(force,sec,q0){
       <p class="hint" id="plTarget">${libTargetText()}</p>
       <p class="hint">Glissez un élément sur l'arborescence à gauche, ou double-cliquez pour l'insérer au point d'insertion.</p></div>
     <div id="plList" class="pl-list"></div>
-    <div class="pl-foot"><button class="btn sm" data-act="libManage">Gérer la bibliothèque</button><button class="btn sm" data-act="libNewT">Nouveau titre</button><p class="lib-stat${libStat.ok?"":" bad"}" id="plStat">${esc(libStat.txt)}</p></div>`;
+    <div class="pl-foot"><button class="btn sm" data-act="libManage">Gérer la bibliothèque</button>${AG?`<button class="btn sm" data-act="libOpen">Ouvrir la bibliothèque</button>`:`<button class="btn sm" data-act="libNewT">Nouveau titre</button>`}<p class="lib-stat${libStat.ok?"":" bad"}" id="plStat">${esc(libStat.txt)}</p></div>`;
   renderLibPanelList();
 }
 function renderLibPanelList(){
@@ -2406,6 +2413,8 @@ $("#editor").addEventListener("click",e=>{
     toast(isTitle(f0.art)?`${f0.art.code} est maintenant un titre, non chiffré`:`${f0.art.code} est maintenant un ouvrage chiffré`);}return;}
   const b=e.target.closest("[data-act]"); if(!b) return; const act=b.dataset.act;
   if(act==="openLib"){openLib();return;}
+  if(act==="toLib"&&libRO()){libNoEdit();return;}
+  if(act==="libOpen"){openLibFile();return;}
   if(act==="toLib"){const ci=curItem();if(!ci)return;
     if(!ci.node){const t=libTitreFor(ci.f.lot.titre);let s=t.children.find(x=>norm(x.titre)===norm(ci.f.ch.titre));if(!s){s={id:"l"+nid(),titre:ci.f.ch.titre,texte:ci.f.ch.texte||"",art:[]};t.children.push(s);}
       s.art.push(toLibArt(ci.it));save();toast(`Article enregistré dans la bibliothèque : ${t.titre} › ${s.titre}`);}
@@ -2464,7 +2473,7 @@ $("#preview").addEventListener("click",e=>{
   const tg=e.target.closest("[data-pltg]"); if(tg){const k=tg.dataset.pltg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibPanelList();return;}
   const pi=e.target.closest("[data-plins]"); if(pi){libInsert(pi.dataset.plins);return;}
   if(e.target.closest('[data-act="libManage"]')){openLib();return;}
-  if(e.target.closest('[data-act="libNewT"]')){const n={id:"l"+nid(),titre:"Nouveau titre",texte:"",children:[]};lib().push(n);save();openLib();libSel=n.id;renderLib();$("#lbT")&&$("#lbT").select();return;}
+  if(e.target.closest('[data-act="libNewT"]')){if(libRO()){libNoEdit();return;}const n={id:"l"+nid(),titre:"Nouveau titre",texte:"",children:[]};lib().push(n);save();openLib();libSel=n.id;renderLib();$("#lbT")&&$("#lbT").select();return;}
   const pe=e.target.closest("[data-pled]"); if(pe){openLib();libSel=pe.dataset.pled;renderLib();return;}
   const pd=e.target.closest("[data-pldel]"); if(pd){libDelete(pd.dataset.pldel);return;}
   if(e.target.closest("[data-plib]")) return;
@@ -3427,39 +3436,55 @@ function redrawLib(){
   if($("#libDlg")&&$("#libDlg").open&&!((ae=>ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&$("#libDetail").contains(ae))((LIBWIN&&!LIBWIN.closed?LIBWIN.document:document).activeElement))) renderLib();
   if(state&&prevModes().includes("lib")&&$("#plQ")) renderLibPanelList();
 }
+/* La bibliothèque est le fichier BIBLIOTHEQUE.cctp (un .cctp ordinaire : titres = lots, sous-titres = chapitres).
+   Elle se modifie en l'ouvrant comme une affaire ; un verrou empêche deux ouvertures simultanées. */
+const libEditing=()=>!!(store&&store.affaires.some(a=>a.lib));
+const libRO=()=>!!AG;
+const libNoEdit=()=>{toast("La bibliothèque se modifie en ouvrant le fichier BIBLIOTHEQUE.cctp : bouton « Ouvrir la bibliothèque ».");};
+const toAffArt=a=>{const {q,...r}=a;return {...r,code:"",loc:a.loc||"",lignes:a.lignes||[],tva:a.tva==null?null:a.tva,qman:q==null?null:q,u:a.u||"",pu:a.pu||0,sub:(a.sub||[]).map(toAffArt)};};
+const fromAffArt=a=>{const {code,lignes,loc,qman,tva,sub,...r}=a;const q=(lignes&&lignes.length)?qty(a):qman;return {...r,q:Number.isFinite(q)?q:null,sub:(sub||[]).map(fromAffArt)};};
+const libToData=L=>L.map(t=>{const {id,...r}=t;return {...r,nid:id,charge:"Commune",children:(t.children||[]).map(c=>{const {id:cid,...cr}=c;return {...cr,nid:cid,art:(c.art||[]).map(toAffArt)};})};});
+const affToLib=D=>D.map(l=>{const {nid,charge,code,children,...r}=l;return {...r,id:nid,children:(children||[]).map(c=>{const {nid:cn,code:cc,art,children:_x,...cr}=c;return {...cr,id:cn,art:(art||[]).map(fromAffArt)};})};});
+function libFileText(L){
+  const a={id:"aff-bibliotheque",lib:true,libVer:3,updated:Date.now(),tvaDef:"t10",view:"redaction",retenue:"B",trash:[],prev:"bpu",
+    op:{...EMPTY_OP(),ref:"BIBLIOTHEQUE",immeuble:"Bibliothèque d'articles",objet:"Bibliothèque partagée AGOA CCTP"},tvas:DEF_TVAS(),ents:[],data:libToData(L)};
+  return serializeAffaire(a);
+}
+const alertLib=m=>ask(m,"Compris",false);
+function openLibFile(){
+  if(!AG){toast("L'ouverture du fichier de la bibliothèque est réservée à l'application Windows.");return;}
+  const st=AG.libState(); if(!st||!st.has){toast("Bibliothèque introuvable : voir Aide, Bibliothèque partagée.");return;}
+  const f=AG.readFiles([st.path])[0]; if(!f){toast("Lecture de la bibliothèque impossible.");return;}
+  importAffaireText(f.text,st.file,st.path);
+}
 async function libSync(force){
   if(!AG||libBusy||!store) return; libBusy=true;
   try{
-    const st=AG.libState();
+    let st=AG.libState();
     if(!st||!st.dir){libStat={ok:false,txt:"Bibliothèque locale : dossier Dropbox « 09 - BDD / IA / AGOA-CCTP » introuvable (Aide, Bibliothèque partagée)"};return;}
-    if(!force&&libBase!==null&&st.mtime===libMtime&&libStr()===JSON.stringify(libBase)) {libStat={ok:true,txt:libStat.txt||"Bibliothèque partagée à jour"};return;}
-    for(let n=0;n<4;n++){
-      const r=await AG.libRead(); let remote=null;
-      if(r){try{const p=JSON.parse(r.text);if(p&&Array.isArray(p.lib))remote=p.lib;}catch(e){}}
-      const mine=lib(); let merged;
-      if(remote===null) merged=mine; else if(libBase===null) merged=remote; else merged=libMerge(libBase,mine,remote);
-      if(JSON.stringify(merged)!==JSON.stringify(mine)){store.lib=merged;}
-      let mt=r?r.mtime:0;
-      if(remote===null||JSON.stringify(merged)!==JSON.stringify(remote)){
-        const w=await AG.libWrite(JSON.stringify({format:"agoa-cctp-bibliotheque",version:1,libVer:store.libVer,enregistre_le:new Date().toISOString(),lib:merged},null,1),mt);
-        if(w&&w.conflict){libBase=libBase===null?null:libBase;continue;}
-        mt=w.mtime;
-      }
-      libMtime=mt; libBase=JSON.parse(JSON.stringify(store.lib));
-      libStat={ok:true,txt:`Bibliothèque partagée : ${st.file} · synchronisée à ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}`};
-      try{LS.setItem(KEY,"")}catch(e){}
-      break;
+    if(!st.has){ // reprise de l'ancien fichier JSON (ou de la copie locale) en BIBLIOTHEQUE.cctp
+      let src=null; try{const o=await AG.libReadLegacy();if(o){const p=JSON.parse(o.text);if(p&&Array.isArray(p.lib))src=p.lib;}}catch(e){}
+      if(!src)src=lib();
+      await AG.libCreate(libFileText(src)); st=AG.libState();
     }
-  }catch(e){libStat={ok:false,txt:"Synchronisation de la bibliothèque impossible : "+(e&&e.message||e)};}
+    if(libEditing()){libStat={ok:true,txt:"Bibliothèque ouverte en modification dans cette application"};return;}
+    if(!force&&st.mtime===libMtime&&libStat.ok&&store.lib) return;
+    const r=await AG.libRead(); const a=r&&parseCctp(r.text);
+    if(!a||!a.lib) throw new Error("fichier BIBLIOTHEQUE.cctp illisible");
+    store.lib=affToLib(a.data); store.libVer=3; libMtime=r.mtime;
+    libStat={ok:true,txt:`Bibliothèque : ${st.file} · lue à ${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}. Pour la modifier, « Ouvrir la bibliothèque ».`};
+    try{LS.setItem(KEY,"")}catch(e){}
+  }catch(e){libStat={ok:false,txt:"Lecture de la bibliothèque impossible : "+(e&&e.message||e)};}
   finally{libBusy=false;refreshLibUI();redrawLib();}
 }
-function libSchedule(){
-  if(!AG) return; clearTimeout(libTimer);
-  libTimer=setTimeout(()=>{if(libBase===null||libStr()!==JSON.stringify(libBase))libSync();},1500);
+let libFsT=null;
+function libSchedule(){ // bibliothèque ouverte en modification : la liste consultable suit l'affaire
+  if(!(state&&state.lib)) return; clearTimeout(libFsT);
+  libFsT=setTimeout(()=>{if(state&&state.lib){try{store.lib=affToLib(state.data);redrawLib();}catch(e){console.error(e);}}},500);
 }
-async function libFlush(){ if(!AG) return; clearTimeout(libTimer); if(libBase===null||libStr()!==JSON.stringify(libBase)){let k=0;while(libBusy&&k++<30)await new Promise(r=>setTimeout(r,100));await libSync();} }
+async function libFlush(){ }
 if(AG){
-  window.__libChoose=async()=>{const d=await AG.libChoose();if(d){libBase=null;await libSync(true);toast(libStat.txt);}};
+  window.__libChoose=async()=>{const d=await AG.libChoose();if(d){libMtime=0;await libSync(true);toast(libStat.txt);}};
   setTimeout(()=>libSync(true),600);
   setInterval(()=>{if(!document.hidden)libSync();},30000);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden)libSync();});
@@ -3572,6 +3597,8 @@ function renderLibDetail(){
    <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-libdel="${it.id}">Supprimer</button>
      ${f.kind==="titre"?`<button class="btn" data-libadd="sous-titre">Ajouter un sous-titre</button>`:f.kind==="sous-titre"?`<button class="btn" data-libadd="article">Ajouter un article</button>`:`<button class="btn" data-libadd="sub">Ajouter un sous-article</button>`}</span>
      ${state?`<button class="btn primary" data-libins="${it.id}">${insLabel(f)}</button>`:""}</div>`;
+  el.classList.toggle("ro",libRO());
+  if(libRO()){el.querySelectorAll("input,select,textarea").forEach(x=>{if(x.type==="text"||x.tagName==="TEXTAREA"||x.type==="number")x.readOnly=true;else x.disabled=true;});el.querySelectorAll("[data-libdel],[data-libadd]").forEach(x=>x.remove());}
 }
 let libDragId=null;
 const libMk={
@@ -3654,6 +3681,7 @@ function libDetach(){
 }
 window.addEventListener("beforeunload",()=>{if(LIBWIN&&!LIBWIN.closed){try{LIBWIN.close();}catch(e){}}});
 $("#libBtn").onclick=openLib;
+if(AG){$("#libNew").hidden=true;$("#libOpenFile").hidden=false;}
 $("#detachLib").onclick=libDetach;
 $("#closeLib").onclick=()=>{if(LIBWIN&&!LIBWIN.closed){const w=LIBWIN;libAttach();w.close();}$("#libDlg").close();};
 $("#libDlg").addEventListener("close",()=>{if(state&&prevModes().includes("lib"))renderPreview();});
@@ -3664,6 +3692,8 @@ $("#libQ").addEventListener("keydown",e=>{
   if(e.key==="Enter"&&libSel){e.preventDefault();libInsert(libSel);}
 });
 $("#libDlg").addEventListener("click",async e=>{
+  if(e.target.closest("#libOpenFile")){openLibFile();return;}
+  if(libRO()&&e.target.closest("[data-libadd],[data-libdel],#libNew")){libNoEdit();return;}
   const tg=e.target.closest("[data-libtg]"); if(tg){const k=tg.dataset.libtg;libClosed.has(k)?libClosed.delete(k):libClosed.add(k);renderLibList(true);return;}
   const ins=e.target.closest("[data-libins]"); if(ins){libInsert(ins.dataset.libins);return;}
   const add=e.target.closest("[data-libadd]");
@@ -3678,6 +3708,7 @@ $("#libDlg").addEventListener("click",async e=>{
 });
 $("#libList").addEventListener("dblclick",e=>{const r=e.target.closest("[data-lib]");if(r&&!e.target.closest("button"))libInsert(r.dataset.lib);});
 $("#libDetail").addEventListener("input",e=>{
+  if(libRO()) return;
   const f=libFind(libSel); if(!f) return; const t=e.target;
   if(t.id==="lbChif"){f.it.type=t.checked?undefined:"titre";save();renderLibList();renderLibDetail();return;}
   const k=t.dataset.lk; if(!k) return; f.it[k]=k==="pu"?parseMoney(t.value):k==="q"?(t.value===""?null:parseFloat(t.value)):t.value; save(); if(k!=="texte") renderLibList();
@@ -4896,9 +4927,10 @@ $("#homeList").addEventListener("click",async e=>{
     renderHome();toast("Affaire dupliquée");return;}
   const del=e.target.closest("[data-delaff]"); if(del){const s=store.affaires.find(x=>x.id===del.dataset.delaff);
     const nat=AG&&s.filePath;
-    if(await ask(nat?`Retirer l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} de la liste ? Son fichier .cctp n'est pas supprimé : vous pourrez le rouvrir.`
-        :`Supprimer définitivement l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} et tout son contenu ? Cette action ne peut pas être annulée.`,nat?"Retirer de la liste":"Supprimer l'affaire",!nat)){
-      store.affaires=store.affaires.filter(x=>x!==s);try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast(nat?"Affaire retirée de la liste":"Affaire supprimée");}
+    if(await ask(s.lib?`Fermer la bibliothèque ? Elle sera de nouveau ouvrable par les autres. Vos modifications sont déjà enregistrées dans le fichier.`:nat?`Retirer l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} de la liste ? Son fichier .cctp n'est pas supprimé : vous pourrez le rouvrir.`
+        :`Supprimer définitivement l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} et tout son contenu ? Cette action ne peut pas être annulée.`,s.lib?"Fermer la bibliothèque":nat?"Retirer de la liste":"Supprimer l'affaire",!nat&&!s.lib)){
+      if(s.lib&&AG&&s.filePath){AG.libLock("release",s.filePath);libMtime=0;}
+      store.affaires=store.affaires.filter(x=>x!==s);try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast(s.lib?"Bibliothèque fermée : elle est de nouveau disponible":nat?"Affaire retirée de la liste":"Affaire supprimée");if(s.lib)libSync(true);}
     return;}
   if(e.target.closest("[data-avanc]"))return; const r=e.target.closest("[data-open]"); if(r) openAffaire(r.dataset.open);
 });

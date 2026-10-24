@@ -592,22 +592,59 @@ function findLibDir() {
   return null;
 }
 const libFile = () => { const d = findLibDir(); return d ? path.join(d, LIB_FILE) : null; };
+const LIB_CCTP = "BIBLIOTHEQUE.cctp";
+const libCctp = () => { const d = findLibDir(); return d ? path.join(d, LIB_CCTP) : null; };
 ipcMain.on("lib-state", e => {
-  const d = findLibDir(); let mtime = 0;
-  if (d) { try { mtime = fs.statSync(path.join(d, LIB_FILE)).mtimeMs; } catch {} }
-  e.returnValue = d ? { dir: d, file: LIB_FILE, mtime } : null;
+  const d = findLibDir(); let mtime = 0, has = false, file = null;
+  if (d) { file = path.join(d, LIB_CCTP); try { mtime = fs.statSync(file).mtimeMs; has = true; } catch {} }
+  e.returnValue = d ? { dir: d, file: LIB_CCTP, path: file, mtime, has, hasJson: fs.existsSync(path.join(d, LIB_FILE)) } : null;
 });
-ipcMain.handle("lib-read", () => {
-  const f = libFile(); if (!f) return null;
+ipcMain.handle("lib-read", () => {   // la bibliothèque est désormais le fichier BIBLIOTHEQUE.cctp
+  const f = libCctp(); if (!f) return null;
   try { return { text: fs.readFileSync(f, "utf8"), mtime: fs.statSync(f).mtimeMs }; } catch { return null; }
 });
-ipcMain.handle("lib-write", (e, text, expectedMtime) => {
-  const f = libFile(); if (!f) throw new Error("Dossier de la bibliothèque introuvable");
-  let cur = 0; try { cur = fs.statSync(f).mtimeMs; } catch {}
-  if (cur && expectedMtime !== cur) return { conflict: true };   // un collègue vient de modifier le fichier
+ipcMain.handle("lib-read-legacy", () => {   // ancien fichier JSON, pour la reprise
+  const d = findLibDir(); if (!d) return null;
+  try { return { text: fs.readFileSync(path.join(d, LIB_FILE), "utf8") }; } catch { return null; }
+});
+ipcMain.handle("lib-create", (e, text) => {   // crée BIBLIOTHEQUE.cctp (reprise de l'ancien JSON) sans jamais écraser
+  const f = libCctp(); if (!f) throw new Error("Dossier de la bibliothèque introuvable");
+  if (fs.existsSync(f)) return { mtime: fs.statSync(f).mtimeMs, existed: true };
   writeAtomic(f, text, false);
+  try { const j = path.join(path.dirname(f), LIB_FILE); if (fs.existsSync(j)) fs.renameSync(j, j + ".ancien"); } catch {}
   return { mtime: fs.statSync(f).mtimeMs };
 });
+/* Verrou d'ouverture : un fichier .verrou à côté du .cctp, rafraîchi toutes les 30 s ; périmé après 3 min (plantage) */
+const os = require("os");
+const lockHeld = new Map();
+const lockMe = () => os.userInfo().username + "@" + os.hostname() + "#" + process.pid;
+const lockKey = p => path.resolve(p).toLowerCase();
+const pidAlive = pid => { try { process.kill(pid, 0); return true; } catch (err) { return err.code === "EPERM"; } };
+const lockBody = (cur) => JSON.stringify({ me: lockMe(), user: os.userInfo().username, host: os.hostname(), since: (cur && cur.since) || Date.now(), t: Date.now() });
+function lockRelease(p) {
+  const k = lockKey(p); if (!lockHeld.has(k)) return;
+  lockHeld.delete(k);
+  try { const lf = p + ".verrou", c = readJson(lf, null); if (c && c.me === lockMe()) fs.unlinkSync(lf); } catch {}
+}
+ipcMain.on("lib-lock", (e, action, p) => {
+  try {
+    if (!p) p = libCctp();
+    if (!p) { e.returnValue = { ok: false, err: "Dossier de la bibliothèque introuvable" }; return; }
+    const lf = p + ".verrou", k = lockKey(p);
+    if (action === "release") { lockRelease(lockHeld.get(k) || p); e.returnValue = { ok: true }; return; }
+    const cur = readJson(lf, null);
+    if (cur && cur.me !== lockMe()) {
+      const fresh = Date.now() - cur.t < 180000, sameMachine = String(cur.me).split("#")[0] === lockMe().split("#")[0];
+      const dead = sameMachine && !pidAlive(+String(cur.me).split("#")[1]);
+      if (fresh && !dead) { e.returnValue = { ok: false, by: cur.user, host: cur.host, since: cur.since }; return; }
+    }
+    if (action === "status") { e.returnValue = { ok: true }; return; }
+    writeAtomic(lf, lockBody(cur && cur.me === lockMe() ? cur : null), false);
+    lockHeld.set(k, p); e.returnValue = { ok: true, path: p };
+  } catch (err) { e.returnValue = { ok: false, err: String(err && err.message || err) }; }
+});
+setInterval(() => { lockHeld.forEach(p => { try { writeAtomic(p + ".verrou", lockBody(readJson(p + ".verrou", null)), false); } catch {} }); }, 30000);
+app.on("will-quit", () => { [...lockHeld.values()].forEach(lockRelease); });
 ipcMain.handle("lib-choose", async () => {
   const r = await dialog.showOpenDialog(win, { title: "Choisir le dossier de la bibliothèque partagée (Dropbox : 09 - BDD / IA / AGOA-CCTP)", properties: ["openDirectory"] });
   if (r.canceled || !r.filePaths[0]) return null;
