@@ -1,1 +1,1 @@
-Déploiement n°72 — Bibliothèque : fichier unique BIBLIOTHEQUE.cctp (ouvrable et modifiable comme une affaire), verrou d'ouverture avec message d'alerte, fenêtre Bibliothèque en consultation
+Déploiement n°73 — Rédaction : plus de ligne vide parasite avant une liste à puces au retour sur l'article

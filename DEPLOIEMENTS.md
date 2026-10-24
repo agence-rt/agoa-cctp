@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°73** — v0.73.0 — 2026-10-24 — Rédaction : plus de ligne vide parasite avant une liste à puces au retour sur l'article
 - **n°72** — v0.72.0 — 2026-10-24 — Bibliothèque : fichier unique BIBLIOTHEQUE.cctp (ouvrable et modifiable comme une affaire), verrou d'ouverture avec message d'alerte, fenêtre Bibliothèque en consultation
 - **n°71** — v0.71.0 — 2026-10-23 — Noms de fichiers BPU et CCTP : CODE TRAVAUX + BPU / CCTP
 - **n°70** — v0.70.0 — 2026-10-23 — Duplication : la quantité est supprimée sauf si elle vaut 1

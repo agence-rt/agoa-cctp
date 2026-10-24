@@ -1068,7 +1068,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.72.0", deploiement: 72};
+const APP = {version: "0.73.0", deploiement: 73};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2151,6 +2151,8 @@ function rtParse(src){
       b.runs=b.runs.filter(r=>r.br||r.t!=="");}
   });
   const has=b=>b.runs.some(r=>!r.br);
+  // « <p><ul>… » (liste créée dans un paragraphe vide) donne un paragraphe vide parasite : on l'écarte, ainsi que la ligne vide juste avant une liste
+  for(let k=blocks.length-1;k>=0;k--){const b=blocks[k];if(!b.li&&(!b.runs.length||(!has(b)&&blocks[k+1]&&blocks[k+1].li)))blocks.splice(k,1);}
   while(blocks.length&&!has(blocks[0]))blocks.shift();
   while(blocks.length&&!has(blocks[blocks.length-1]))blocks.pop();
   return blocks;
