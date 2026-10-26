@@ -1,1 +1,1 @@
-Déploiement n°74 — Rédaction : listes à cocher (options), seules les cases cochées apparaissent dans le BPU et le CCTP, en puces
+Déploiement n°75 — Arborescence : monter/descendre d'un niveau au clic droit (article, chapitre, lot) et glisser un chapitre ou article vers la zone « nouveau lot »

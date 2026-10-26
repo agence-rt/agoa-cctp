@@ -146,6 +146,9 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .lot-r{display:flex;align-items:center;gap:2px;flex:none}
 #artMenu{position:fixed;z-index:200;min-width:170px;background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:4px;display:flex;flex-direction:column}
 #artMenu button{text-align:left;border:0;background:none;padding:7px 12px;font:inherit;font-size:13.5px;border-radius:4px;cursor:pointer;color:var(--ink)}
+#artMenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+#lotDropZone{position:sticky;bottom:0;margin:8px 6px;padding:12px;border:2px dashed var(--accent);border-radius:8px;text-align:center;color:var(--accent);background:var(--surface);font-size:13px}
+#lotDropZone[hidden]{display:none}#lotDropZone.over{background:var(--accent-soft)}
 #artMenu button:hover{background:var(--accent-soft);color:var(--accent)}
 .lot-mv{display:inline-flex;margin-left:auto}.lot-mv .x{width:22px;height:24px;font-size:10px;opacity:.5}.tree .lot:hover .lot-mv .x,.tree .chs:hover .lot-mv .x,.tree .art:hover .lot-mv .x{opacity:1}.tree .chs .lot-mv,.tree .art .lot-mv{margin-left:6px}.lot-mv .x:disabled{opacity:.15}
 .lot-x,.pen{width:24px;height:24px;font-size:15px;opacity:.45;flex:none}
@@ -1072,7 +1075,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.74.0", deploiement: 74};
+const APP = {version: "0.75.0", deploiement: 75};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1504,13 +1507,13 @@ document.addEventListener("contextmenu",e=>{
   if(!a&&!nd){artMenuClose();return;}
   e.preventDefault(); artMenuClose();
   const m=document.createElement("div"); m.id="artMenu"; m.setAttribute("role","menu");
-  if(a){m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">Nouvel article</button><button role="menuitem" data-amact="sub">Ajouter un sous-article</button>`;m.dataset.id=a.dataset.id;}
+  if(a){m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">Nouvel article</button><button role="menuitem" data-amact="sub">Ajouter un sous-article</button><hr><button role="menuitem" data-amact="up">Monter d'un niveau</button><button role="menuitem" data-amact="down">Descendre d'un niveau</button>`;m.dataset.id=a.dataset.id;}
   else{const isLot=nd.matches(".lot"), k=isLot?nd.querySelector("[data-lotnid]").dataset.lotnid:nd.dataset.chnid;
-    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un article"}</button>`;m.dataset.id=k;} document.body.appendChild(m);
+    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un article"}</button><hr>${isLot?"":`<button role="menuitem" data-amact="up">Monter d'un niveau (en lot)</button>`}<button role="menuitem" data-amact="down">Descendre d'un niveau${isLot?" (en chapitre)":" (en article)"}</button>`;m.dataset.id=k;} document.body.appendChild(m);
   const w=m.offsetWidth,h=m.offsetHeight; m.style.left=Math.min(e.clientX,innerWidth-w-6)+"px"; m.style.top=Math.min(e.clientY,innerHeight-h-6)+"px";
 });
 document.addEventListener("click",e=>{const b=e.target.closest("#artMenu button");
-  if(b){const m=b.parentNode,id=m.dataset.id,k=b.dataset.amact;m.remove();({dup:artDup,sub:artSub,new:artNew,ndup:nodeDup,nnew:nodeNew,nin:nodeAddIn})[k](id);return;}
+  if(b){const m=b.parentNode,id=m.dataset.id,k=b.dataset.amact;m.remove();({dup:artDup,sub:artSub,new:artNew,ndup:nodeDup,nnew:nodeNew,nin:nodeAddIn,up:i=>lvlMove(i,-1),down:i=>lvlMove(i,1)})[k](id);return;}
   artMenuClose();},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")artMenuClose();});
 addEventListener("blur",artMenuClose);
@@ -2092,6 +2095,35 @@ function chToArt(){
   prev.art.push(a); lot.children.splice(idx,1); state.sel=a.id; refresh();
   toast(`Le chapitre ${code} est devenu l'article ${a.code}, à la fin du chapitre ${prev.code}`);
 }
+function chToLot(){
+  const nc=nodeCtx(state.sel); if(!nc||nc.level!=="chapitre") return; const lot=nc.lot, ch=nc.node, li=state.data.indexOf(lot), code=ch.code;
+  lot.children.splice(lot.children.indexOf(ch),1);
+  if(!lot.children.length) lot.children.push({titre:"Nouveau chapitre",texte:"",art:[blank("",1)]});
+  const nl={code:"",titre:ch.titre,texte:ch.texte||"",charge:lot.charge||"Commune",children:[ch]}; ch.texte="";
+  state.data.splice(li+1,0,nl); ensureNodeIds(); renumberAll(); state.sel=nl.nid; openIds.add(nl.nid); refresh();
+  toast(`Le chapitre ${code} est devenu le lot ${nl.code}`);
+}
+function lotToCh(){
+  const nc=nodeCtx(state.sel); if(!nc||nc.level!=="lot") return; const lot=nc.lot, li=state.data.indexOf(lot);
+  if(state.data.length<2){toast("Il n'y a qu'un seul lot : il ne peut pas devenir un chapitre");return;}
+  const kids=lot.children||[], art=kids.length===1?(kids[0].art||[]):kids.map(c=>({id:nid(),code:"",titre:c.titre,type:"titre",texte:c.texte||"",loc:"",u:"ens",pu:0,tva:null,qman:null,lignes:[],imgs:[],sub:c.art||[]}));
+  const ch={titre:lot.titre,texte:lot.texte||"",art:art.length?art:[blank("",1)]}, code=lot.code;
+  state.data.splice(li,1);
+  if(li>0){const t=state.data[li-1];t.children.push(ch);openIds.add(t.nid);} else {const t=state.data[0];t.children.unshift(ch);openIds.add(t.nid);}
+  ensureNodeIds(); renumberAll(); state.sel=ch.nid; refresh();
+  toast(`Le lot ${code} est devenu le chapitre ${ch.code}`);
+}
+function lvlMove(id,dir){
+  const nc=nodeCtx(id);
+  if(nc){state.sel=id;
+    if(nc.level==="lot"){dir<0?toast("Un lot est déjà au niveau le plus haut"):lotToCh();}
+    else if(nc.level==="chapitre"){dir<0?chToLot():chToArt();}
+    else toast("Ce niveau ne peut pas être déplacé ainsi");
+    return;}
+  const f=locate(id); if(!f) return; state.sel=id;
+  if(dir<0){f.owner&&f.owner.id?outdent():artToCh();}
+  else{if(f.i===0){toast("Le premier élément d'une liste ne peut pas descendre d'un niveau : il n'a pas d'élément précédent");return;}indent();}
+}
 async function artToCh(){
   const f=locate(state.sel); if(!f) return; const ar=f.art;
   const lost=[]; if(!ar.sub.length&&qty(ar)*ar.pu>0)lost.push("son chiffrage propre"); if((ar.imgs||[]).length)lost.push("ses images");
@@ -2613,6 +2645,18 @@ tree.addEventListener("drop",e=>{
   if(ids.length>1){if(t.dataset.node) moveMany(ids,null,null,t.dataset.node); else moveMany(ids,t.dataset.id,zone(t,e));return;}
   if(t.dataset.node) move(id,null,null,t.dataset.node); else move(id,t.dataset.id,zone(t,e));
 });
+
+(function lotDropZone(){
+  const z=document.createElement("div");z.id="lotDropZone";z.hidden=true;z.textContent="Déposer ici : en faire un nouveau lot";tree.after(z);
+  const show=e=>{if(e.target.closest&&(e.target.closest("summary.chs[data-chnid]")||e.target.closest(".art")))z.hidden=false;};
+  const hide=()=>{z.hidden=true;z.classList.remove("over");};
+  document.addEventListener("dragstart",show);document.addEventListener("dragend",hide);
+  z.addEventListener("dragover",e=>{if(!(dragId||dragCh))return;e.preventDefault();z.classList.add("over");});
+  z.addEventListener("dragleave",()=>z.classList.remove("over"));
+  z.addEventListener("drop",e=>{e.preventDefault();const ch=dragCh,id=dragId;dragCh=null;dragId=null;dragIds=[];hide();clearDrop();
+    tree.querySelectorAll(".dragging,.drop-before,.drop-after,.drop-in").forEach(x=>x.classList.remove("dragging","drop-before","drop-after","drop-in"));
+    if(ch){state.sel=ch;chToLot();}else if(id){state.sel=id;artToLot();}});
+})();
 
 /* Corbeille */
 function renderTrash(){
