@@ -448,6 +448,7 @@ td .ec.up{color:var(--ochre)}
 .synth h3{font-size:15px;font-weight:650;margin:28px 0 10px}
 .synth p.body{font-family:var(--doc);font-size:16px;line-height:1.65;max-width:68ch}
 .synth td,.synth th{font-size:14px}
+.syn-b .rte.syn-rte{min-height:52px;max-height:none;resize:none}.syn-rte{border:1px solid var(--line);border-radius:0 0 6px 6px;padding:8px 10px;background:#fff;font-family:var(--doc);font-size:15px;line-height:1.5}.syn-rte[data-syk=reco],.syn-rte[data-syk=sign]{font-weight:700}.syn-ed .rte-bar{position:sticky;top:0;z-index:6;margin-top:6px}.syn-b{margin:10px 0}
 .syn-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.syn-ret{margin-left:auto;font-size:13px;color:var(--muted)}
 .stab{width:100%;border-collapse:collapse}.stab th{background:var(--accent-soft,#fbe8e8);text-align:left;padding:7px 8px;font-size:13px}.stab th.n,.stab td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stab td{padding:5px 8px;border-bottom:1px solid var(--line)}.stab td.ind{padding-left:26px}.stab td.out{background:#eee;color:#aaa}.stab td.best{color:#1e785a;font-weight:700}
@@ -1081,7 +1082,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.84.0", deploiement: 84};
+const APP = {version: "0.85.0", deploiement: 85};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2285,12 +2286,19 @@ const rteBar=()=>`<div class="rte-bar" role="toolbar" aria-label="Mise en forme 
 </div>`;
 const rteField=(label,t,ph)=>`<div class="field dcard">${label?`<div class="dcard-h"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.5" y="1.5" width="11" height="13" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><label id="fTxtL">${label}</label></div>`:""}${rteBar()}<div id="fTxt" class="rte${plainTxt(t).trim()?"":" empty"}" contenteditable="true" role="textbox" aria-multiline="true" ${label?`aria-labelledby="fTxtL"`:`aria-label="Description de l'ouvrage"`} data-ph="${esc(ph)}" spellcheck="true">${rtEditorHtml(t)||"<p><br></p>"}</div></div>`;
 (function rteEvents(){
-  const ed=()=>document.getElementById("fTxt"); let rng=null;
+  let lastRte=null, rng=null;
+  document.addEventListener("focusin",e=>{if(e.target.classList&&e.target.classList.contains("rte"))lastRte=e.target;});
+  const ed=()=>(lastRte&&lastRte.isConnected&&lastRte.offsetParent)?lastRte:document.getElementById("fTxt");
   const inEd=n=>{const e=ed();return !!(e&&n&&e.contains(n.nodeType===3?n.parentNode:n));};
   const wrapTop=()=>{const e=ed(); if(!e)return; const blk=/^(P|DIV|UL|OL|H[1-6]|BLOCKQUOTE)$/;
     if(!e.firstChild){const p=document.createElement("p");p.appendChild(document.createElement("br"));e.appendChild(p);return;}
     let n=e.firstChild; while(n){const nx=n.nextSibling; if(!(n.nodeType===1&&blk.test(n.tagName))&&(n.nodeType===3||n.nodeType===1)){const p=document.createElement("p");e.insertBefore(p,n);let m=n;while(m&&!(m.nodeType===1&&blk.test(m.tagName))){const mx=m.nextSibling;p.appendChild(m);m=mx;}n=m;}else n=nx;}};
-  const sync=()=>{const e=ed(),ci=curItem(); if(!e||!ci) return; wrapTop(); e.querySelectorAll("ul.ck > li:not([data-ck])").forEach(li=>li.setAttribute("data-ck","1")); const v=cleanRt(e.innerHTML);
+  const sync=()=>{const e=ed(); if(!e) return;
+    if(e.dataset&&e.dataset.syk){ // zone de texte de la lettre de synthèse
+      wrapTop(); e.querySelectorAll("ul.ck > li:not([data-ck])").forEach(li=>li.setAttribute("data-ck","1")); const v=cleanRt(e.innerHTML), S=synObj(), k=e.dataset.syk;
+      if(v!==S.txt[k]){S.txt[k]=v;save();const b=e.closest(".syn-b"),r=b&&b.querySelector("[data-syreset]");if(r)r.disabled=false;const h=b&&b.querySelector(".syn-a .hint");if(h)h.textContent="Texte modifié";}
+      return;}
+    const ci=curItem(); if(!ci) return; wrapTop(); e.querySelectorAll("ul.ck > li:not([data-ck])").forEach(li=>li.setAttribute("data-ck","1")); const v=cleanRt(e.innerHTML);
     e.classList.toggle("empty",!v); if(v!==(ci.it.texte||"")){ci.it.texte=v;save();updateLive();}};
   const restore=()=>{const e=ed();if(!e)return;e.focus();if(rng){const s=getSelection();s.removeAllRanges();s.addRange(rng);}};
   document.addEventListener("selectionchange",()=>{
@@ -2303,7 +2311,7 @@ const rteField=(label,t,ph)=>`<div class="field dcard">${label?`<div class="dcar
     ed().querySelectorAll('font[size="7"]').forEach(f=>{const sp=document.createElement("span");sp.style.fontSize=(pt/RT_BASE)+"em";sp.innerHTML=f.innerHTML;sp.querySelectorAll("[style]").forEach(x=>{x.style.fontSize="";});f.replaceWith(sp);});sync();};
   const curPt=()=>{const s=getSelection();let n=s.anchorNode;if(n&&n.nodeType===3)n=n.parentNode;const e=ed();if(!n||!e)return RT_BASE;
     return Math.round(parseFloat(getComputedStyle(n).fontSize)/parseFloat(getComputedStyle(e).fontSize)*RT_BASE*2)/2;};
-  const bar=document.getElementById("editor");
+  const bar={addEventListener:(t,f,o)=>[document.getElementById("editor"),document.getElementById("synth")].forEach(x=>x&&x.addEventListener(t,f,o))};
   bar.addEventListener("mousedown",e=>{if(e.target.closest(".rte-bar button"))e.preventDefault();});
   bar.addEventListener("click",e=>{
     const b=e.target.closest(".rte-bar [data-rt]"); if(!b) return; e.preventDefault(); restore(); const k=b.dataset.rt, x=document.execCommand.bind(document);
@@ -2320,7 +2328,7 @@ const rteField=(label,t,ph)=>`<div class="field dcard">${label?`<div class="dcar
     else x(k);
     sync();
   });
-  bar.addEventListener("click",e=>{const li=e.target.closest&&e.target.closest("#fTxt ul.ck > li"); if(!li||e.target.closest(".rte-bar"))return;
+  bar.addEventListener("click",e=>{const li=e.target.closest&&e.target.closest(".rte ul.ck > li"); if(!li||e.target.closest(".rte-bar"))return;
     const r=li.getBoundingClientRect(); if(e.clientX-r.left>26)return; e.preventDefault();
     li.setAttribute("data-ck",li.getAttribute("data-ck")==="1"?"0":"1"); sync();});
   const aiMenu=()=>document.querySelector(".ai-menu");
@@ -2351,8 +2359,8 @@ const rteField=(label,t,ph)=>`<div class="field dcard">${label?`<div class="dcar
     const a=e.target.closest("[data-ai]"); if(a){e.preventDefault();const m=aiMenu();if(m)m.hidden=true;aiRun(a.dataset.ai);}
   });
   bar.addEventListener("change",e=>{const t=e.target; if(t.matches("[data-rt-size]")&&t.value){const v=parseFloat(t.value);t.value="";applySize(v);}});
-  bar.addEventListener("input",e=>{if(e.target.id==="fTxt")sync();});
-  bar.addEventListener("paste",e=>{if(e.target.id!=="fTxt"&&!e.target.closest("#fTxt"))return;e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",false,t);});
+  bar.addEventListener("input",e=>{if(e.target.classList&&e.target.classList.contains("rte"))sync();});
+  bar.addEventListener("paste",e=>{if(!e.target.closest(".rte"))return;e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData("text/plain");document.execCommand("insertText",false,t);});
   document.execCommand("defaultParagraphSeparator",false,"p");
 })();
 $("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)return;
@@ -3008,6 +3016,35 @@ async function exportSynth(){
   }catch(err){console.error(err);toast("L'export de la synthèse a échoué.");}
 }
 document.addEventListener("click",e=>{if(e.target.closest("#expSynth"))exportSynth();});
+/* Lettre de synthèse : rendu d'un texte enrichi (gras, italique, souligné, surligné, tailles, alignement, puces) dans le PDF */
+function pdfRichLetter(doc,wa,src,x0,w,y,o){
+  const base=o.base||10.5, ink=o.ink, stBase=o.bold?"bold":"normal", LH=1.42;
+  const stl=r=>{const b=r.b||o.bold;return b&&r.i?"bolditalic":b?"bold":r.i?"italic":"normal";};
+  const fnt=(st,sz)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);doc.setTextColor(ink[0],ink[1],ink[2]);};
+  let num=0, prevLi=false, prevOrd=false;
+  rtParse(rtSrc(src)).forEach(bk=>{
+    const toks=[]; bk.runs.forEach(r=>{ if(r.br){toks.push({br:1});return;}
+      const sz=(r.sz?r.sz/RT_BASE:1)*base; wa(r.t).split(/( +)/).forEach(p=>{if(p==="")return;fnt(stl(r),sz);toks.push(p[0]===" "?{sp:1,r,sz,w:doc.getTextWidth(" ")*p.length}:{t:p,r,sz,w:doc.getTextWidth(p)});});});
+    const lh0=base*0.3528*LH;
+    if(!toks.length){y+=lh0*0.6;prevLi=false;return;}
+    if(bk.li){num=(prevLi&&bk.ord&&prevOrd)?num+1:1;} prevLi=bk.li; prevOrd=bk.ord;
+    const ind=(bk.li?6:0)+(bk.ind||0)*5, avl=w-ind; let line=[],lw=0,first=true;
+    const emit=last=>{ while(line.length&&line[line.length-1].sp){lw-=line.pop().w;} if(!line.length){return;}
+      const lh=Math.max(lh0,...line.map(t=>t.sz*0.3528*LH)), al=bk.align||"left"; let x=x0+ind, extra=0, ns=line.filter(t=>t.sp).length;
+      if(al==="justify"&&!last&&ns>0)extra=Math.max(0,(avl-lw)/ns); else if(al==="center")x+=Math.max(0,(avl-lw)/2); else if(al==="right")x+=Math.max(0,avl-lw);
+      const yb=y+lh*0.78; let cx=x;
+      line.forEach(t=>{const ww=t.w+(t.sp?extra:0); if(t.r&&t.r.hl){doc.setFillColor(255,241,118);doc.rect(cx,y+lh*0.1,ww,t.sz*0.3528*1.12,"F");} cx+=ww;});
+      cx=x; line.forEach(t=>{const ww=t.w+(t.sp?extra:0); if(!t.sp){fnt(stl(t.r),t.sz);doc.text(t.t,cx,yb);} if(t.r&&t.r.u){doc.setDrawColor(ink[0],ink[1],ink[2]);doc.setLineWidth(0.18);doc.line(cx,yb+0.7,cx+ww,yb+0.7);} cx+=ww;});
+      if(bk.li&&first){ if(bk.ord){fnt("normal",base);doc.text(num+".",x0+ind-5.2,yb);} else {doc.setFillColor(o.red[0],o.red[1],o.red[2]);doc.circle(x0+ind-3,yb-1.2,0.7,"F");} }
+      first=false; y+=lh; line=[]; lw=0; };
+    toks.forEach(t=>{ if(t.br){emit(true);return;}
+      if(!t.sp&&lw+t.w>avl+0.01&&line.length){emit(false);}
+      if(t.sp&&!line.length)return; line.push(t); lw+=t.w; });
+    emit(true);
+    y+=lh0*0.28;
+  });
+  return y;
+}
 function buildSynthPdf(J,info){
   const o=state.op||{}, M=anaModel(), A=M.A, E=M.E, n=E.length, BD=bilanData(M);
   const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90];
@@ -3038,7 +3075,9 @@ function buildSynthPdf(J,info){
     yy+=8; font("bold",17,RED); doc.text("ANALYSE DES OFFRES",lx,yy); doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(lx,yy+2.5,lx+lw,yy+2.5); yy+=14;
     font("normal",10.5,INK); doc.text(wa(((SY.lieu!=null?SY.lieu:"Paris")?(SY.lieu!=null?SY.lieu:"Paris")+" le ":"")+(SY.date||dateFr())),lx,yy); yy+=10;
     doc.text("Madame, Monsieur,",lx,yy); yy+=8;
-    const blk=(t,st,gap)=>{ if(!String(t||"").trim())return; font(st||"normal",10.5,INK);
+    const blk=(t,st,gap)=>{ if(!String(t||"").trim())return;
+      if(isRich(t)){const y2=pdfRichLetter(doc,wa,t,lx,lw,yy,{base:10.5,ink:INK,red:RED,bold:st==="bold"}); yy=y2+(gap==null?4:gap); return;}
+      font(st||"normal",10.5,INK);
       String(t).split("\n").forEach(raw=>{const bl=/^\s*[-•]\s+/.test(raw), line=raw.replace(/^\s*[-•]\s+/,""); const ind=bl?8:0;
         const ls=doc.splitTextToSize(wa(line),lw-ind-(bl?0:0)); ls.forEach((l,i)=>{ if(bl&&!i){fill(RED);doc.circle(lx+3,yy-1.2,0.7,"F");} doc.text(l,lx+ind,yy); yy+=5.4;}); });
       yy+=gap==null?4:gap;};
@@ -4230,7 +4269,7 @@ function renderSynth(){
   if(!ents.length){$("#synth").innerHTML=`<h2>${esc(o.objet||"Synthèse")}</h2><p class="sub">Aucune offre reçue pour le moment.</p>`;return;}
   const M=anaModel(), E=M.E, R=synRows(M);
   const ret=ents.find(e=>e.id===state.retenue)||ents[0], S=synObj(), BD=bilanData(M), D=synthDefaults(M,BD,ret), selB=recoSel(M);
-  const edBlock=([k,lab,rows])=>`<div class="syn-b"><label for="sy-${k}">${lab}</label><textarea id="sy-${k}" data-syk="${k}" rows="${rows}" spellcheck="true">${esc(synText(k,D))}</textarea><div class="syn-a">${S.txt[k]!=null?`<span class="hint">Texte modifié</span> `:`<span class="hint">Texte automatique</span> `}<button class="btn sm" data-syreset="${k}"${S.txt[k]!=null?"":" disabled"}>Rétablir le texte automatique</button></div></div>`;
+  const edBlock=([k,lab,rows])=>`<div class="syn-b"><label for="sy-${k}">${lab}</label><div id="sy-${k}" class="rte syn-rte" data-syk="${k}" contenteditable="true" role="textbox" aria-multiline="true" aria-label="${esc(lab)}" spellcheck="true">${rtEditorHtml(synText(k,D))||"<p><br></p>"}</div><div class="syn-a">${S.txt[k]!=null?`<span class="hint">Texte modifié</span> `:`<span class="hint">Texte automatique</span> `}<button class="btn sm" data-syreset="${k}"${S.txt[k]!=null?"":" disabled"}>Rétablir le texte automatique</button></div></div>`;
   const edit=ks=>ks.map(k=>edBlock(SY_KEYS.find(x=>x[0]===k))).join("");
   const td=(r,j)=>r.out&&r.out[j]?`<td class="n out">–</td>`:`<td class="n${r.best===j?" best":""}">${r.k==="tva"?eur2(r.v[j]):eur2(r.v[j])}</td>`;
   $("#synth").innerHTML=`
@@ -4239,6 +4278,7 @@ function renderSynth(){
    <details class="syn-ed" open><summary>Lettre d'analyse des offres (première page du PDF)</summary>
    <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
    <div class="syn-b"><label>Entreprises consultées : n° de devis <span class="hint">(les noms et adresses viennent de la consultation)</span></label><div class="syn-dv">${ents.map(e=>`<span><b>${esc(e.nom)}</b>${e.adresse?` <span class="hint">${esc(e.adresse)}</span>`:""} <input type="text" data-sydv="${esc(e.id)}" value="${esc(S.devis[e.id]||"")}" placeholder="n° de devis" style="max-width:110px"></span>`).join("")}</div></div>
+   ${rteBar()}
    ${edit(["intro","obs"])}
    <div class="syn-b"><label>Entreprise(s) mieux-disante(s) <span class="hint">${Array.isArray(S.best)&&S.best.length?"choix manuel":"automatique : mieux-disant de chaque lot"}</span></label><div class="syn-dv">${ents.map(e=>`<label class="chk"><input type="checkbox" data-sybest="${esc(e.id)}" ${selB.includes(e.id)?"checked":""}> ${esc(e.nom)}</label>`).join("")}</div>${Array.isArray(S.best)&&S.best.length?`<button class="btn sm" id="syBestAuto">Choix automatique</button>`:""}</div>
    ${edit(["reco","pj","conclu","sign"])}
@@ -4251,8 +4291,6 @@ function renderSynth(){
   const sy=$("#synth");
   sy.querySelectorAll("[data-sybest]").forEach(c=>c.onchange=()=>{const v=[...sy.querySelectorAll("[data-sybest]")].filter(x=>x.checked).map(x=>x.dataset.sybest);synObj().best=v.length?v:null;if(v.length)state.retenue=v[0];save();renderSynth();});
   {const b=$("#syBestAuto");if(b)b.onclick=()=>{delete synObj().best;save();renderSynth();};}
-  sy.querySelectorAll("textarea[data-syk]").forEach(t=>{const fit=()=>{t.style.height="auto";t.style.height=Math.max(48,t.scrollHeight+2)+"px";};fit();
-    t.addEventListener("input",()=>{fit();synObj().txt[t.dataset.syk]=t.value;save();const b=t.closest(".syn-b"),r=b.querySelector("[data-syreset]");if(r)r.disabled=false;const h=b.querySelector(".syn-a .hint");if(h)h.textContent="Texte modifié";});});
   sy.querySelectorAll("[data-syreset]").forEach(b=>b.onclick=()=>{delete synObj().txt[b.dataset.syreset];save();renderSynth();});
   sy.querySelectorAll("input[data-sydv]").forEach(i=>{i.addEventListener("input",()=>{synObj().devis[i.dataset.sydv]=i.value.trim();save();});i.addEventListener("change",()=>renderSynth());});
   $("#sy-date").addEventListener("input",e=>{synObj().date=e.target.value;save();});

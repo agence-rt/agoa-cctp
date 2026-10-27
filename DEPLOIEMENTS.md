@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°85** — v0.85.0 — 2026-10-27 — Synthèse : éditeur de texte enrichi (gras, italique, souligné, surligné, tailles, alignement, puces, cases) pour la lettre d'analyse, repris dans le PDF
 - **n°84** — v0.84.0 — 2026-10-27 — Synthèse : affichage élargi du tableau ; le PDF de la synthèse s'ouvre automatiquement après l'export
 - **n°83** — v0.83.0 — 2026-10-27 — Synthèse PDF : sous-total HT par lot, total HT + TVA + TTC en bas, en-tête allégé, titre TABLEAU DE SYNTHÈSE, couleurs des lots ; couleurs des lots rétablies dans l'analyse des offres
 - **n°82** — v0.82.0 — 2026-10-27 — Synthèse PDF : tableau limité aux chapitres avec sous-totaux, sous-total de lot HT/TVA/TTC et total des lots TTC (comme à l'écran)
