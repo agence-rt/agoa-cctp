@@ -1,1 +1,1 @@
-Déploiement n°83 — Synthèse PDF : sous-total HT par lot, total HT + TVA + TTC en bas, en-tête allégé, titre TABLEAU DE SYNTHÈSE, couleurs des lots ; couleurs des lots rétablies dans l'analyse des offres
+Déploiement n°84 — Synthèse : affichage élargi du tableau ; le PDF de la synthèse s'ouvre automatiquement après l'export

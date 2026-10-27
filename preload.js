@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld("agoa", {
   ragic: (tool, input) => ipcRenderer.invoke("ragic", tool, input),
   aiRewrite: (text, mode) => ipcRenderer.invoke("ai-rewrite", text, mode),
   aiKey: () => ipcRenderer.invoke("ai-key"),
-  saveFile: (filename, bytes) => ipcRenderer.invoke("save-file", filename, bytes),
+  saveFile: (filename, bytes, openAfter) => ipcRenderer.invoke("save-file", filename, bytes, !!openAfter),
   savePDF: filename => ipcRenderer.invoke("save-pdf", filename),
   saveAs: (filename, text) => ipcRenderer.invoke("save-as", filename, text),
   writeFile: (file, text) => ipcRenderer.invoke("write-file", file, text),

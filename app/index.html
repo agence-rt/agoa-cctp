@@ -441,6 +441,7 @@ td.best .val{font-weight:650;color:var(--accent)}
 td .ec.up{color:var(--ochre)}
 .legend{font-size:12.5px;color:var(--muted);padding:12px 18px;display:flex;gap:18px;flex-wrap:wrap}
 .legend i{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:6px;border-radius:2px;background:var(--accent-soft);border:1px solid var(--accent)}
+#v-synthese .synth{max-width:min(1500px,100%)}
 .synth{max-width:860px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:36px 44px}
 .synth h2{font-family:var(--disp);font-size:34px;line-height:1.1;font-weight:400;letter-spacing:.02em;text-transform:uppercase;margin:0 0 6px;color:var(--ink)}
 .synth .sub{color:var(--muted);margin:0 0 28px}
@@ -1080,7 +1081,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.83.0", deploiement: 83};
+const APP = {version: "0.84.0", deploiement: 84};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2745,8 +2746,8 @@ function loadJsPDF(){
   return jsP||(jsP=loadScripts(["vendor/jspdf.umd.min.js","https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"])
     .then(()=>(window.jspdf&&window.jspdf.jsPDF)||Promise.reject(new Error("jspdf"))).catch(e=>{jsP=null;throw e;}));
 }
-async function saveFile(buf,name,what){
-  if(AG){try{const u8=typeof buf==="string"?new TextEncoder().encode(buf):new Uint8Array(buf.buffer?buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength):buf);const ok=await AG.saveFile(name,u8);toast(ok?`${what} enregistré : ${name}`:"Enregistrement annulé.");}catch(e){toast("L'enregistrement a échoué : "+(e&&e.message||"erreur"));}return;}
+async function saveFile(buf,name,what,openAfter){
+  if(AG){try{const u8=typeof buf==="string"?new TextEncoder().encode(buf):new Uint8Array(buf.buffer?buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength):buf);const ok=await AG.saveFile(name,u8,openAfter);toast(ok?`${what} enregistré : ${name}`:"Enregistrement annulé.");}catch(e){toast("L'enregistrement a échoué : "+(e&&e.message||"erreur"));}return;}
   const dl=await (window.claude&&window.claude.use?window.claude.use("downloads"):Promise.resolve(null));
   if(!dl){toast("Le téléchargement de fichier n'est pas disponible dans cette vue.");return;}
   try{await dl.save({filename:name,data:buf});toast(`${what} enregistré : ${name}`);}
@@ -3003,7 +3004,7 @@ async function exportSynth(){
     const info=await askDocInfo("la synthèse"); if(!info) return;
     toast("Préparation de la synthèse…");
     const buf=buildSynthPdf(J,info);
-    await saveFile(buf,safeName(fileBase(state)+" - Synthèse"+(info?" - V"+info.ver:""))+".pdf","Synthèse");
+    await saveFile(buf,safeName(fileBase(state)+" - Synthèse"+(info?" - V"+info.ver:""))+".pdf","Synthèse",true);
   }catch(err){console.error(err);toast("L'export de la synthèse a échoué.");}
 }
 document.addEventListener("click",e=>{if(e.target.closest("#expSynth"))exportSynth();});

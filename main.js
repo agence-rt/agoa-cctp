@@ -764,12 +764,13 @@ ipcMain.on("set-config", (e, patch) => { writeAtomic(configPath(), JSON.stringif
 ipcMain.handle("ragic", (e, tool, input) => ragic(tool, input));
 ipcMain.handle("ai-rewrite", (e, text, mode) => aiRewrite(text, mode));
 ipcMain.handle("ai-key", () => askAnthropicKey());
-ipcMain.handle("save-file", async (e, filename, bytes) => {
+ipcMain.handle("save-file", async (e, filename, bytes, openAfter) => {
   const ext = (filename.split(".").pop() || "").toLowerCase();
   const names = { cctp: "Affaire AGOA CCTP", xlsx: "Classeur Excel", pdf: "PDF" };
   const r = await dialog.showSaveDialog(win, { defaultPath: path.join(app.getPath("documents"), filename), filters: [{ name: names[ext] || ext.toUpperCase(), extensions: [ext] }, { name: "Tous les fichiers", extensions: ["*"] }] });
   if (r.canceled || !r.filePath) return false;
   fs.writeFileSync(r.filePath, Buffer.from(bytes));
+  if (openAfter) { try { await shell.openPath(r.filePath); } catch {} }
   return true;
 });
 ipcMain.handle("save-as", async (e, filename, text) => {
