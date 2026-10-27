@@ -833,9 +833,8 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
         <label for="dbxPath">Dossier de dépôt des offres : « 02 - ETUDE / 03 - RETOUR ENTREPRISES » de l'opération (Dropbox)</label>
         <input type="text" id="dbxPath" placeholder="Retrouvé automatiquement à partir du code travaux" autocomplete="off">
         <p class="dbx-st" id="dbxSt"></p>
-        <p class="hint" style="margin:6px 0 0">Les offres déposées par la page de saisie ou importées sont rangées dans ce dossier, dans un sous-dossier par entreprise : BPU rempli (<span id="dbxEx1"></span>) et devis sous en-tête (<span id="dbxEx2"></span>).</p>
-        <p class="dbx-st" id="dbxWatch"></p>
-        <div class="rb-act"><button class="btn sm" id="dbxScanBtn" title="Lit les nouveaux fichiers du dossier retour, importe les offres et prévient par mail">Vérifier les retours maintenant</button> <button class="btn sm" id="dbxAllBtn" title="Relit tous les BPU du dossier, y compris ceux déjà vus">Tout relire</button> <button class="btn sm" id="dbxSuggest">Retrouver le dossier</button> <button class="btn sm" id="dbxChoose">Choisir le dossier…</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
+        <p class="hint" style="margin:6px 0 0">Les offres importées ou saisies manuellement sont enregistrées dans ce dossier, dans un sous-dossier par entreprise, sous forme de BPU d'analyse (<span id="dbxEx1"></span>) : le fichier envoyé par l'entreprise n'est jamais modifié. Le devis est rangé à côté (<span id="dbxEx2"></span>).</p>
+        <div class="rb-act"><button class="btn sm" id="dbxSuggest">Retrouver le dossier</button> <button class="btn sm" id="dbxChoose">Choisir le dossier…</button> <button class="btn sm" id="portalPrev">Voir la page de saisie côté entreprise</button></div>
       </div>
       <table id="entTable"></table>
     </div>
@@ -1084,7 +1083,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.88.0", deploiement: 88};
+const APP = {version: "0.89.0", deploiement: 89};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3356,6 +3355,7 @@ async function ragicImport(i){
 const depotUrl=e=>{const u=String((e&&e.depot)||"").trim();return /^https:\/\/(www\.)?dropbox\.com\//i.test(u)?u:"";};
 const dbxSub=e=>safeName(e.nom).replace(/\.+$/,"")||"Entreprise";
 const dbxFile=(e,k)=>safeName([(state.op&&state.op.ref)||"BPU",dbxSub(e),k].join("_"));
+const dbxAna=e=>dbxFile(e,"BPU")+"_analyse.xlsx"; // notre fichier d'analyse : ne remplace jamais celui de l'entreprise
 function dbxSuggest(){
   const o=state.op||{}, m=String(o.ref||"").trim().toUpperCase().match(/^([A-Z0-9]+?)-?([A-Z])?$/);
   const imm=(o.ref||"").split("-")[0].toUpperCase(), lt=(String(o.ref||"").split("-")[1]||"").toUpperCase();
@@ -3397,82 +3397,6 @@ async function bpuBytes(en){
   if(E){try{const b=await buildBpuStyled(E,en,docInfoDefault());return new Uint8Array(b.buffer?b.buffer:b);}catch(err){console.error(err);}}
   const X=await loadXLSX(); const b=buildBpuBasic(X,en,docInfoDefault()); return new Uint8Array(b.buffer?b.buffer:b);
 }
-/* ---------- Surveillance du dossier « 03 - RETOUR ENTREPRISES » : import automatique + courriel ---------- */
-let dbxBusy=false, dbxLast=null;
-const dbxSig=f=>f.rel+"|"+f.size+"|"+Math.round(f.mtime);
-const nrmN=s=>norm(s).replace(/[^a-z0-9]/g,"");
-async function dbxProcess(dir,f){
-  const bytes=await AG.dbxRead(dir,f.rel); const u8=new Uint8Array(bytes);
-  let d; try{d=await parseBpuFile(new File([u8],f.name));}catch(e){return {st:"ignore"};}
-  if(!d.read) return {st:"ignore"};
-  let en=null;
-  for(const c of [d.entreprise,f.sub].filter(Boolean)){const k=nrmN(c); if(!k)continue; en=ents().find(e=>nrmN(e.nom)===k||nrmN(dbxSub(e))===k); if(en)break;}
-  if(!en){const nm=d.entreprise||f.sub; if(!nm) return {st:"unknown"}; en={id:"e"+nid(),nom:nm,statut:"À consulter",base:null,travaux:[]}; ents().push(en);}
-  registerOffer(en,d); return {st:"ok",en,d,bytes:u8,f};
-}
-async function mailOffer(r){
-  const {en,d,f,bytes}=r, o=state.op||{}, M=anaModel(), B=bilanData(M), row=B.rows.find(x=>x.e.id===en.id);
-  const now=new Date(), when=now.toLocaleDateString("fr-FR")+" à "+now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-  const L=[]; L.push("Bonjour,","","Une nouvelle offre a été déposée dans le dossier « 03 - RETOUR ENTREPRISES » et importée dans AGOA CCTP.","",
-    `Opération : ${[o.ref,o.immeuble].filter(Boolean).join(" - ")||"–"}`);
-  if(o.objet)L.push(`Objet : ${o.objet}`);
-  const adr=[o.adresse,o.ville].filter(Boolean).join(", "); if(adr)L.push(`Adresse : ${adr}`);
-  if(o.syndic)L.push(`Syndic : ${o.syndic}`);
-  L.push("",`Entreprise : ${en.nom}`,`Fichier : ${f.rel}`,`Reçue le : ${when}`);
-  if(row){L.push(`Montant du marché de base : ${eur(row.ht)} HT (${eur(row.ttc)} TTC)`);
-    if(row.pct!=null)L.push(`Écart par rapport à l'estimation (${eur(B.est)} HT) : ${row.ecart>=0?"+":"-"}${eur(Math.abs(row.ecart))} (${row.pct>=0?"+":"-"}${fmt(Math.abs(row.pct),1)} %)`);
-    if(row.rank)L.push(`Rang actuel : ${row.rank} sur ${B.rows.filter(x=>x.rank).length} offre(s) complète(s)`);
-    row.opts.forEach(x=>L.push(`Option / variante ${x.lab} : ${x.net>=0?"+":"-"}${eur(Math.abs(x.net))} HT`));
-    row.alert.forEach(a=>L.push("Attention : "+a[1]));}
-  L.push(`Prix lus : ${d.read} sur ${d.total} articles chiffrés${d.missing?` (${d.missing} manquant${d.missing>1?"s":""})`:""}${Object.keys(d.notes||{}).length?` ; ${Object.keys(d.notes).length} annotation(s) de l'entreprise`:""}`);
-  const offs=offers().length, cons=ents().length; L.push(`Offres reçues : ${offs} sur ${cons} entreprise(s) consultée(s)`);
-  L.push("","Message généré automatiquement par AGOA CCTP.");
-  const subject=`[AGOA] Offre reçue - ${[o.ref,o.immeuble].filter(Boolean).join(" ")} - ${en.nom}`, text=L.join("\n");
-  let cfg=null; try{cfg=await AG.mailGet();}catch(e){}
-  if(cfg&&cfg.configured&&cfg.auto){
-    const r=await AG.mailSend({subject,text,attachments:[{name:f.name,bytes}]});
-    if(r.ok){toast(`Mail envoyé à ${r.to||cfg.to} : offre de ${en.nom}`);jPush([`Mail de réception envoyé (${en.nom})`]);return true;}
-    toast("Envoi du mail impossible ("+(r.message||"erreur")+") : un brouillon est ouvert à la place.");}
-  await AG.mailDraft((cfg&&cfg.to)||"etudes@remithollet.fr",subject,text); return false;
-}
-async function dbxScanNew(mode){ // mode : "auto" (surveillance), "new" (bouton), "all" (tout relire)
-  if(!AG||!AG.dbxScan||!state||dbxBusy) return;
-  if(mode==="auto"&&(state.dbxWatchOff||document.querySelector("dialog[open]"))) return;
-  dbxBusy=true;
-  try{
-    const dir=await dbxResolveDir(false); if(!dir){if(mode!=="auto")toast("Dossier de dépôt introuvable : retrouvez-le d'abord.");return;}
-    const files=await AG.dbxScan(dir); dbxLast=new Date();
-    if(state.dbxSeen==null&&mode==="auto"){state.dbxSeen=files.map(dbxSig);save();dbxWatchSt();return;} // première lecture : base de référence, sans import
-    const seen=new Set(state.dbxSeen||[]), news=(mode==="all"?files:files.filter(f=>!seen.has(dbxSig(f)))).sort((a,b)=>a.mtime-b.mtime);
-    if(!news.length){if(mode!=="auto")toast("Aucun nouveau retour dans le dossier.");dbxWatchSt();return;}
-    const done=[], unknown=[];
-    for(const f of news){
-      try{const r=await dbxProcess(dir,f); if(r.st==="ok")done.push(r); else if(r.st==="unknown")unknown.push(f.name);}catch(e){console.error(e);}
-    }
-    state.dbxSeen=files.map(dbxSig); save();
-    if(done.length){
-      if(state.view==="analyse")renderAnalyse(); else if(state.view==="consultation")renderConsult();
-      toast(done.length>1?`${done.length} offres importées automatiquement`:`Offre de ${done[0].en.nom} importée automatiquement`);
-      jPush(done.map(r=>`Offre importée depuis le dossier retour : ${r.en.nom}`));
-    }
-    if(unknown.length)toast(`${unknown.length} fichier${unknown.length>1?"s":""} à importer manuellement (entreprise non reconnue)`);
-    dbxWatchSt();
-  }catch(e){console.error(e);if(mode!=="auto")toast("Lecture du dossier impossible : "+(e&&e.message||"erreur"));}
-  finally{dbxBusy=false;}
-}
-function dbxWatchSt(){
-  const el=$("#dbxWatch"); if(!el) return;
-  if(!AG||!AG.dbxScan){el.textContent="";return;}
-  el.className="dbx-st"+(state&&state.dbxWatchOff?"":" ok");
-  el.innerHTML=`<label style="font-weight:400"><input type="checkbox" id="dbxWatchOn" ${state&&state.dbxWatchOff?"":"checked"}> Surveiller ce dossier : importer les nouveaux BPU et prévenir par mail</label>${dbxLast&&!(state&&state.dbxWatchOff)?` <span class="hint">Dernière vérification : ${dbxLast.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</span>`:""}`;
-}
-document.addEventListener("click",e=>{
-  if(e.target.closest("#dbxScanBtn"))dbxScanNew("new");
-  else if(e.target.closest("#dbxAllBtn")){ask("Relire tous les BPU du dossier et importer les offres ? Les offres déjà importées des mêmes entreprises seront remplacées par le contenu des fichiers. Aucun mail n'est envoyé.","Tout relire").then(ok=>{if(ok)dbxScanNew("all");});}
-});
-document.addEventListener("change",e=>{if(e.target.id==="dbxWatchOn"&&state){state.dbxWatchOff=!e.target.checked;save();dbxWatchSt();if(e.target.checked){state.dbxSeen=null;dbxScanNew("auto");}}});
-if(AG&&AG.dbxScan){setInterval(()=>{if(state&&state.view!=="home")dbxScanNew("auto");},120000);}
-
 /* ---------- Messagerie (notifications) ---------- */
 async function mlLoad(){
   if(!AG||!AG.mailGet||!$("#mlHost")) return;
@@ -3493,13 +3417,13 @@ function renderConsult(){
   $("#qtyWarn").innerHTML=M.length?`<div class="qwarn"><span>${M.length} article${M.length>1?"s":""} chiffré${M.length>1?"s":""} sans quantité. Les quantités doivent être remplies avant la consultation.</span><button class="btn sm" id="qwGo">Voir la liste</button></div>`
     :`<div class="qok">Toutes les quantités sont renseignées.</div>`;
   const E=ents(); $("#dbxPath").value=state.dropbox||"";
-  {const e0=E[0]||{nom:"Entreprise"};$("#dbxEx1").textContent=dbxFile(e0,"BPU")+".xlsx";$("#dbxEx2").textContent=dbxFile(e0,"DEVIS")+".pdf";}
+  {const e0=E[0]||{nom:"Entreprise"};$("#dbxEx1").textContent=dbxAna(e0);$("#dbxEx2").textContent=dbxFile(e0,"DEVIS")+".pdf";}
   $("#entTable").innerHTML=E.length?`<tr><th>Entreprise</th><th>État</th><th></th></tr>`+E.map((e,i)=>`<tr>
     <td><b class="entnm">${esc(e.nom)}</b> <button class="lnk" data-entren="${i}" title="Modifier le nom" aria-label="Modifier le nom de ${esc(e.nom)}">✎</button>${e.ragicId?` <span class="tag">Ragic</span>`:""}<span class="hint ent-sub">${esc([e.email,e.tel].filter(Boolean).join(", "))}</span><span class="hint ent-sub dbx-sub" title="Sous-dossier de dépôt">Dépôt : …/03 - RETOUR ENTREPRISES/${esc(dbxSub(e))}</span><details class="ent-lots"><summary>Lots répondus : <b>${esc(entLotsLabel(e))}</b></summary><div>${entLotsBoxes(e,"data-entlot")}<span class="hint">Les lots non cochés (hors compétence) ne sont pas comptés comme incomplets.</span></div></details><span class="ent-act"><button class="lnk" data-entportal="${i}">Saisie manuelle</button><button class="lnk" data-entimp="${i}">Importer une offre</button></span>${(e.travaux||[]).length?`<span class="ent-tags">${e.travaux.map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</span>`:""}</td>
     <td><select data-entst="${i}" class="${hasOffer(e)||e.statut==='Offre reçue'?'st-ok':''}" aria-label="État de ${esc(e.nom)}">${STATUTS.map(s=>`<option ${s===e.statut?"selected":""}>${s}</option>`).join("")}</select>${histHtml(e)}</td>
     <td style="width:36px"><button class="x" data-delent="${i}" aria-label="Retirer ${esc(e.nom)}">×</button></td></tr>`).join("")
     :`<tr><td class="hint" style="padding:16px">Aucune entreprise consultée. Ajoutez-en depuis la base Ragic.</td></tr>`;
-  dbxStatus(); dbxWatchSt(); dbxScanNew("auto");
+  dbxStatus();
 }
 
 $("#qtyWarn").addEventListener("click",e=>{if(e.target.id==="qwGo")openQtyCheck();});
@@ -4458,7 +4382,7 @@ async function exportBpu(entId,info,opts){
 }
 async function buildBpuStyled(E,en,info,opts){
   const withDesc=!!(opts&&opts.desc);
-  const o=state.op||{}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{};
+  const o=state.op||{}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{}, qes=(en&&en.offre&&en.offre.qents)||{}, uns=(en&&en.offre&&en.offre.units)||{};
   const BLUE="FF555B63", INK="FF333333", PALE="FFEDEEF0", LINE="FFCDD0D4", GREY="FFF3F4F5", MUTED="FF6B7A8C";
   const F=(sz,o2={})=>({name:"Arial",size:sz,color:{argb:INK},...o2});
   const EUR='#,##0.00\\ "€";\\-#,##0.00\\ "€";;', EUR0='#,##0.00\\ "€";\\-#,##0.00\\ "€"';
@@ -4500,7 +4424,7 @@ async function buildBpuStyled(E,en,info,opts){
     const rates0=[...new Set(baseItems.filter(y=>y.k==="art").map(y=>y.tva))];
     r=baseLast+2+(rates0.length+2)+2; ovItems.forEach(asg);
     const lastRow=ovItems.length?r-1:baseLast, val={}; // montants calculés
-    items.forEach(x=>{if(x.k==="art"){const p=pus[x.id];x.m=p!=null?Math.round(p*x.q*100)/100:0;val[x.row]=x.m;}});
+    items.forEach(x=>{if(x.k==="art"){const p=pus[x.id];x.m=p!=null?Math.round(p*(qes[x.id]!=null?qes[x.id]:x.q)*100)/100:0;val[x.row]=x.m;}});
     const baseById={}; baseItems.forEach(x=>{if(x.k==="art")baseById[x.id]=x;});
     items.forEach(x=>{if(x.k==="ded"){const b=baseById[x.refId];x.m=b?b.m:0;x.baseRow=b?b.row:null;}});
     const BV={}; ovItems.filter(y=>y.k==="otot").forEach(x=>{const o=x.o,inn=items.filter(y=>y.k==="art"&&y.ovIn===o.id),bas=baseItems.filter(y=>y.k==="art"&&y.ovB.includes(o.id));
@@ -4525,8 +4449,8 @@ async function buildBpuStyled(E,en,info,opts){
         set(3,x.titre,F(10),{wrapText:true,indent:x.d});
         const QNF=qd(x.u)?"#,##0.00":"#,##0";
         set(4,x.q,F(10,{italic:true}),{horizontal:"right"},QNF);
-        set(5,x.u,F(10,{italic:true}),{horizontal:"center"});
-        const qe=set(6,null,F(10),{horizontal:"right"},QNF); qe.border=box; qe.protection={locked:false}; qe.dataValidation={type:"decimal",operator:"greaterThanOrEqual",allowBlank:true,formulae:[0],showErrorMessage:true,errorTitle:"Quantité entreprise",error:"Saisissez une quantité positive."};
+        set(5,uns[x.id]||x.u,F(10,{italic:true}),{horizontal:"center"});
+        const qe=set(6,qes[x.id]!=null?qes[x.id]:null,F(10),{horizontal:"right"},QNF); qe.border=box; qe.protection={locked:false}; qe.dataValidation={type:"decimal",operator:"greaterThanOrEqual",allowBlank:true,formulae:[0],showErrorMessage:true,errorTitle:"Quantité entreprise",error:"Saisissez une quantité positive."};
         set(7,x.tva,F(10,{italic:true}),{horizontal:"right"},Number.isInteger(x.tva)?'0" %"':'0.0" %"');
         const pu=set(8,pus[x.id]!=null?pus[x.id]:null,F(10,{bold:true,color:{argb:BLUE}}),{horizontal:"right"},EUR0); pu.border=box; pu.protection={locked:false}; pu.dataValidation={type:"decimal",operator:"greaterThanOrEqual",allowBlank:true,formulae:[0],showErrorMessage:true,errorTitle:"Prix unitaire",error:"Saisissez un montant positif en euros."};
         const m=set(9,{formula:`IF(ISNUMBER(H${x.row}),IF(ISNUMBER(F${x.row}),ROUND(H${x.row}*F${x.row},2),ROUND(H${x.row}*D${x.row},2)),0)`,result:x.m},F(10,{italic:true}),{horizontal:"right"},EUR); m.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};
@@ -4607,7 +4531,7 @@ async function buildBpuStyled(E,en,info,opts){
   return await wb.xlsx.writeBuffer();
 }
 function buildBpuBasic(X,en,info){
-  const o=state.op||{}, aoa=[], A=(...r)=>{aoa.push(r);return aoa.length;}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{};
+  const o=state.op||{}, aoa=[], A=(...r)=>{aoa.push(r);return aoa.length;}, pus=(en&&en.offre&&en.offre.pus)||{}, nts=(en&&en.offre&&en.offre.notes)||{}, qes=(en&&en.offre&&en.offre.qents)||{}, uns=(en&&en.offre&&en.offre.units)||{};
   A("Bordereau des prix unitaires (BPU) - "+[o.ref,o.immeuble,o.objet].filter(Boolean).join(" - "));
   if(info) A(docTag(info));
   A("Entreprise : "+(en?en.nom:"…………………………………"));
@@ -4616,10 +4540,10 @@ function buildBpuBasic(X,en,info){
   A("Renseignez uniquement la colonne « Prix unitaire HT » ; les montants et totaux se calculent automatiquement. Ne modifiez ni les quantités ni les désignations.");
   A();
   const hdr=A("N°","Ref.","Désignation","U","Qté","TVA (%)","Prix unitaire HT","Montant HT","Annotations entreprise","Groupe","Bases");
-  const first=hdr+1, fr=[], baseN={}, mm=r=>pus[r.id]!=null?r.q*pus[r.id]:0;
+  const first=hdr+1, fr=[], baseN={}, mm=r=>pus[r.id]!=null?(qes[r.id]!=null?qes[r.id]:r.q)*pus[r.id]:0;
   const flat=bpuFlat().filter(r=>r.k!=="btot"), BK=["ovh","ovs","ded","dsub","osum","otot"], isBlk=r=>BK.includes(r.k)||r.opt;
   const body=r=>{String(r.texte||"").split("\n").map(t=>t.trim()).filter(Boolean).forEach(t=>A(null,null,t));};
-  const artRow=r=>{const c=ovOf(r.ar),n=A(r.code,r.id,r.titre,r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:mm(r),tva:r.tva});baseN[r.id]=n;return n;};
+  const artRow=r=>{const c=ovOf(r.ar),n=A(r.code,r.id,r.titre,uns[r.id]||r.u,qes[r.id]!=null?qes[r.id]:r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:mm(r),tva:r.tva});baseN[r.id]=n;return n;};
   flat.filter(r=>!isBlk(r)).forEach(r=>{if(r.k==="art")artRow(r);else A(r.code,null,r.k==="par"&&r.d>0?r.titre:r.titre.toUpperCase());body(r);});
   const baseLast=aoa.length; A();
   const tH=A(null,null,"Total HT"), tT=A(null,null,"Total TVA"), tC=A(null,null,"Total TTC");
@@ -4724,10 +4648,10 @@ $("#impOk").onclick=()=>{
   if(!impData) return; let en;
   if($("#impEnt").value==="__new"){const n=$("#impName").value.trim();if(!n){$("#impName").focus();return;}en={id:"e"+nid(),nom:n,statut:"À consulter",base:null,travaux:[]};ents().push(en);}
   else en=ents().find(e=>e.id===$("#impEnt").value);
-  if(!en) return; registerOffer(en,impData); $("#impDlg").close(); const fi=impFile;
+  if(!en) return; registerOffer(en,impData); $("#impDlg").close();
   if(state.view==="analyse")renderAnalyse(); else renderConsult();
   toast(`Offre de ${en.nom} importée : l'analyse est à jour`);
-  if(fi&&AG&&AG.dbxWrite){fi.arrayBuffer().then(b=>depositFiles(en,[{name:dbxFile(en,"BPU")+".xlsx",bytes:new Uint8Array(b)}])).catch(err=>console.error(err));}
+  if(AG&&AG.dbxWrite){bpuBytes(en).then(b=>depositFiles(en,[{name:dbxAna(en),bytes:b}])).catch(err=>console.error(err));}
 };
 $("#impBtn").onclick=()=>openImport(null);
 $("#expBpuBtn").onclick=()=>exportBpu(null);
@@ -4841,7 +4765,7 @@ $("#ptBody").addEventListener("click",async e=>{
     registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},qents:{...PD.qents},units:{...PD.units},devis:PD.devis,marks:{...PD.marks}});
     if(t.miss)histAdd(en,`Prix manquants validés par l'architecte (${t.miss})`);save();
     const dv=PD.devisBuf, manual=PD.manual; $("#portalDlg").close(); PD=null; renderConsult(); toast(manual?`Offre de ${en.nom} enregistrée : l'analyse des offres est à jour`:`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
-    try{const files=[{name:dbxFile(en,"BPU")+".xlsx",bytes:await bpuBytes(en)}]; if(dv)files.push({name:dbxFile(en,"DEVIS")+".pdf",bytes:dv}); await depositFiles(en,files);}catch(err){console.error(err);toast("Offre enregistrée, mais le dépôt dans Dropbox a échoué.");}
+    try{const files=[{name:dbxAna(en),bytes:await bpuBytes(en)}]; if(dv)files.push({name:dbxFile(en,"DEVIS")+".pdf",bytes:dv}); await depositFiles(en,files);}catch(err){console.error(err);toast("Offre enregistrée, mais le dépôt dans Dropbox a échoué.");}
   }
 });
 $("#entTable").addEventListener("input",e=>{const l=e.target.closest("[data-entlink]");if(!l)return;const en=ents()[+l.dataset.entlink];en.depot=l.value.trim();save();

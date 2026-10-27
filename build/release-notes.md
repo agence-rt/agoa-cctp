@@ -1,1 +1,1 @@
-Déploiement n°88 — Consultation : la saisie manuelle affiche et permet de modifier quantités et unités de l'entreprise (lues dans le BPU, colonnes Qté ou Qté ent.) ; montants et analyse calculés avec elles
+Déploiement n°89 — Consultation : plus d'analyse automatique du dossier Dropbox (import via « Importer une offre ») ; l'offre importée ou saisie manuellement devient un nouveau BPU Excel « …_BPU_analyse.xlsx » (le fichier de l'entreprise n'est plus touché) ; le BPU _analyse reprend désormais les quantités entreprise, unités et prix unitaires modifiés

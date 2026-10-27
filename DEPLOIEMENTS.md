@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°89** — v0.89.0 — 2026-10-27 — Consultation : plus d'analyse automatique du dossier Dropbox (import via « Importer une offre ») ; l'offre importée ou saisie manuellement devient un nouveau BPU Excel « …_BPU_analyse.xlsx » (le fichier de l'entreprise n'est plus touché) ; le BPU _analyse reprend désormais les quantités entreprise, unités et prix unitaires modifiés
 - **n°88** — v0.88.0 — 2026-10-27 — Consultation : la saisie manuelle affiche et permet de modifier quantités et unités de l'entreprise (lues dans le BPU, colonnes Qté ou Qté ent.) ; montants et analyse calculés avec elles
 - **n°87** — v0.87.0 — 2026-10-27 — Analyse des offres : les unités (et quantités) modifiées par l'entreprise sur son BPU prévalent sur le BPU (montants recalculés, repère /unité, hors comparaison d'écarts)
 - **n°86** — v0.86.0 — 2026-10-27 — Rédaction : la localisation passe à la ligne (Entrée) et reste multiligne à l'aperçu et au CCTP
