@@ -1080,7 +1080,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.82.0", deploiement: 82};
+const APP = {version: "0.83.0", deploiement: 83};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1199,7 +1199,10 @@ const lotStyle=l=>{const c=lotCol(l);return `--lcp:${c.pale};--lcm:${c.mid};--lc
 const lotSheetStyle=l=>{const c=lotCol(l);return `--accent:${c.strong};--accent-soft:${c.pale};--line:${c.mid};--band:${c.strong}`;};
 function ovFrameRows(html,col,mode="all",bg){const rows=String(html).match(/<tr[\s\S]*?<\/tr>/g)||[];
   return rows.map((r,i)=>{const cl=" ob"+((mode==="all"||mode==="top")&&i===0?" obt":"")+((mode==="all"||mode==="bot")&&i===rows.length-1?" obb":"");
-    const g=bg&&(i===0||i>=rows.length-3)?" obg":"";return r.replace(/^<tr( class="([^"]*)")?/,(m,a,c)=>`<tr style="--oc:${col}${g?";--ob:"+bg:""}" class="${c||""}${cl}${g}"`);}).join("");}
+    const g=bg&&(i===0||i>=rows.length-3)?" obg":"";
+    const m=r.match(/^<tr([^>]*)>/); if(!m)return r; let at=m[1],st="",c="";
+    at=at.replace(/\sstyle="([^"]*)"/,(x,v)=>{st=v;return "";}).replace(/\sclass="([^"]*)"/,(x,v)=>{c=v;return "";});
+    return `<tr${at} style="${st?st+";":""}--oc:${col}${g?";--ob:"+bg:""}" class="${c}${cl}${g}">`+r.slice(m[0].length);}).join("");}
 const sgn=v=>(v>0.004?"+":"")+eur2(v);
 const ovKindLab=o=>o.kind==="variante"?"Variante":"Option";
 const btotal=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+btotal(x),0):isTitle(ar)?0:(ovOf(ar).in?0:qty(ar)*ar.pu);
@@ -1344,7 +1347,7 @@ async function saveAffaireFile(quiet){
       let p=state.filePath;
       if(p){await AG.writeFile(p,text);}
       else{p=await AG.saveAs(name,text); if(!p){if(!quiet)toast("Enregistrement annulé.");return;}}
-      if(!state.lib&&p!==state.filePath)AG.libLock("acquire",p);
+      if(!state.lib&&p!==state.filePath&&AG.libLock)AG.libLock("acquire",p);
       state.filePath=p; state.fileName=p.split(/[\\/]/).pop(); state.fileSaved=Date.now()+1; MAN_OV=OVV; bkMaybe(true);
       try{LS.setItem(KEY,JSON.stringify(store))}catch(e){} markDirty(); toast(`Fichier enregistré : ${state.fileName}`);
     }catch(e){toast("L'enregistrement du fichier a échoué : "+(e&&e.message||"erreur"));}
@@ -3047,13 +3050,10 @@ function buildSynthPdf(J,info){
   /* titre */
   font("bold",10.5,RED); doc.text("SYNTHÈSE DE LA CONSULTATION DES ENTREPRISES",L,y+4);
   doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(L,y+7,R,y+7); y+=14;
-  font("bold",17,INK); doc.splitTextToSize(wa((o.objet||"Objet des travaux").toUpperCase()),W).slice(0,2).forEach(l=>{doc.text(l,L,y+5);y+=7.6;});
-  font("normal",12,RED); if(o.immeuble){doc.text(wa(o.immeuble),L,y+4);y+=6;}
-  font("normal",9.5,MUTED); const adr=[o.adresse,o.ville].filter(Boolean).join(", "); if(adr){doc.text(wa(adr),L,y+3.5);y+=5;}
-  doc.text(wa("Montants en euros, hors taxes sauf mention contraire. "+(o.syndic?"Syndic : "+o.syndic+".":"")),L,y+3.5); y+=7;
+  y+=2;
 
   /* 1. tableau de synthèse */
-  h2("1. Tableau de synthèse par lot et par chapitre");
+  h2("TABLEAU DE SYNTHÈSE");
   const labW=Math.max(62,W-n*Math.min(32,(W-62)/n)), cw=(W-labW)/n;
   const head=()=>{fill(PALE);doc.rect(L,y,W,7,"F");font("bold",8.5,RED);doc.text("Lot / chapitre",L+2,y+4.8);
     E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
@@ -3070,17 +3070,20 @@ function buildSynthPdf(J,info){
     vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;const best=o2.best===j;font(o2.b||best?"bold":"normal",o2.sz||8.5,best?GRN:o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.15);doc.line(L,y+h,R,y+h);y+=h;};
   const bestOf=vals=>{let b=-1,m=Infinity;vals.forEach((v,j)=>{if(v>0&&v<m){m=v;b=j;}});return b;};
-  M.lots.forEach(({l,li,rows,tot})=>{
-    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), ttc=E.map(e=>tot.e[e.id].ttc);
-    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:true,fill:PALE});
+  M.lots.forEach(({l,li,rows,tot},k)=>{
+    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), lc=lotCol(lotById(l.id)), lp=hexRgb(lc.pale), ls=hexRgb(lc.strong);
+    if(k)y+=4;
+    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:true,fill:lp,c:ls});
     rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;const cv=E.map(e=>w.sub.e[e.id].ht);
       row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nf),{ind:3,best:bestOf(cv),out:OUT});});
-    row(`Sous-total lot ${pad(li+1)} HT`,ht.map(nf),{b:true,best:bestOf(ht),out:OUT});
-    row("TVA",ht.map((v,j)=>nf(ttc[j]-v)),{sz:8,out:OUT});
-    row(`Sous-total lot ${pad(li+1)} TTC`,ttc.map(nf),{b:true,best:bestOf(ttc),out:OUT});
+    row(`Sous-total lot ${pad(li+1)} HT`,ht.map(nf),{b:true,fill:lp,c:ls,best:bestOf(ht),out:OUT});
   });
-  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune");
-  y+=1.5; row("TOTAL DES LOTS TTC",E.map(e=>nf(T0[e.id+"T"])),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id+"T"]))});
+  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
+  const vals=(o3,sfx)=>E.map(e=>nf(o3[e.id+(sfx||"")]));
+  y+=4; row("TOTAL HT",vals(T0),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id]))});
+  if(V0.est||E.some(e=>V0[e.id])){row("dont parties communes (HT)",vals(C0),{ind:3,sz:8});row("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:8});}
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];row(`TVA à ${pct(tx)}`,E.map(e=>nf(Rr.e[e.id]*tx/100)),{sz:8});});
+  row("TOTAL TTC",vals(T0,"T"),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id+"T"]))});
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){y+=3;need(16);font("bold",9,RED);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
     OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgn2(nt(O.e[e.id]))),{ind:3});});}
@@ -4240,7 +4243,7 @@ function renderSynth(){
    ${edit(["reco","pj","conclu","sign"])}
    <p class="hint">Les textes automatiques se mettent à jour tant qu'ils n'ont pas été modifiés à la main (bouton « Rétablir » pour revenir au texte automatique).</p></details>
    <div class="scroll"><table class="stab"><thead><tr><th>Lot / chapitre</th>${E.map(e=>`<th class="n">${esc(entShort(e))}</th>`).join("")}</tr></thead><tbody>
-   ${R.map(r=>r.k==="lot"?`<tr class="sl" style="${lotStyle(r.l)}"><td colspan="${E.length+1}">${esc(r.lab)}</td></tr>`
+   ${R.map(r=>r.k==="lot"?`<tr class="sl" style="${lotStyle(lotById(r.l.id))}"><td colspan="${E.length+1}">${esc(r.lab)}</td></tr>`
      :`<tr class="s-${r.k}"><td${r.k==="par"?' class="ind"':""}>${esc(r.lab)}</td>${E.map((e,j)=>td(r,j)).join("")}</tr>`).join("")}
    </tbody></table></div>
    <p class="hint">Montants HT, sauf mention contraire. Colonnes grisées : lot non chiffré par l'entreprise. Le mieux-disant de chaque ligne est en vert.</p>`;
@@ -4269,7 +4272,7 @@ async function exportSynthXlsx(){
     h.eachCell(c=>{c.font=F(10,{bold:true});c.fill=PALE;}); h.height=30;
     let r=4;
     R.forEach(x=>{const row=ws.getRow(r++),c=row.getCell(1); c.value=x.lab;
-      if(x.k==="lot"){const lc=lotCol(x.l);c.font=F(12,{bold:true,color:{argb:"FF"+lc.strong.slice(1).toUpperCase()}});for(let j=1;j<=Ent.length+1;j++)row.getCell(j).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+lc.pale.slice(1).toUpperCase()}};return;}
+      if(x.k==="lot"){const lc=lotCol(lotById(x.l.id));c.font=F(12,{bold:true,color:{argb:"FF"+lc.strong.slice(1).toUpperCase()}});for(let j=1;j<=Ent.length+1;j++)row.getCell(j).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+lc.pale.slice(1).toUpperCase()}};return;}
       const b=x.k==="ch"||x.k==="sub"||x.k==="ttc"||x.k==="tot"; c.font=F(10,{bold:b,italic:x.k==="tva"}); c.alignment={indent:x.k==="par"?2:0};
       Ent.forEach((e,j)=>{const k=row.getCell(2+j); if(x.out&&x.out[j]){k.fill=GREY;k.value=null;return;} k.value=Math.round(x.v[j]*100)/100; k.numFmt=MON; k.font=F(10,{bold:b||x.best===j,color:x.best===j?{argb:"FF1E785A"}:undefined});});
       if(x.k==="tot"){for(let j=1;j<=Ent.length+1;j++)row.getCell(j).border={top:{style:"medium"}};}});
@@ -4284,7 +4287,7 @@ async function exportSynthXlsx(){
     [h1,h2].forEach(x=>x.eachCell(c=>{c.font=F(10,{bold:true});c.fill=PALE;c.alignment=Object.assign({wrapText:true,vertical:"middle"},c.alignment||{});}));
     let q=4;
     M.lots.forEach(({l,li,rows,out})=>{
-      const lr=wc.getRow(q++), lc=lotCol(l); lr.getCell(1).value=pad(li+1); lr.getCell(2).value=l.titre;
+      const lr=wc.getRow(q++), lc=lotCol(lotById(l.id)); lr.getCell(1).value=pad(li+1); lr.getCell(2).value=l.titre;
       for(let j=1;j<=5+2*Ent.length;j++){lr.getCell(j).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+lc.pale.slice(1).toUpperCase()}};lr.getCell(j).font=F(11,{bold:true,color:{argb:"FF"+lc.strong.slice(1).toUpperCase()}});}
       rows.forEach((w,wi)=>{if(w.ex||anaOvOnly(rows,wi))return; const o=w.o, row=wc.getRow(q++);
         row.getCell(1).value=o.code||""; const c2=row.getCell(2); c2.value=o.titre; c2.alignment={indent:Math.min(w.d,4),wrapText:true,vertical:"top"};

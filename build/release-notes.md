@@ -1,1 +1,1 @@
-Déploiement n°82 — Synthèse PDF : tableau limité aux chapitres avec sous-totaux, sous-total de lot HT/TVA/TTC et total des lots TTC (comme à l'écran)
+Déploiement n°83 — Synthèse PDF : sous-total HT par lot, total HT + TVA + TTC en bas, en-tête allégé, titre TABLEAU DE SYNTHÈSE, couleurs des lots ; couleurs des lots rétablies dans l'analyse des offres
