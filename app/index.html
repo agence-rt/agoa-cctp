@@ -596,6 +596,7 @@ dialog.portal[open]{display:flex;flex-direction:column}
 .pt-tbl .code{white-space:nowrap;color:var(--muted);width:78px}
 .pt-tbl .pt-desc{display:block;font-weight:400;color:var(--muted);font-size:12px;line-height:1.45;margin-top:2px;white-space:pre-wrap}
 .pt-tbl input[type=text]{background:var(--field-bg);padding:6px;font-size:13px}
+.pt-tbl input.pq{text-align:right;width:76px;font-variant-numeric:tabular-nums}.pt-tbl input.pun{width:56px}.pt-tbl input.chg{border-color:var(--ochre);background:#fff8ec}
 .pt-tbl input.pu{text-align:right;width:112px;font-variant-numeric:tabular-nums}
 .pt-tbl input.nt{min-width:140px}
 .pt-tbl tr.miss input.pu{border-color:var(--ochre)}
@@ -1083,7 +1084,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.87.0", deploiement: 87};
+const APP = {version: "0.88.0", deploiement: 88};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3888,7 +3889,8 @@ function anaSync(){
   return live;
 }
 const medianOf=a=>{const v=a.slice().sort((x,y)=>x-y),n=v.length;return n?(n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2):null;};
-const uTag=(w,j)=>w.ue&&w.ue[j]?` <span class="uchg" title="Unité modifiée par l'entreprise : ${esc(w.ue[j])} (BPU : ${esc(w.o.u||"")}) · quantité ${fmt(w.qe[j],2)}">/${esc(w.ue[j])}</span>`:"";
+const uTag=(w,j)=>{const u=w.ue&&w.ue[j], q=w.qe&&w.qe[j]!=null&&Math.abs(w.qe[j]-w.q)>0.0001?w.qe[j]:null; if(!u&&q==null)return "";
+  return ` <span class="uchg" title="${u?`Unité de l'entreprise : ${esc(u)} (BPU : ${esc(w.o.u||"")}) · `:""}${q!=null?`Quantité de l'entreprise : ${fmt(q,2)} (BPU : ${fmt(w.q,2)})`:""}">${u?"/"+esc(u):""}${q!=null?" × "+fmt(q,2).replace(/,00$/,""):""}</span>`;};
 function anaModel(){
   const live=anaSync(), A=state.ana, E=offers();
   const M={A,E,lots:[],flags:Object.fromEntries(E.map(e=>[e.id,0])),miss:Object.fromEntries(E.map(e=>[e.id,0])),nflag:0,ov:{}};
@@ -3907,7 +3909,7 @@ function anaModel(){
       const ar=w.o, k=1+tvaOf(ar,null)/100; w.q=qty(ar); w.est=w.q*ar.pu; w.estT=w.est*k;
       E.forEach(e=>{const out=!!lotObj&&entSkip(e).has(lotObj.nid), mk=out?"":markOf(e,ar.id), m=!out&&!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0&&!mk, p=(m||out||(mk&&(e.offre.pus||{})[ar.id]==null))?null:puEnt(ar,e);
         (w.mk=w.mk||[]).push((e.offre&&(e.offre.pus||{})[ar.id]==null)?mk:"");w.miss.push(m); w.p.push(p);
-        const ue=(!out&&e.offre&&(e.offre.units||{})[ar.id])||"", qe=ue&&e.offre.qents&&e.offre.qents[ar.id]!=null?e.offre.qents[ar.id]:w.q; // unité (et quantité) de l'entreprise : elles prévalent sur le BPU
+        const ue=(!out&&e.offre&&(e.offre.units||{})[ar.id])||"", qe=!out&&e.offre&&e.offre.qents&&e.offre.qents[ar.id]!=null?e.offre.qents[ar.id]:w.q; // unité et quantité de l'entreprise : elles prévalent sur le BPU
         (w.ue=w.ue||[]).push(ue); (w.qe=w.qe||[]).push(qe); w.a.push(p==null?null:qe*p);});
       if(!w.ex&&w.q>0){
         const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]&&!w.ue[i]);
@@ -4069,7 +4071,7 @@ function renderAnalyse(){
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
             const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=col&&!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
             const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`, mk=(w.mk&&w.mk[j])||"", can=e.offre&&p==null&&!entSkip(e).has(l.id)?` data-amark="${esc(e.id)}|${esc(w.o.id)}" title="Cliquer pour indiquer : compris / non compris / sans objet"`:"";
-            body+=`<td class="n e1 ${c}${can?" mkcell":""}"${can}>${mk?markPill(mk):m?"–":eur2(p)+uTag(w,j)}</td><td class="n ${m?"miss":""}"${w.ue&&w.ue[j]?` title="Quantité de l'entreprise : ${fmt(w.qe[j],2)} ${esc(w.ue[j])}"`:""}>${m||mk?"–":eur2(w.a[j])}</td>`;});
+            body+=`<td class="n e1 ${c}${can?" mkcell":""}"${can}>${mk?markPill(mk):m?"–":eur2(p)+uTag(w,j)}</td><td class="n ${m?"miss":""}">${m||mk?"–":eur2(w.a[j])}</td>`;});
         }else{
           const st=w.k==="ch"&&!w.ex&&w.sub?w.sub:null;
           body+=st?`<td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(st.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n st-v">${eur2(st.e[e.id].ht)}${ec(st.e[e.id].ht,st.est)}</td>`).join("")}`
@@ -4676,14 +4678,15 @@ async function parseBpuFile(file){
     let hi=-1,c={};
     for(let i=0;i<Math.min(rows.length,40);i++){const r=rows[i]||[];const ix=re=>r.findIndex(v=>v!=null&&re.test(String(v).trim()));
       const p=ix(/^prix\s*unitaire/i);
-      if(p>=0&&ix(/^d[ée]signation$/i)>=0){hi=i;c={p,u:ix(/^u(nit[ée]s?)?\.?$/i),ref:ix(/^ref\.?$/i),code:ix(/^n[°o]$/i),note:ix(/^(annotations?|observations?)/i),qe:ix(/^qt[ée]\s*ent/i)};break;}}
+      if(p>=0&&ix(/^d[ée]signation$/i)>=0){hi=i;c={p,q:ix(/^qt[ée]\.?$/i),u:ix(/^u(nit[ée]s?)?\.?$/i),ref:ix(/^ref\.?$/i),code:ix(/^n[°o]$/i),note:ix(/^(annotations?|observations?)/i),qe:ix(/^qt[ée]\s*ent/i)};break;}}
     if(hi<0) return; found++;
     rows.slice(hi+1).forEach(r=>{
       const ref=c.ref>=0&&r[c.ref]!=null&&String(r[c.ref]).trim()!==""?String(r[c.ref]).trim():null;
       const cd=c.code>=0&&r[c.code]!=null?String(r[c.code]).trim():null;
       const ar=ref?byId[ref]:(cd?byCd[cd]:null);
       if(!ar){if(ref)unknown++;return;}
-      if(c.qe>=0&&typeof r[c.qe]==="number"&&Math.abs(r[c.qe]-qty(ar))>0.0001) qents[ar.id]=r[c.qe];
+      {const qv=(c.qe>=0&&typeof r[c.qe]==="number")?r[c.qe]:(c.q>=0&&typeof r[c.q]==="number"?r[c.q]:null); // « Qté ent. », ou « Qté » modifiée directement par l'entreprise
+       if(qv!=null&&Math.abs(qv-qty(ar))>0.0001) qents[ar.id]=qv;}
       if(c.u>=0&&r[c.u]!=null&&String(r[c.u]).trim()&&nU(r[c.u])!==nU(ar.u)) units[ar.id]=String(r[c.u]).trim(); // l'unité de l'entreprise prévaut sur celle du BPU
       if(c.note>=0&&r[c.note]!=null&&String(r[c.note]).trim()) notes[ar.id]=String(r[c.note]).trim();
       const v=r[c.p]; if(v==null||String(v).trim()==="") return;
@@ -4741,16 +4744,17 @@ $("#portalPrev").onclick=()=>{const E=ents();if(!E.length){toast("Ajoutez d'abor
 let PD=null;
 function openPortal(entId,manual){
   const en=ents().find(e=>e.id===entId); if(!en) return;
-  PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null,marks:{...((en.offre&&en.offre.marks)||{})},manual:!!manual};
+  PD={id:en.id,pus:{...((en.offre&&en.offre.pus)||{})},notes:{...((en.offre&&en.offre.notes)||{})},devis:(en.offre&&en.offre.devis)||null,marks:{...((en.offre&&en.offre.marks)||{})},qents:{...((en.offre&&en.offre.qents)||{})},units:{...((en.offre&&en.offre.units)||{})},manual:!!manual};
   renderPortal(); $("#portalDlg").showModal();
 }
+const pQ=(id,q)=>PD&&PD.qents&&PD.qents[id]!=null?PD.qents[id]:q;
 function portalTotals(){let ht=0,tva=0,miss=0,n=0;const O={};ovl().forEach(o=>O[o.id]={ht:0,ttc:0});
-  leavesE(ents().find(x=>x.id===PD.id),ar=>{const q=qty(ar);n++;const p=PD.pus[ar.id];if(p==null){if(q>0&&!PD.marks[ar.id])miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
+  leavesE(ents().find(x=>x.id===PD.id),ar=>{const q0=qty(ar),q=pQ(ar.id,q0);n++;const p=PD.pus[ar.id];if(p==null){if(q0>0&&!PD.marks[ar.id])miss++;return;}const m=q*p,k=tvaOf(ar)/100,c=ovOf(ar);
     if(!c.in){ht+=m;tva+=m*k;}else if(O[c.in]){O[c.in].ht+=m;O[c.in].ttc+=m*(1+k);}
     c.base.forEach(id=>{if(O[id]){O[id].ht-=m;O[id].ttc-=m*(1+k);}});});
   return{ht,tva,ttc:ht+tva,miss,n,O};}
 function portalSums(){
-  const Q={},T={};leaves(ar=>{Q[ar.id]=qty(ar);T[ar.id]=tvaOf(ar);});const M=id=>PD.pus[id]==null?0:Q[id]*PD.pus[id], sm=ids=>ids.reduce((a,id)=>a+M(id),0);
+  const Q={},T={};leaves(ar=>{Q[ar.id]=pQ(ar.id,qty(ar));T[ar.id]=tvaOf(ar);});const M=id=>PD.pus[id]==null?0:Q[id]*PD.pus[id], sm=ids=>ids.reduce((a,id)=>a+M(id),0);
   document.querySelectorAll("#ptBody [data-pdm]").forEach(c=>{c.textContent=PD.pus[c.dataset.pdm]==null?"":eur2(M(c.dataset.pdm));});
   document.querySelectorAll("#ptBody [data-psum]").forEach(c=>{const k=c.dataset.psum,ids=(c.dataset.pids||"").split(",").filter(Boolean),bs=(c.dataset.pbas||"").split(",").filter(Boolean);
     const V=a=>a.reduce((x,id)=>x+M(id)*(T[id]||0)/100,0);
@@ -4779,9 +4783,9 @@ function renderPortal(){
         +`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;
       h=h.slice(0,os)+ovFrameRows(h.slice(os),c.fg);}
     else{const p=PD.pus[r.id], miss=p==null&&r.q>0&&!PD.marks[r.id];
-      h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre)}${desc}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
+      h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre)}${desc}</td><td class="n"><input type="text" inputmode="decimal" class="pq${PD.qents[r.id]!=null?" chg":""}" data-pq="${r.id}" value="${fq(pQ(r.id,r.q),PD.units[r.id]||r.u)}" autocomplete="off" aria-label="Quantité de l'entreprise pour ${esc(r.titre)}" title="${PD.qents[r.id]!=null?"Quantité de l'entreprise (BPU : "+fq(r.q,r.u)+")":"Quantité du BPU : modifiable si l'entreprise a chiffré une autre quantité"}"></td><td><input type="text" class="pun${PD.units[r.id]?" chg":""}" data-pun="${r.id}" value="${esc(PD.units[r.id]||r.u)}" autocomplete="off" aria-label="Unité de l'entreprise pour ${esc(r.titre)}" title="${PD.units[r.id]?"Unité de l'entreprise (BPU : "+esc(r.u)+")":"Unité du BPU : modifiable si l'entreprise a changé l'unité"}"></td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
         <td><input type="text" inputmode="decimal" class="pu" data-ppu="${r.id}" value="${p==null?"":money(p)}" placeholder="0,00 €" autocomplete="off" aria-label="Prix unitaire HT de ${esc(r.titre)}"><span class="mk-bar" data-mkbar="${r.id}">${p==null?mkBar(PD.marks[r.id]):""}</span></td>
-        <td class="n" data-pm="${r.id}">${p==null?"":eur2(r.q*p)}</td>
+        <td class="n" data-pm="${r.id}">${p==null?"":eur2(pQ(r.id,r.q)*p)}</td>
         <td><input type="text" class="nt" data-pnt="${r.id}" value="${esc(PD.notes[r.id]||"")}" placeholder="Annotation" aria-label="Annotation sur ${esc(r.titre)}"></td></tr>`;}
   });
   $("#ptBody").innerHTML=`
@@ -4810,8 +4814,12 @@ $("#ptBody").addEventListener("input",e=>{
   if(t.dataset.ppu){const id=t.dataset.ppu, v=t.value.trim();
     if(v==="") delete PD.pus[id]; else{PD.pus[id]=Math.round(parseMoney(v)*100)/100;delete PD.marks[id];}
     {const mb=t.closest("td").querySelector("[data-mkbar]");if(mb)mb.innerHTML=PD.pus[id]==null?mkBar(PD.marks[id]):"";}
-    const tr=t.closest("tr"), q=(()=>{let r=0;leaves(ar=>{if(ar.id===id)r=qty(ar);});return r;})();
-    tr.querySelector("[data-pm]").textContent=PD.pus[id]==null?"":eur2(q*PD.pus[id]); tr.classList.toggle("miss",PD.pus[id]==null&&q>0&&!PD.marks[id]); portalFoot();}
+    const tr=t.closest("tr"), q0=(()=>{let r=0;leaves(ar=>{if(ar.id===id)r=qty(ar);});return r;})(), q=pQ(id,q0);
+    tr.querySelector("[data-pm]").textContent=PD.pus[id]==null?"":eur2(q*PD.pus[id]); tr.classList.toggle("miss",PD.pus[id]==null&&q0>0&&!PD.marks[id]); portalFoot();}
+  else if(t.dataset.pq||t.dataset.pun){const id=t.dataset.pq||t.dataset.pun, tr=t.closest("tr"); let ar0=null;leaves(ar=>{if(ar.id===id)ar0=ar;}); if(!ar0)return;
+    if(t.dataset.pq){const v=t.value.trim(), n=parseMoney(v); if(v===""||!Number.isFinite(n)||Math.abs(n-qty(ar0))<0.0001)delete PD.qents[id]; else PD.qents[id]=n; t.classList.toggle("chg",PD.qents[id]!=null);}
+    else{const v=t.value.trim(); if(!v||v.toLowerCase().replace(/\s+/g,"")===String(ar0.u||"").toLowerCase().replace(/\s+/g,""))delete PD.units[id]; else PD.units[id]=v; t.classList.toggle("chg",!!PD.units[id]);}
+    tr.querySelector("[data-pm]").textContent=PD.pus[id]==null?"":eur2(pQ(id,qty(ar0))*PD.pus[id]); portalFoot();}
   else if(t.dataset.pnt){const id=t.dataset.pnt; if(t.value.trim()) PD.notes[id]=t.value; else delete PD.notes[id];}
 });
 $("#ptBody").addEventListener("focusout",e=>{const t=e.target;if(t.dataset&&t.dataset.ppu&&PD&&PD.pus[t.dataset.ppu]!=null)t.value=money(PD.pus[t.dataset.ppu]);});
@@ -4819,7 +4827,7 @@ $("#ptBody").addEventListener("focusin",e=>{if(e.target.dataset&&e.target.datase
 $("#ptBody").addEventListener("change",async e=>{
   const t=e.target;
   if(t.id==="pPdf"&&t.files[0]){const f=t.files[0];PD.devis={nom:f.name,taille:f.size};try{PD.devisBuf=new Uint8Array(await f.arrayBuffer());}catch(x){PD.devisBuf=null;}portalFoot();}
-  if(t.id==="pImp"&&t.files[0]){try{const d=await parseBpuFile(t.files[0]);Object.assign(PD.pus,d.pus);Object.assign(PD.notes,d.notes);renderPortal();toast(`${d.read} prix repris depuis votre fichier Excel`);}catch(err){toast(err.message||"Fichier illisible.");}t.value="";}
+  if(t.id==="pImp"&&t.files[0]){try{const d=await parseBpuFile(t.files[0]);Object.assign(PD.pus,d.pus);Object.assign(PD.notes,d.notes);Object.assign(PD.qents,d.qents||{});Object.assign(PD.units,d.units||{});renderPortal();toast(`${d.read} prix repris depuis votre fichier Excel`);}catch(err){toast(err.message||"Fichier illisible.");}t.value="";}
 });
 $("#ptBody").addEventListener("click",async e=>{
   if(!PD) return;
@@ -4830,7 +4838,7 @@ $("#ptBody").addEventListener("click",async e=>{
   if(e.target.closest("#pSubmit")){
     const en=ents().find(x=>x.id===PD.id), t=portalTotals(); if(!en||(!PD.devis&&!PD.manual)) return;
     if(t.miss&&!await ask(`Il manque <b>${t.miss}</b> prix unitaire${t.miss>1?"s":""} sur des articles chiffrés. ${PD.manual?"Enregistrer":"Soumettre"} l'offre en l'état ?`,PD.manual?"Enregistrer quand même":"Soumettre quand même")) return;
-    registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},devis:PD.devis,marks:{...PD.marks}});
+    registerOffer(en,{pus:{...PD.pus},notes:{...PD.notes},qents:{...PD.qents},units:{...PD.units},devis:PD.devis,marks:{...PD.marks}});
     if(t.miss)histAdd(en,`Prix manquants validés par l'architecte (${t.miss})`);save();
     const dv=PD.devisBuf, manual=PD.manual; $("#portalDlg").close(); PD=null; renderConsult(); toast(manual?`Offre de ${en.nom} enregistrée : l'analyse des offres est à jour`:`Offre de ${en.nom} reçue : l'analyse des offres est à jour`);
     try{const files=[{name:dbxFile(en,"BPU")+".xlsx",bytes:await bpuBytes(en)}]; if(dv)files.push({name:dbxFile(en,"DEVIS")+".pdf",bytes:dv}); await depositFiles(en,files);}catch(err){console.error(err);toast("Offre enregistrée, mais le dépôt dans Dropbox a échoué.");}

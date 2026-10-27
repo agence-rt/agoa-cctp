@@ -1,1 +1,1 @@
-Déploiement n°87 — Analyse des offres : les unités (et quantités) modifiées par l'entreprise sur son BPU prévalent sur le BPU (montants recalculés, repère /unité, hors comparaison d'écarts)
+Déploiement n°88 — Consultation : la saisie manuelle affiche et permet de modifier quantités et unités de l'entreprise (lues dans le BPU, colonnes Qté ou Qté ent.) ; montants et analyse calculés avec elles
