@@ -1080,7 +1080,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.81.0", deploiement: 81};
+const APP = {version: "0.82.0", deploiement: 82};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3071,18 +3071,16 @@ function buildSynthPdf(J,info){
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.15);doc.line(L,y+h,R,y+h);y+=h;};
   const bestOf=vals=>{let b=-1,m=Infinity;vals.forEach((v,j)=>{if(v>0&&v<m){m=v;b=j;}});return b;};
   M.lots.forEach(({l,li,rows,tot})=>{
-    const lv=E.map(e=>tot.e[e.id].ht), OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
-    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,lv.map(nf),{b:true,fill:PALE,best:bestOf(lv),out:OUT});
-    rows.forEach((w,wi)=>{if((w.k!=="ch"&&w.k!=="par")||w.d>1||w.ex||!w.sub||anaOvOnly(rows,wi))return;const t=w.sub, cv=E.map(e=>t.e[e.id].ht);
-      if(w.k==="par"&&!cv.some(v=>v>0))return;
-      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nf),{ind:3+w.d*4,b:w.d===0,sz:w.d?8:8.5,best:bestOf(cv),out:OUT});});
+    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), ttc=E.map(e=>tot.e[e.id].ttc);
+    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:true,fill:PALE});
+    rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;const cv=E.map(e=>w.sub.e[e.id].ht);
+      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nf),{ind:3,best:bestOf(cv),out:OUT});});
+    row(`Sous-total lot ${pad(li+1)} HT`,ht.map(nf),{b:true,best:bestOf(ht),out:OUT});
+    row("TVA",ht.map((v,j)=>nf(ttc[j]-v)),{sz:8,out:OUT});
+    row(`Sous-total lot ${pad(li+1)} TTC`,ttc.map(nf),{b:true,best:bestOf(ttc),out:OUT});
   });
-  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
-  const vals=(o3,sfx)=>E.map(e=>nf(o3[e.id+(sfx||"")]));
-  y+=1.5; row("TOTAL HT",vals(T0),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id]))});
-  if(V0.est||E.some(e=>V0[e.id])){row("dont parties communes (HT)",vals(C0),{ind:3,sz:8});row("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:8});}
-  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];row(`TVA à ${pct(tx)}`,E.map(e=>nf(Rr.e[e.id]*tx/100)),{sz:8});});
-  row("TOTAL TTC",vals(T0,"T"),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id+"T"]))});
+  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune");
+  y+=1.5; row("TOTAL DES LOTS TTC",E.map(e=>nf(T0[e.id+"T"])),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id+"T"]))});
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){y+=3;need(16);font("bold",9,RED);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
     OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgn2(nt(O.e[e.id]))),{ind:3});});}
