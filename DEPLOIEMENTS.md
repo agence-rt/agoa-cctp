@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°81** — v0.81.0 — 2026-10-27 — Synthèse : tableau limité aux chapitres, nom d'entreprise seul dans les tableaux, lettre d'analyse rédigeable (entreprises et adresses automatiques, choix des mieux-disants)
 - **n°80** — v0.80.0 — 2026-10-27 — Verrou d'ouverture des affaires .cctp (un seul poste à la fois) ; onglet Synthèse recomposé : export PDF, export tableaux Excel, tableau de synthèse lot/chapitre/sous-chapitre
 - **n°79** — v0.79.0 — 2026-10-27 — Couleur de lot : sélecteur de couleur libre en plus des couleurs de base
 - **n°78** — v0.78.0 — 2026-10-27 — Contrôle avant export : uniquement quantités et unités (plus d'alerte sur les prix, titres, descriptions ou chapitres vides)

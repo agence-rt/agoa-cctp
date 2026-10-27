@@ -1080,7 +1080,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.80.0", deploiement: 80};
+const APP = {version: "0.81.0", deploiement: 81};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3056,7 +3056,7 @@ function buildSynthPdf(J,info){
   h2("1. Tableau de synthèse par lot et par chapitre");
   const labW=Math.max(62,W-n*Math.min(32,(W-62)/n)), cw=(W-labW)/n;
   const head=()=>{fill(PALE);doc.rect(L,y,W,7,"F");font("bold",8.5,RED);doc.text("Lot / chapitre",L+2,y+4.8);
-    E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(e.nom),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
+    E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
     y+=7;};
   head();
   const row=(lab,vals,o2={})=>{
@@ -3092,7 +3092,7 @@ function buildSynthPdf(J,info){
     y+=3;need(20);font("bold",9,RED);doc.text("Entreprises consultées par lot",L,y+3.5);y+=6;
     LO.filter(z=>z.list.length).forEach(z=>{need(12+z.list.length*8);fill(PALE);doc.rect(L,y,W,5.6,"F");font("bold",8.5,RED);doc.text(wa(`Lot ${pad(z.x.li+1)} - ${doc.splitTextToSize(wa(z.x.l.titre),W-60)[0]}`),L+2,y+3.9);font("normal",8,MUTED);doc.text(wa("MOE : "+nf(z.x.tot.est)+" HT"),R-1,y+3.9,{align:"right"});y+=5.6;
       z.list.forEach(o=>{need(9);const a2=entAdr(o.e);const bs=o.e.id===z.best;if(bs){fill([225,243,235]);doc.rect(L,y,W,4.6+(a2?3.8:0),"F");}
-        font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(doc.splitTextToSize(o.e.nom+(bs?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
+        font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(doc.splitTextToSize(entShort(o.e)+(bs?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
         font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
         if(a2){font("normal",7.5,MUTED);doc.text(wa(doc.splitTextToSize(a2,W-8)[0]),L+4,y+2.6);y+=3.8;}});y+=1.5;});
     y+=1;need(10);    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.line(L,y,R,y);fill(PALE);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nf(P.ht)+" HT"),R-34,y+4,{align:"right"});doc.text(wa(nf(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
@@ -3111,7 +3111,7 @@ function buildSynthPdf(J,info){
   const sepV=(yy,h)=>{doc.setDrawColor(GL[0],GL[1],GL[2]);doc.setLineWidth(0.25);E.forEach((e,j)=>{doc.line(xe(j),yy,xe(j),yy+h);});doc.line(xe(n-1)+cEp+cEm,yy,xe(n-1)+cEp+cEm,yy+h);};
   const gh=()=>{fill(PALE);doc.rect(L,y,W,showPU?11:7,"F");font("bold",7.6,RED);
     const t1=showPU?y+4.3:y+4.6; doc.text("N°",xs.code+1,t1);doc.text("Désignation",xs.des+1,t1);doc.text("U",xs.u+cU-1,t1,{align:"right"});doc.text("Qté",xs.q+cQ-1,t1,{align:"right"});
-    E.forEach((e,j)=>{doc.text(wa(doc.splitTextToSize(wa(e.nom),cEp+cEm-1)[0]),xe(j)+(cEp+cEm)/2,t1,{align:"center"});});
+    E.forEach((e,j)=>{doc.text(wa(doc.splitTextToSize(wa(entShort(e)),cEp+cEm-1)[0]),xe(j)+(cEp+cEm)/2,t1,{align:"center"});});
     if(showPU){const t2=y+8.8;E.forEach((e,j)=>{doc.text("PU",xe(j)+cEp-1,t2,{align:"right"});doc.text("Montant",xe(j)+cEp+cEm-1,t2,{align:"right"});});}
     sepV(y,showPU?11:7); y+=showPU?11:7;};
   gh();
@@ -3900,7 +3900,7 @@ function anaBilanHtml(M){
   const B=bilanData(M), sg=n=>(n>=0?"+":"−")+eur(Math.abs(n)), pc=n=>n==null?"–":(n>=0?"+":"−")+fmt(Math.abs(n),1)+" %";
   return `<h4>Bilan des offres <label style="margin-left:12px">Alerte à ± <input type="number" id="anaSeuilO" min="1" max="200" value="${B.lim}"> % de l'estimation</label></h4>
   <table><thead><tr><th>Entreprise</th><th>Rang</th><th>Total HT</th><th>Total TTC</th><th>Écart / estimation (${eur(B.est)} HT)</th><th>vs médiane</th><th>Prix hors seuil</th><th>Prix manquants</th><th>Annotations</th></tr></thead><tbody>
-  ${B.rows.map(r=>`<tr class="${r.rank===1?"rk1":""}"><td>${esc(r.e.nom)}${state.retenue===r.e.id?" ★":""}${r.opts.length?`<span class="opt">${r.opts.map(o=>`${esc(o.lab)} : ${sg(o.net)}`).join(" · ")}</span>`:""}${r.alert.map(a=>`<span class="al ${a[0]}">⚠ ${esc(a[1])}</span>`).join("")}</td>
+  ${B.rows.map(r=>`<tr class="${r.rank===1?"rk1":""}"><td>${esc(entShort(r.e))}${state.retenue===r.e.id?" ★":""}${r.opts.length?`<span class="opt">${r.opts.map(o=>`${esc(o.lab)} : ${sg(o.net)}`).join(" · ")}</span>`:""}${r.alert.map(a=>`<span class="al ${a[0]}">⚠ ${esc(a[1])}</span>`).join("")}</td>
    <td>${r.rank?r.rank+(r.rank===1?"er":"e"):(r.miss?"incomplète":"–")}</td><td>${eur(r.ht)}</td><td>${eur(r.ttc)}</td><td>${sg(r.ecart)} (${pc(r.pct)})</td><td>${pc(r.vsMed)}</td><td>${r.flags||"–"}</td><td>${r.miss||"–"}</td><td>${r.notes||"–"}</td></tr>`).join("")}</tbody></table>`;
 }
 function anaOvOnly(rows,i){ // ligne réservée aux options : à sortir du tableau du marché de base
@@ -3947,6 +3947,7 @@ function pickSummary(M){
     if(x.l.charge==="Commune"){cht+=o.ht;cttc+=o.ttc;}});
   return {rows,ht,ttc,est,estT,cht,cttc,auto:!manual};
 }
+const entShort=e=>{const n=String(e&&e.nom||"");return n.split(/[\\/]/).pop().trim()||n;};
 const entAdr=e=>[e.adresse,e.tel,e.email].filter(Boolean).join(" · ");
 function quoteCfg(){const S=synObj();const t=(Array.isArray(S.tant)&&S.tant.length?S.tant:[50,100,200]).filter(v=>v>0);return {on:!!S.quote,tant:t,base:S.base>0?S.base:10000};}
 function anaBlockEnd(rows,i){let e=i+1;while(e<rows.length&&rows[e].d>rows[i].d)e++;return e;}
@@ -3993,11 +3994,11 @@ function renderAnalyse(){
     <details class="ana-lotsel" ${anaLotSelOpen?"open":""}><summary title="Choisir les lots à analyser">Lots analysés (${state.data.filter(l=>!l.noBpu&&!(A.off||[]).includes(l.nid)).length}/${state.data.filter(l=>!l.noBpu).length}) ▾</summary><div>${state.data.map(l=>l.noBpu?`<label class="lotck" style="opacity:.55"><input type="checkbox" disabled> Lot ${esc(l.code)} ${esc(l.titre)} <span class="hint">(hors BPU)</span></label>`:`<label class="lotck"><input type="checkbox" data-alsel="${esc(l.nid)}" ${(A.off||[]).includes(l.nid)?"":"checked"}> Lot ${esc(l.code)} ${esc(l.titre)}</label>`).join("")}</div></details>
     <span class="achips" role="group" aria-label="Entreprises affichées"><span class="hint">Entreprises :</span>
       <span class="achip ${A.hideMoe?"off":""}"><button data-achip="moe" aria-pressed="${!A.hideMoe}" title="Afficher ou masquer l'estimation de la MOE">Estimation MOE</button></span>
-      ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}" draggable="true" data-achipd="${esc(e.id)}" title="Glisser pour changer l'ordre"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(e.nom)}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
+      ${E.map(e=>`<span class="achip ${A.hide.includes(e.id)?"off":""}" draggable="true" data-achipd="${esc(e.id)}" title="Glisser pour changer l'ordre"><button data-achip="${esc(e.id)}" aria-pressed="${!A.hide.includes(e.id)}" title="Afficher ou masquer cette entreprise">${esc(entShort(e))}${state.retenue===e.id?" ★":""}</button><details class="ana-lots" data-alotd="${esc(e.id)}" ${anaLotOpen===e.id?"open":""}><summary title="Lots auxquels répond ${esc(e.nom)}" class="${(e.skip||[]).length?"part":""}">${(e.skip||[]).length?esc(entLotsLabel(e)):"Lots"} ▾</summary><div><b>Lots répondus par ${esc(e.nom)}</b>${entLotsBoxes(e,"data-alot")}</div></details></span>`).join("")}
     </span>
     <span class="sep"></span>
     <button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
-  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(e.nom)}</th>`;}).join("")}</tr>
+  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(entShort(e))}</th>`;}).join("")}</tr>
     <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
   const ec=()=>"";
   let body="";
@@ -4156,12 +4157,12 @@ function synthRet(M){const E=M.E;return E.find(e=>e.id===state.retenue)||E[0];}
 function synthDefaults(M,BD,ret){
   const o=state.op||{}, E=M.E, n=E.length, S=synObj(), ents=state.ents||[];
   const T0=anaSums(M,()=>true), com=anaSums(M,l=>l.charge==="Commune");
-  const lst=a=>a.map(e=>"- "+e.nom+(S.devis[e.id]?" (devis n°"+S.devis[e.id]+")":"")).join("\n");
+  const lst=a=>a.map(e=>"- "+e.nom+(S.devis[e.id]?" (devis n°"+S.devis[e.id]+")":"")+(e.adresse?" - "+[e.adresse,e.tel].filter(Boolean).join(" - "):"")).join("\n");
   const d={};
   d.intro=`Suite à l'appel d'offres concernant les travaux de ${String(o.objet||"…").toUpperCase()}, ${n>1?n+" entreprises ont répondu favorablement":n+" entreprise a répondu favorablement"} :\n${lst(E)}`;
   const inc=BD.rows.filter(r=>r.miss);
   d.obs=inc.length?inc.map(r=>`L'offre de ${r.e.nom} est incomplète (${r.miss} prix manquant${r.miss>1?"s":""}).`).join("\n")+(n-inc.length>0?`\n${n-inc.length>1?"Les "+(n-inc.length)+" autres offres sont conformes":"L'autre offre est conforme"} au CCTP et au BPU transmis.`:""):(n>1?`Les ${n} offres sont conformes au CCTP et au BPU transmis.`:`L'offre est conforme au CCTP et au BPU transmis.`);
-  d.reco=ret?`Sur l'ensemble des offres, l'entreprise la mieux disante est\n${ret.nom}, avec un montant de travaux de ${eur2(T0[ret.id+"T"])} TTC`:"";
+  d.reco=recoText(M);
   d.pj="Vous trouverez ci-joint le tableau comparatif global, ainsi que l'ensemble des devis reçus.";
   d.conclu="Nous restons à votre entière disposition pour tous renseignements complémentaires.\nDans l'attente de vous relire, recevez, Madame, Monsieur, l'expression de nos salutations distinguées.";
   d.sign=archCur().signature;
@@ -4183,6 +4184,24 @@ function synthDefaults(M,BD,ret){
   d.ecarts=dev.slice(0,8).map(x=>`${x.w.o.code||""} ${x.w.o.titre} - ${x.e.nom} : ${sg(x.d)} EUR (${(x.p>=0?"+":"-")+fmt(Math.abs(x.p),1)} %).`).join("\n");
   return d;
 }
+/* Entreprise(s) mieux-disante(s) : choix enregistré, sinon mieux-disant de chaque lot (analyse des offres) */
+function recoSel(M){
+  const S=synObj(), ids=M.E.map(e=>e.id);
+  if(Array.isArray(S.best)){const v=S.best.filter(i=>ids.includes(i)); if(v.length)return v;}
+  const P=pickSummary(M); if(P.rows.length)return [...new Set(P.rows.map(r=>r.ent.id))];
+  const LO=lotOffers(M), b=LO.length&&LO[0].best; if(b)return [b];
+  const T=anaSums(M,()=>true), ok=M.E.filter(e=>T[e.id+"T"]>0).sort((a,b)=>T[a.id+"T"]-T[b.id+"T"]); return ok.length?[ok[0].id]:(M.E[0]?[M.E[0].id]:[]);
+}
+function recoText(M){
+  const sel=recoSel(M); if(!sel.length)return "";
+  const LO=lotOffers(M), asg=[];
+  LO.forEach(({x,list})=>{const c=list.filter(o=>sel.includes(o.e.id)).sort((a,b)=>(a.inc-b.inc)||(a.ht-b.ht))[0]; if(c)asg.push({lot:x.l,li:x.li,e:c.e,ttc:c.ttc});});
+  const T=anaSums(M,()=>true), byE=sel.map(id=>M.E.find(e=>e.id===id)).filter(Boolean);
+  if(byE.length===1){const e=byE[0], tt=asg.length&&M.lots.length>1?asg.filter(a=>a.e.id===e.id).reduce((s,a)=>s+a.ttc,0):T[e.id+"T"];
+    return `Sur l'ensemble des offres, l'entreprise la mieux disante est\n${e.nom}, avec un montant de travaux de ${eur2(tt||T[e.id+"T"])} TTC`;}
+  if(M.lots.length<2||!asg.length) return `Sur l'ensemble des offres, les entreprises les mieux disantes sont :\n`+byE.map(e=>`- ${e.nom}, avec un montant de travaux de ${eur2(T[e.id+"T"])} TTC`).join("\n");
+  return `Sur l'ensemble des offres, les entreprises les mieux disantes sont :\n`+asg.map(a=>`- Lot ${pad(a.li+1)} ${a.lot.titre} : ${a.e.nom}, ${eur2(a.ttc)} TTC`).join("\n")+`\nSoit un montant total de travaux de ${eur2(asg.reduce((s,a)=>s+a.ttc,0))} TTC`;
+}
 function synText(k,D){const S=synObj();return S.txt[k]!=null?S.txt[k]:(D[k]||"");}
 
 /* ---------- Synthèse ---------- */
@@ -4192,9 +4211,9 @@ function synRows(M){
   M.lots.forEach(({l,li,rows,tot,n})=>{
     const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
     R.push({k:"lot",lab:`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,l});
-    rows.forEach((w,wi)=>{if((w.k!=="ch"&&w.k!=="par")||w.d>1||w.ex||!w.sub||anaOvOnly(rows,wi))return;
-      const v=E.map(e=>w.sub.e[e.id].ht); if(w.k==="par"&&!v.some(x=>x>0))return;
-      R.push({k:w.d===0?"ch":"par",lab:`${w.o.code||""}  ${w.o.titre}`,v,out:OUT,best:bestOf(v)});});
+    rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;
+      const v=E.map(e=>w.sub.e[e.id].ht);
+      R.push({k:"ch",lab:`${w.o.code||""}  ${w.o.titre}`,v,out:OUT,best:bestOf(v)});});
     const ht=E.map(e=>tot.e[e.id].ht), ttc=E.map(e=>tot.e[e.id].ttc);
     R.push({k:"sub",lab:`Sous-total lot ${pad(li+1)} HT`,v:ht,out:OUT,best:bestOf(ht)});
     R.push({k:"tva",lab:"TVA",v:E.map((e,j)=>ttc[j]-ht[j]),out:OUT});
@@ -4208,17 +4227,34 @@ function renderSynth(){
   const ents=offers(), o=state.op;
   if(!ents.length){$("#synth").innerHTML=`<h2>${esc(o.objet||"Synthèse")}</h2><p class="sub">Aucune offre reçue pour le moment.</p>`;return;}
   const M=anaModel(), E=M.E, R=synRows(M);
-  const ret=ents.find(e=>e.id===state.retenue)||ents[0];
+  const ret=ents.find(e=>e.id===state.retenue)||ents[0], S=synObj(), BD=bilanData(M), D=synthDefaults(M,BD,ret), selB=recoSel(M);
+  const edBlock=([k,lab,rows])=>`<div class="syn-b"><label for="sy-${k}">${lab}</label><textarea id="sy-${k}" data-syk="${k}" rows="${rows}" spellcheck="true">${esc(synText(k,D))}</textarea><div class="syn-a">${S.txt[k]!=null?`<span class="hint">Texte modifié</span> `:`<span class="hint">Texte automatique</span> `}<button class="btn sm" data-syreset="${k}"${S.txt[k]!=null?"":" disabled"}>Rétablir le texte automatique</button></div></div>`;
+  const edit=ks=>ks.map(k=>edBlock(SY_KEYS.find(x=>x[0]===k))).join("");
   const td=(r,j)=>r.out&&r.out[j]?`<td class="n out">–</td>`:`<td class="n${r.best===j?" best":""}">${r.k==="tva"?eur2(r.v[j]):eur2(r.v[j])}</td>`;
   $("#synth").innerHTML=`
    <div class="syn-bar"><button class="btn primary" id="expSynth">Exporter synthèse (PDF)</button><button class="btn" id="expSynthX">Exporter tableaux (Excel)</button>
-    <label class="syn-ret">Entreprise retenue <select id="selRet">${ents.map(e=>`<option value="${e.id}" ${e.id===ret.id?"selected":""}>${esc(e.nom)}</option>`).join("")}</select></label></div>
-   <div class="scroll"><table class="stab"><thead><tr><th>Lot / chapitre / sous-chapitre</th>${E.map(e=>`<th class="n">${esc(e.nom)}</th>`).join("")}</tr></thead><tbody>
+</div>
+   <details class="syn-ed" open><summary>Lettre d'analyse des offres (première page du PDF)</summary>
+   <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
+   <div class="syn-b"><label>Entreprises consultées : n° de devis <span class="hint">(les noms et adresses viennent de la consultation)</span></label><div class="syn-dv">${ents.map(e=>`<span><b>${esc(e.nom)}</b>${e.adresse?` <span class="hint">${esc(e.adresse)}</span>`:""} <input type="text" data-sydv="${esc(e.id)}" value="${esc(S.devis[e.id]||"")}" placeholder="n° de devis" style="max-width:110px"></span>`).join("")}</div></div>
+   ${edit(["intro","obs"])}
+   <div class="syn-b"><label>Entreprise(s) mieux-disante(s) <span class="hint">${Array.isArray(S.best)&&S.best.length?"choix manuel":"automatique : mieux-disant de chaque lot"}</span></label><div class="syn-dv">${ents.map(e=>`<label class="chk"><input type="checkbox" data-sybest="${esc(e.id)}" ${selB.includes(e.id)?"checked":""}> ${esc(e.nom)}</label>`).join("")}</div>${Array.isArray(S.best)&&S.best.length?`<button class="btn sm" id="syBestAuto">Choix automatique</button>`:""}</div>
+   ${edit(["reco","pj","conclu","sign"])}
+   <p class="hint">Les textes automatiques se mettent à jour tant qu'ils n'ont pas été modifiés à la main (bouton « Rétablir » pour revenir au texte automatique).</p></details>
+   <div class="scroll"><table class="stab"><thead><tr><th>Lot / chapitre</th>${E.map(e=>`<th class="n">${esc(entShort(e))}</th>`).join("")}</tr></thead><tbody>
    ${R.map(r=>r.k==="lot"?`<tr class="sl" style="${lotStyle(r.l)}"><td colspan="${E.length+1}">${esc(r.lab)}</td></tr>`
      :`<tr class="s-${r.k}"><td${r.k==="par"?' class="ind"':""}>${esc(r.lab)}</td>${E.map((e,j)=>td(r,j)).join("")}</tr>`).join("")}
    </tbody></table></div>
    <p class="hint">Montants HT, sauf mention contraire. Colonnes grisées : lot non chiffré par l'entreprise. Le mieux-disant de chaque ligne est en vert.</p>`;
-  $("#selRet").onchange=e=>{state.retenue=e.target.value;save();};
+  const sy=$("#synth");
+  sy.querySelectorAll("[data-sybest]").forEach(c=>c.onchange=()=>{const v=[...sy.querySelectorAll("[data-sybest]")].filter(x=>x.checked).map(x=>x.dataset.sybest);synObj().best=v.length?v:null;if(v.length)state.retenue=v[0];save();renderSynth();});
+  {const b=$("#syBestAuto");if(b)b.onclick=()=>{delete synObj().best;save();renderSynth();};}
+  sy.querySelectorAll("textarea[data-syk]").forEach(t=>{const fit=()=>{t.style.height="auto";t.style.height=Math.max(48,t.scrollHeight+2)+"px";};fit();
+    t.addEventListener("input",()=>{fit();synObj().txt[t.dataset.syk]=t.value;save();const b=t.closest(".syn-b"),r=b.querySelector("[data-syreset]");if(r)r.disabled=false;const h=b.querySelector(".syn-a .hint");if(h)h.textContent="Texte modifié";});});
+  sy.querySelectorAll("[data-syreset]").forEach(b=>b.onclick=()=>{delete synObj().txt[b.dataset.syreset];save();renderSynth();});
+  sy.querySelectorAll("input[data-sydv]").forEach(i=>{i.addEventListener("input",()=>{synObj().devis[i.dataset.sydv]=i.value.trim();save();});i.addEventListener("change",()=>renderSynth());});
+  $("#sy-date").addEventListener("input",e=>{synObj().date=e.target.value;save();});
+  $("#sy-lieu").addEventListener("input",e=>{synObj().lieu=e.target.value;save();});
 }
 async function exportSynthXlsx(){
   if(!state) return; if(!offers().length){toast("Aucune offre reçue.");return;}
@@ -4231,7 +4267,7 @@ async function exportSynthXlsx(){
     const ws=wb.addWorksheet("Synthèse",{views:[{state:"frozen",ySplit:3}]});
     ws.getColumn(1).width=62; Ent.forEach((e,j)=>ws.getColumn(2+j).width=18);
     ws.getCell(1,1).value=`${ref} - Tableau de synthèse`; ws.getCell(1,1).font=F(14,{bold:true});
-    const h=ws.getRow(3); h.getCell(1).value="Lot / chapitre / sous-chapitre"; Ent.forEach((e,j)=>{h.getCell(2+j).value=e.nom;h.getCell(2+j).alignment={horizontal:"right",wrapText:true};});
+    const h=ws.getRow(3); h.getCell(1).value="Lot / chapitre"; Ent.forEach((e,j)=>{h.getCell(2+j).value=entShort(e);h.getCell(2+j).alignment={horizontal:"right",wrapText:true};});
     h.eachCell(c=>{c.font=F(10,{bold:true});c.fill=PALE;}); h.height=30;
     let r=4;
     R.forEach(x=>{const row=ws.getRow(r++),c=row.getCell(1); c.value=x.lab;
@@ -4246,7 +4282,7 @@ async function exportSynthXlsx(){
     Ent.forEach((e,j)=>{wc.getColumn(6+2*j).width=13;wc.getColumn(7+2*j).width=15;});
     wc.getCell(1,1).value=`${ref} - Tableau comparatif global`; wc.getCell(1,1).font=F(14,{bold:true});
     const h1=wc.getRow(2),h2=wc.getRow(3); ["Code","Désignation","Unité","Quantité","Estimation MOE (PU)"].forEach((t,i)=>{h2.getCell(1+i).value=t;});
-    Ent.forEach((e,j)=>{h1.getCell(6+2*j).value=e.nom;wc.mergeCells(2,6+2*j,2,7+2*j);h1.getCell(6+2*j).alignment={horizontal:"center"};h2.getCell(6+2*j).value="PU HT";h2.getCell(7+2*j).value="Montant HT";});
+    Ent.forEach((e,j)=>{h1.getCell(6+2*j).value=entShort(e);wc.mergeCells(2,6+2*j,2,7+2*j);h1.getCell(6+2*j).alignment={horizontal:"center"};h2.getCell(6+2*j).value="PU HT";h2.getCell(7+2*j).value="Montant HT";});
     [h1,h2].forEach(x=>x.eachCell(c=>{c.font=F(10,{bold:true});c.fill=PALE;c.alignment=Object.assign({wrapText:true,vertical:"middle"},c.alignment||{});}));
     let q=4;
     M.lots.forEach(({l,li,rows,out})=>{

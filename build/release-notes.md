@@ -1,1 +1,1 @@
-Déploiement n°80 — Verrou d'ouverture des affaires .cctp (un seul poste à la fois) ; onglet Synthèse recomposé : export PDF, export tableaux Excel, tableau de synthèse lot/chapitre/sous-chapitre
+Déploiement n°81 — Synthèse : tableau limité aux chapitres, nom d'entreprise seul dans les tableaux, lettre d'analyse rédigeable (entreprises et adresses automatiques, choix des mieux-disants)
