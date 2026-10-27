@@ -450,6 +450,7 @@ td .ec.up{color:var(--ochre)}
 .synth td,.synth th{font-size:14px}
 .syn-b .rte.syn-rte{min-height:52px;max-height:none;resize:none}.syn-rte{border:1px solid var(--line);border-radius:0 0 6px 6px;padding:8px 10px;background:#fff;font-family:var(--doc);font-size:15px;line-height:1.5}.syn-rte[data-syk=reco],.syn-rte[data-syk=sign]{font-weight:700}.syn-ed .rte-bar{position:sticky;top:0;z-index:6;margin-top:6px}.syn-b{margin:10px 0}
 .syn-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.syn-ret{margin-left:auto;font-size:13px;color:var(--muted)}
+.uchg{font-size:10px;font-style:italic;color:var(--ochre,#b35a0e);margin-left:2px;white-space:nowrap}
 .stab{width:100%;border-collapse:collapse}.stab th{background:var(--accent-soft,#fbe8e8);text-align:left;padding:7px 8px;font-size:13px}.stab th.n,.stab td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stab td{padding:5px 8px;border-bottom:1px solid var(--line)}.stab td.ind{padding-left:26px}.stab td.out{background:#eee;color:#aaa}.stab td.best{color:#1e785a;font-weight:700}
 .stab tr.sl td{background:var(--lcp);color:var(--lcs);font-weight:700;font-size:15px;padding-top:10px}.stab tr.s-ch td,.stab tr.s-sub td,.stab tr.s-ttc td{font-weight:700}.stab tr.s-tva td{font-style:italic;color:var(--muted)}
@@ -1082,7 +1083,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.86.0", deploiement: 86};
+const APP = {version: "0.87.0", deploiement: 87};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3176,7 +3177,7 @@ function buildSynthPdf(J,info){
           if(fl){fill(d>0?UP:DN);doc.rect(xe(j),y,cEp+cEm,h,"F");}
           font(bst?"bold":"normal",fs,m?MUTED:bst?GRN:INK);
           if(m){doc.text("-",xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}
-          else{if(showPU)doc.text(nf(p),xe(j)+cEp-1,y+3.5,{align:"right"});doc.text(nf(w.a[j]),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}});
+          else{if(showPU){doc.text(nf(p),xe(j)+cEp-1,y+3.5,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xe(j)+0.8,y+3.5);font(bst?"bold":"normal",fs,bst?GRN:INK);}}doc.text(nf(w.a[j]),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}});
       }else if(w.k==="ch"&&w.sub){
         font("bold",fs,RED);
         E.forEach((e,j)=>{if(!LOUT[j])doc.text(nf(w.sub.e[e.id].ht),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});});}
@@ -3887,6 +3888,7 @@ function anaSync(){
   return live;
 }
 const medianOf=a=>{const v=a.slice().sort((x,y)=>x-y),n=v.length;return n?(n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2):null;};
+const uTag=(w,j)=>w.ue&&w.ue[j]?` <span class="uchg" title="Unité modifiée par l'entreprise : ${esc(w.ue[j])} (BPU : ${esc(w.o.u||"")}) · quantité ${fmt(w.qe[j],2)}">/${esc(w.ue[j])}</span>`:"";
 function anaModel(){
   const live=anaSync(), A=state.ana, E=offers();
   const M={A,E,lots:[],flags:Object.fromEntries(E.map(e=>[e.id,0])),miss:Object.fromEntries(E.map(e=>[e.id,0])),nflag:0,ov:{}};
@@ -3904,11 +3906,13 @@ function anaModel(){
       if(!w.leaf) return;
       const ar=w.o, k=1+tvaOf(ar,null)/100; w.q=qty(ar); w.est=w.q*ar.pu; w.estT=w.est*k;
       E.forEach(e=>{const out=!!lotObj&&entSkip(e).has(lotObj.nid), mk=out?"":markOf(e,ar.id), m=!out&&!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0&&!mk, p=(m||out||(mk&&(e.offre.pus||{})[ar.id]==null))?null:puEnt(ar,e);
-        (w.mk=w.mk||[]).push((e.offre&&(e.offre.pus||{})[ar.id]==null)?mk:"");w.miss.push(m); w.p.push(p); w.a.push(p==null?null:w.q*p);});
+        (w.mk=w.mk||[]).push((e.offre&&(e.offre.pus||{})[ar.id]==null)?mk:"");w.miss.push(m); w.p.push(p);
+        const ue=(!out&&e.offre&&(e.offre.units||{})[ar.id])||"", qe=ue&&e.offre.qents&&e.offre.qents[ar.id]!=null?e.offre.qents[ar.id]:w.q; // unité (et quantité) de l'entreprise : elles prévalent sur le BPU
+        (w.ue=w.ue||[]).push(ue); (w.qe=w.qe||[]).push(qe); w.a.push(p==null?null:qe*p);});
       if(!w.ex&&w.q>0){
-        const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]);
+        const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]&&!w.ue[i]);
         const ref=A.ref==="moe"?(ar.pu>0?ar.pu:null):(vals.length>=2?medianOf(vals):null);
-        w.dev=w.p.map((p,i)=>(ref&&p!=null&&p>0&&!w.miss[i])?(p/ref-1)*100:null);
+        w.dev=w.p.map((p,i)=>(ref&&p!=null&&p>0&&!w.miss[i]&&!w.ue[i])?(p/ref-1)*100:null);
         w.dev.forEach((d,i)=>{if(d!=null&&Math.abs(d)>=A.seuil){w.flagged=true;M.flags[E[i].id]++;}});
         if(w.flagged)M.nflag++;
         w.miss.forEach((m,i)=>{if(m)M.miss[E[i].id]++;});
@@ -4065,7 +4069,7 @@ function renderAnalyse(){
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
             const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=col&&!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
             const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`, mk=(w.mk&&w.mk[j])||"", can=e.offre&&p==null&&!entSkip(e).has(l.id)?` data-amark="${esc(e.id)}|${esc(w.o.id)}" title="Cliquer pour indiquer : compris / non compris / sans objet"`:"";
-            body+=`<td class="n e1 ${c}${can?" mkcell":""}"${can}>${mk?markPill(mk):m?"–":eur2(p)}</td><td class="n ${m?"miss":""}">${m||mk?"–":eur2(w.a[j])}</td>`;});
+            body+=`<td class="n e1 ${c}${can?" mkcell":""}"${can}>${mk?markPill(mk):m?"–":eur2(p)+uTag(w,j)}</td><td class="n ${m?"miss":""}"${w.ue&&w.ue[j]?` title="Quantité de l'entreprise : ${fmt(w.qe[j],2)} ${esc(w.ue[j])}"`:""}>${m||mk?"–":eur2(w.a[j])}</td>`;});
         }else{
           const st=w.k==="ch"&&!w.ex&&w.sub?w.sub:null;
           body+=st?`<td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(st.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n st-v">${eur2(st.e[e.id].ht)}${ec(st.e[e.id].ht,st.est)}</td>`).join("")}`
@@ -4335,7 +4339,7 @@ async function exportSynthXlsx(){
         Ent.forEach((e,j)=>{const a=row.getCell(6+2*j),b=row.getCell(7+2*j);
           if(out[e.id]){a.fill=GREY;b.fill=GREY;return;}
           if(w.p[j]==null){const mk=w.mk&&w.mk[j];a.value=mk?(MARKS[mk]?MARKS[mk][0]:""):(w.miss[j]?"manquant":"");a.font=F(10,{italic:true,color:{argb:"FF999999"}});return;}
-          a.value=w.p[j];a.numFmt=MON;b.value=Math.round(w.a[j]*100)/100;b.numFmt=MON;
+          a.value=w.p[j];a.numFmt=w.ue&&w.ue[j]?MON+'"  /'+String(w.ue[j]).replace(/"/g,'')+'"':MON;b.value=Math.round(w.a[j]*100)/100;b.numFmt=MON;
           if(w.best!=null&&w.p[j]===w.best){a.font=F(10,{bold:true,color:{argb:"FF1E785A"}});b.font=F(10,{bold:true,color:{argb:"FF1E785A"}});}});});
     });
     const buf=await wb.xlsx.writeBuffer();
@@ -4387,9 +4391,9 @@ function offerInfo(e){
   const d=new Date(e.offre.recu), m=missingFor(e);
   return `Reçue le ${isNaN(d)?"–":d.toLocaleDateString("fr-FR")}${e.offre.devis?` · devis ${e.offre.devis.nom}`:" · sans devis PDF"}${m?` · ${m} prix manquant${m>1?"s":""}`:""}${Object.keys(e.offre.qents||{}).length?` · ${Object.keys(e.offre.qents).length} quantité${Object.keys(e.offre.qents).length>1?"s":""} modifiée${Object.keys(e.offre.qents).length>1?"s":""} par l'entreprise`:""}`;
 }
-function registerOffer(en,{pus,notes,qents,devis,marks}){
+function registerOffer(en,{pus,notes,qents,units,devis,marks}){
   const had=!!en.offre, prevM=JSON.stringify((en.offre&&en.offre.marks)||{});
-  en.offre={pus,notes:notes||{},qents:qents||{},marks:marks||(en.offre&&en.offre.marks)||{},devis:devis||(en.offre&&en.offre.devis)||null,recu:new Date().toISOString(),lots:state.data.filter(l=>!l.noBpu&&!(en.skip||[]).includes(l.nid)).map(l=>l.nid)};
+  en.offre={pus,notes:notes||{},qents:qents||{},units:units||{},marks:marks||(en.offre&&en.offre.marks)||{},devis:devis||(en.offre&&en.offre.devis)||null,recu:new Date().toISOString(),lots:state.data.filter(l=>!l.noBpu&&!(en.skip||[]).includes(l.nid)).map(l=>l.nid)};
   en.statut="Offre reçue"; en.date=new Date().toLocaleDateString("fr-FR");
   const dv=en.offre.devis&&en.offre.devis.nom, mm=missingFor(en);
   histAdd(en,(had?"Offre modifiée":"Offre reçue")+(dv?` · devis ${dv}`:"")+(mm?` · ${mm} prix manquant${mm>1?"s":""}`:""));
@@ -4660,7 +4664,8 @@ async function parseBpuFile(file){
   const X=await loadXLSX();
   const wb=X.read(await file.arrayBuffer(),{type:"array"});
   const byId={},byCd={}; let total=0; leaves(ar=>{byId[ar.id]=ar;byCd[ar.code]=ar;total++;});
-  const pus={},notes={},qents={}; let unknown=0, found=0, entreprise="";
+  const pus={},notes={},qents={},units={}; let unknown=0, found=0, entreprise="";
+  const nU=x=>String(x==null?"":x).trim().toLowerCase().replace(/\s+/g,"").replace(/m2$/,"m²").replace(/m3$/,"m³");
   wb.SheetNames.forEach(sn=>{
     const rows=X.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});
     if(!entreprise) for(let i=0;i<Math.min(rows.length,12)&&!entreprise;i++){const r=rows[i]||[];
@@ -4671,7 +4676,7 @@ async function parseBpuFile(file){
     let hi=-1,c={};
     for(let i=0;i<Math.min(rows.length,40);i++){const r=rows[i]||[];const ix=re=>r.findIndex(v=>v!=null&&re.test(String(v).trim()));
       const p=ix(/^prix\s*unitaire/i);
-      if(p>=0&&ix(/^d[ée]signation$/i)>=0){hi=i;c={p,ref:ix(/^ref\.?$/i),code:ix(/^n[°o]$/i),note:ix(/^(annotations?|observations?)/i),qe:ix(/^qt[ée]\s*ent/i)};break;}}
+      if(p>=0&&ix(/^d[ée]signation$/i)>=0){hi=i;c={p,u:ix(/^u(nit[ée]s?)?\.?$/i),ref:ix(/^ref\.?$/i),code:ix(/^n[°o]$/i),note:ix(/^(annotations?|observations?)/i),qe:ix(/^qt[ée]\s*ent/i)};break;}}
     if(hi<0) return; found++;
     rows.slice(hi+1).forEach(r=>{
       const ref=c.ref>=0&&r[c.ref]!=null&&String(r[c.ref]).trim()!==""?String(r[c.ref]).trim():null;
@@ -4679,6 +4684,7 @@ async function parseBpuFile(file){
       const ar=ref?byId[ref]:(cd?byCd[cd]:null);
       if(!ar){if(ref)unknown++;return;}
       if(c.qe>=0&&typeof r[c.qe]==="number"&&Math.abs(r[c.qe]-qty(ar))>0.0001) qents[ar.id]=r[c.qe];
+      if(c.u>=0&&r[c.u]!=null&&String(r[c.u]).trim()&&nU(r[c.u])!==nU(ar.u)) units[ar.id]=String(r[c.u]).trim(); // l'unité de l'entreprise prévaut sur celle du BPU
       if(c.note>=0&&r[c.note]!=null&&String(r[c.note]).trim()) notes[ar.id]=String(r[c.note]).trim();
       const v=r[c.p]; if(v==null||String(v).trim()==="") return;
       const pu=typeof v==="number"?v:parseMoney(v);
@@ -4687,7 +4693,7 @@ async function parseBpuFile(file){
   });
   if(!found) throw new Error("Colonne « Prix unitaire » introuvable : ce fichier ne ressemble pas à un BPU de l'application.");
   let missing=0; leaves(ar=>{if(qty(ar)>0&&pus[ar.id]==null)missing++;});
-  return {entreprise,pus,notes,qents,total,read:Object.keys(pus).length,missing,unknown,qdiff:Object.keys(qents).length};
+  return {entreprise,pus,notes,qents,units,total,read:Object.keys(pus).length,missing,unknown,qdiff:Object.keys(qents).length,udiff:Object.keys(units).length};
 }
 /* import d'un BPU complété (analyse ou consultation) */
 let impData=null, impFile=null;
@@ -4706,7 +4712,7 @@ $("#impFile").addEventListener("change",async e=>{
     if(d.entreprise){const sel=$("#impEnt"),hit=ents().find(e=>e.nom.trim().toLowerCase()===d.entreprise.toLowerCase());
       if(hit&&sel.value!==hit.id){sel.value=hit.id;$("#impNameF").hidden=true;}
       else if(!hit&&sel.value==="__new"&&!$("#impName").value.trim()){$("#impName").value=d.entreprise;}}
-    sum.innerHTML=`<b>${d.read}</b> prix lus sur <b>${d.total}</b> articles chiffrés.${d.missing?` <span style="color:var(--ochre)">${d.missing} prix manquant${d.missing>1?"s":""} (quantité renseignée, prix absent).</span>`:" Tous les prix sont renseignés."}${d.qdiff?` <span style="color:var(--ochre)">${d.qdiff} quantité${d.qdiff>1?"s":""} modifiée${d.qdiff>1?"s":""} par l'entreprise (colonne « Qté ent. ») : l'analyse reste calculée sur vos quantités.</span>`:""}${d.unknown?` ${d.unknown} ligne${d.unknown>1?"s":""} ne correspond${d.unknown>1?"ent":""} à aucun article actuel.`:""}`;
+    sum.innerHTML=`<b>${d.read}</b> prix lus sur <b>${d.total}</b> articles chiffrés.${d.missing?` <span style="color:var(--ochre)">${d.missing} prix manquant${d.missing>1?"s":""} (quantité renseignée, prix absent).</span>`:" Tous les prix sont renseignés."}${d.qdiff?` <span style="color:var(--ochre)">${d.qdiff} quantité${d.qdiff>1?"s":""} modifiée${d.qdiff>1?"s":""} par l'entreprise (colonne « Qté ent. ») : l'analyse reste calculée sur vos quantités.</span>`:""}${d.udiff?` <span style="color:var(--ochre)">${d.udiff} unité${d.udiff>1?"s":""} modifiée${d.udiff>1?"s":""} par l'entreprise : elle${d.udiff>1?"s":""} prévaut${d.udiff>1?"ent":""} sur le BPU (quantité de l'entreprise reprise pour ces articles).</span>`:""}${d.unknown?` ${d.unknown} ligne${d.unknown>1?"s":""} ne correspond${d.unknown>1?"ent":""} à aucun article actuel.`:""}`;
     $("#impOk").disabled=d.read===0;
     if(d.read===0){sum.className="imp-sum err";sum.textContent="Aucun prix n'a pu être lu dans ce fichier.";}
   }catch(err){sum.className="imp-sum err";sum.textContent=err.message||"Fichier illisible.";}
