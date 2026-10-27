@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°77** — v0.77.0 — 2026-10-27 — Contrôle avant export : plus d'alerte sur les prix estimatifs non renseignés (quantités et unités seulement)
 - **n°76** — v0.76.0 — 2026-10-27 — Casse automatique : lots, chapitres et sous-chapitres en majuscules, articles en minuscules ; sous-chapitres (niveau 2) non chiffrés
 - **n°75** — v0.75.0 — 2026-10-26 — Arborescence : monter/descendre d'un niveau au clic droit (article, chapitre, lot) et glisser un chapitre ou article vers la zone « nouveau lot »
 - **n°74** — v0.74.0 — 2026-10-24 — Rédaction : listes à cocher (options), seules les cases cochées apparaissent dans le BPU et le CCTP, en puces

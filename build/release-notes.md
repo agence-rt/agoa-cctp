@@ -1,1 +1,1 @@
-Déploiement n°76 — Casse automatique : lots, chapitres et sous-chapitres en majuscules, articles en minuscules ; sous-chapitres (niveau 2) non chiffrés
+Déploiement n°77 — Contrôle avant export : plus d'alerte sur les prix estimatifs non renseignés (quantités et unités seulement)

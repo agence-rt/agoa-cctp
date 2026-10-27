@@ -1075,7 +1075,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.76.0", deploiement: 76};
+const APP = {version: "0.77.0", deploiement: 77};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1731,7 +1731,6 @@ function allIssues(){
     if(qty(ar)<=0||badLine) r.push({ar,sev:"err",why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});
     if(!String(ar.u||"").trim()) r.push({ar,sev:"err",why:"Unité manquante"});
     if(!String(ar.titre||"").trim()||/^nouvel article$/i.test(String(ar.titre).trim())) r.push({ar,sev:"err",why:"Titre à renseigner"});
-    if(!(Number(ar.pu)>0)) r.push({ar,sev:"warn",why:"Prix estimatif non renseigné"});
     if(!plainTxt(ar.texte).trim()) r.push({ar,sev:"warn",why:"Description vide"});});
   const empty=(n,lot)=>{if(!(n.art||[]).length&&!(n.children||[]).length&&n.level!=="lot")r.push({node:n,sev:"warn",why:"Chapitre vide"});(n.children||[]).forEach(c=>empty(c,lot));};
   state.data.forEach(l=>(l.children||[]).forEach(c=>empty(c,l)));
