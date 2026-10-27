@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°76** — v0.76.0 — 2026-10-27 — Casse automatique : lots, chapitres et sous-chapitres en majuscules, articles en minuscules ; sous-chapitres (niveau 2) non chiffrés
 - **n°75** — v0.75.0 — 2026-10-26 — Arborescence : monter/descendre d'un niveau au clic droit (article, chapitre, lot) et glisser un chapitre ou article vers la zone « nouveau lot »
 - **n°74** — v0.74.0 — 2026-10-24 — Rédaction : listes à cocher (options), seules les cases cochées apparaissent dans le BPU et le CCTP, en puces
 - **n°73** — v0.73.0 — 2026-10-24 — Rédaction : plus de ligne vide parasite avant une liste à puces au retour sur l'article

@@ -1075,7 +1075,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.75.0", deploiement: 75};
+const APP = {version: "0.76.0", deploiement: 76};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1426,6 +1426,20 @@ const validLines=ar=>ar.lignes.filter(l=>l.expr.trim()&&Number.isFinite(evalMetr
 const metreOn=ar=>validLines(ar).length>0;
 const qty=ar=>metreOn(ar)?validLines(ar).reduce((s,l)=>s+lineVal(l),0):(Number(ar.qman)||0);
 const isTitle=ar=>ar.type==="titre";
+/* Niveaux : lot, chapitre (niveau 1) et sous-chapitre (niveau 2) en MAJUSCULES, jamais chiffrés ; articles (niveau 3 et +) : 1re lettre en majuscule.
+   Un titre entièrement en capitales est ramené en minuscules ; un titre déjà en casse mixte (sigles, noms propres) n'est modifié que sur sa 1re lettre. */
+const capFirst=t=>{t=String(t==null?"":t);const i=t.search(/[A-Za-zÀ-ÿ]/);if(i<0)return t;const b=/[a-zà-ÿ]/.test(t)?t:t.toLowerCase();return b.slice(0,i)+b.charAt(i).toUpperCase()+b.slice(i+1);};
+const normTitre=(lvl,t)=>lvl<=2?String(t==null?"":t).toUpperCase():capFirst(t);
+function enforceLevels(){
+  const sub=(a,lv)=>{a.titre=normTitre(lv,a.titre);(a.sub||[]).forEach(x=>sub(x,3));};
+  state.data.forEach(lot=>{lot.titre=normTitre(0,lot.titre);
+    lot.children.forEach(ch=>{ch.titre=normTitre(1,ch.titre);const L=ch.art||[];
+      for(let i=0;i<L.length;i++){const a=L[i];
+        if(a.sub&&a.sub.length)a.type="titre";
+        else if(a.type!=="titre"){ // ouvrage chiffré au niveau 2 : il passe sous un sous-chapitre de même intitulé (chiffrage et identifiant conservés)
+          L[i]={id:nid(),code:"",titre:a.titre,type:"titre",texte:"",loc:"",u:"ens",pu:0,tva:null,qman:null,lignes:[],imgs:[],sub:[a]};}
+        sub(L[i],2);}});});
+}
 const total=ar=>ar.sub.length?ar.sub.reduce((s,x)=>s+total(x),0):isTitle(ar)?0:qty(ar)*ar.pu;
 const countSub=ar=>ar.sub.reduce((s,x)=>s+1+countSub(x),0);
 const rate=id=>state.tvas.find(t=>t.id===id);
@@ -1451,6 +1465,7 @@ const pad=n=>String(n).padStart(2,"0");
 function ensureNodeIds(){const seen=new Set();const v=n=>{if(!n.nid||seen.has(n.nid))n.nid=nid();seen.add(n.nid);(n.children||[]).forEach(v);};state.data.forEach(v);}
 function findNodeByNid(k){let r=null;lists((list,owner)=>{if(!r&&!owner.id&&owner.nid===k)r=owner;});return r;}
 function renumberAll(){
+  enforceLevels();
   state.data.forEach((lot,i)=>{lot.code=pad(i+1);let j=0;
     lot.children.forEach(ch=>{j++;ch.code=lot.code+"."+j;});});
   renumber();
@@ -1493,7 +1508,7 @@ function artDup(id){const f=locate(id);if(!f)return;const c=noQty(reid(JSON.pars
 function artSub(id){const f=locate(id);if(!f)return;const ar=f.art,n=blank(ar.u),first=!ar.sub.length;
   if(first&&!isTitle(ar)){Object.assign(n,{pu:ar.pu,tva:ar.tva,qman:ar.qman,lignes:ar.lignes,titre:"Nouveau sous-article"});ar.lignes=[];ar.qman=null;}
   ar.sub.push(n);openIds.add(ar.id);state.sel=n.id;refresh();toast(first&&!isTitle(ar)?`Sous-article ${n.code} créé, le chiffrage de ${ar.code} y a été reporté`:`Sous-article ${n.code} créé`);const t=$("#fTitre");if(t)t.select();}
-function artNew(id){const f=locate(id);if(!f)return;const n=blank(f.art.u,f.top);f.list.splice(f.i+1,0,n);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
+function artNew(id){const f=locate(id);if(!f)return;const n=blank(f.art.u,f.depth===0);f.list.splice(f.i+1,0,n);state.sel=n.id;refresh();toast(`Article ${n.code} ajouté`);const t=$("#fTitre");if(t)t.select();}
 const stripNid=n=>{delete n.nid;(n.children||[]).forEach(stripNid);(n.art||[]).forEach(reid);return n;};
 function nodeDup(k){const nc=nodeCtx(k);if(!nc)return;const c=noQty(stripNid(JSON.parse(JSON.stringify(nc.node))));(c.art||[]).forEach(noQty);c.titre+=" (copie)";
   if(nc.level==="lot"){state.data.splice(state.data.indexOf(nc.lot)+1,0,c);}else{nc.lot.children.splice(nc.lot.children.indexOf(nc.ch)+1,0,c);}
@@ -1507,9 +1522,10 @@ document.addEventListener("contextmenu",e=>{
   if(!a&&!nd){artMenuClose();return;}
   e.preventDefault(); artMenuClose();
   const m=document.createElement("div"); m.id="artMenu"; m.setAttribute("role","menu");
-  if(a){m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">Nouvel article</button><button role="menuitem" data-amact="sub">Ajouter un sous-article</button><hr><button role="menuitem" data-amact="up">Monter d'un niveau</button><button role="menuitem" data-amact="down">Descendre d'un niveau</button>`;m.dataset.id=a.dataset.id;}
+  const lf=a&&locate(a.dataset.id), aTop=!!lf&&lf.depth===0;
+  if(a){m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">${aTop?"Nouveau sous-chapitre":"Nouvel article"}</button><button role="menuitem" data-amact="sub">${aTop?"Ajouter un article":"Ajouter un sous-article"}</button><hr><button role="menuitem" data-amact="up">Monter d'un niveau</button><button role="menuitem" data-amact="down">Descendre d'un niveau</button>`;m.dataset.id=a.dataset.id;}
   else{const isLot=nd.matches(".lot"), k=isLot?nd.querySelector("[data-lotnid]").dataset.lotnid:nd.dataset.chnid;
-    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un article"}</button><hr>${isLot?"":`<button role="menuitem" data-amact="up">Monter d'un niveau (en lot)</button>`}<button role="menuitem" data-amact="down">Descendre d'un niveau${isLot?" (en chapitre)":" (en article)"}</button>`;m.dataset.id=k;} document.body.appendChild(m);
+    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un sous-chapitre"}</button><hr>${isLot?"":`<button role="menuitem" data-amact="up">Monter d'un niveau (en lot)</button>`}<button role="menuitem" data-amact="down">Descendre d'un niveau${isLot?" (en chapitre)":" (en sous-chapitre)"}</button>`;m.dataset.id=k;} document.body.appendChild(m);
   const w=m.offsetWidth,h=m.offsetHeight; m.style.left=Math.min(e.clientX,innerWidth-w-6)+"px"; m.style.top=Math.min(e.clientY,innerHeight-h-6)+"px";
 });
 document.addEventListener("click",e=>{const b=e.target.closest("#artMenu button");
@@ -1641,7 +1657,7 @@ function imgsField(ar,after){
     <input type="file" id="imgFile" accept="image/*" multiple hidden>
     <button class="btn sm" data-imgadd>Ajouter une image</button></div>`;
 }
-const blank=(u="",top=false)=>({id:nid(),code:"",titre:"Nouvel article",...(top?{type:"titre"}:{}),u:top?"":u,pu:0,tva:null,qman:null,texte:"",loc:"",lignes:[],sub:[]});
+const blank=(u="",top=false)=>({id:nid(),code:"",titre:top?"NOUVEAU SOUS-CHAPITRE":"Nouvel article",...(top?{type:"titre"}:{}),u:top?"":u,pu:0,tva:null,qman:null,texte:"",loc:"",lignes:[],sub:top?[blank(u||"u")]:[]});
 
 const ents=()=>state.ents||(state.ents=[]);
 const hasOffer=e=>!!(e.offre||e.base!=null);
@@ -1823,7 +1839,7 @@ function renderEditor(){
   const {art:ar,lot,ch,list,i,owner}=f, hasSub=ar.sub.length>0, prev=list[i-1];
   el.innerHTML=`
   <div class="art-head"><span class="art-code">${ar.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(ar.titre)}" aria-label="Intitulé de l'article"><span class="pctb" id="pctB"${pcLab(ar)?"":" hidden"}>${esc(pcLab(ar))}</span></div>
-  <div class="art-opts"><label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>${hlBar(ar)}</div>
+  <div class="art-opts">${f.depth===0?`<span class="hint" style="margin-right:6px">Sous-chapitre · non chiffré (le chiffrage commence au niveau 3)</span>`:`<label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>`}${hlBar(ar)}</div>
   ${rteField("",ar.texte,"Décrire la prestation : matériaux, mise en œuvre, sujétions…")}
   <div class="field inl"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}"></div>
   ${imgsField(ar)}
@@ -1936,7 +1952,7 @@ function bpuRows(list,mode,lot,d=0,force=false){
   return list.map(ar=>{
     if(!force&&(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar))))return "";
     const has=ar.sub.length||isTitle(ar), cur=ar.id===state.sel&&!ent?" cur":"", pad=`style="padding-left:${8+d*16}px"`, idA=ent?"":`data-id="${ar.id}"`;
-    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre.toUpperCase())}${ovBadge(ar)}${pcB(ar)}</td>`;
+    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre)}${ovBadge(ar)}${pcB(ar)}</td>`;
     if(has) h+=ent?`<td></td><td></td><td></td><td></td><td></td><td></td></tr>`:`<td></td><td></td><td></td><td></td><td class="n">${ar.sub.length?fmt(total(ar)):""}</td></tr>`;
     else{
       h+=`<td class="n">${fq(qty(ar),ar.u)}</td><td>${esc(ar.u)}</td><td class="n">${pct(tvaOf(ar,lot))}</td>`+(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(ar.pu)}</td><td class="n">${fmt(total(ar))}</td>`)+`</tr>`;
@@ -1959,7 +1975,7 @@ function ovBlocksHtml(root,lot){
 function nodeRow(n,lot,mode,cls="chap"){
   const ent=mode==="ent", span=ent?7:6, cur=!ent&&n.nid===state.sel?" cur":"", idA=ent?"":`data-nid="${n.nid}"`;
   if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n)}</td></tr>`;
-  let h=`<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td>${esc(n.titre.toUpperCase())}</td><td class="n">${fq(qty(n),n.u)}</td><td>${esc(n.u)}</td><td class="n">${pct(tvaOf(n,lot))}</td>`
+  let h=`<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td>${esc(n.titre)}</td><td class="n">${fq(qty(n),n.u)}</td><td>${esc(n.u)}</td><td class="n">${pct(tvaOf(n,lot))}</td>`
     +(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(n.pu)}</td><td class="n">${fmt(ownNode(n))}</td>`)+`</tr>`;
   if(metreOn(n)&&showMetre(n)) h+=validLines(n).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}">${esc(mLine(l))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
   return h;
@@ -2432,6 +2448,7 @@ $("#editor").addEventListener("input",e=>{
 });
 $("#editor").addEventListener("input",e=>{
   const ci=curItem(); if(!ci) return; const o=ci.it, t=e.target, k=t.dataset.k;
+  if(k==="titre"&&t.tagName==="INPUT"){const lv=ci.node?(ci.nc.level==="lot"?0:1):(ci.f.depth===0?2:3),nv=normTitre(lv,t.value);if(nv!==t.value){const p=t.selectionStart;t.value=nv;try{t.setSelectionRange(p,p);}catch(_){}}}
   if(t.id==="artChif"&&!ci.node){o.type=t.checked?undefined:"titre";save();renderTree();renderEditor();
     toast(t.checked?`${o.code} est un article chiffré`:`${o.code} est un titre, non chiffré`);return;}
   if(t.id==="nodeArt"){
@@ -2494,7 +2511,7 @@ $("#editor").addEventListener("click",e=>{
       ar.sub.push(n); state.sel=n.id; refresh();
       toast(first?`Sous-article ${n.code} créé, le chiffrage de ${ar.code} y a été reporté`:`Sous-article ${n.code} créé`);
       $("#fTitre").select(); break;}
-    case "addAfter":{const n=blank(ar.u,f.top);list.splice(i+1,0,n);state.sel=n.id;refresh();$("#fTitre").select();toast(`Article ${n.code} ajouté`);break;}
+    case "addAfter":{const n=blank(ar.u,f.depth===0);list.splice(i+1,0,n);state.sel=n.id;refresh();$("#fTitre").select();toast(`Article ${n.code} ajouté`);break;}
     case "del": delArt(); break;
     case "addLine":{ar.lignes.push({expr:"",note:""});save();renderEditor();const ins=document.querySelectorAll('#editor input[data-f="expr"]');ins[ins.length-1].focus();break;}
     case "delLine":{ar.lignes.splice(+b.dataset.line,1);save();renderEditor();break;}
@@ -2573,7 +2590,8 @@ function renameNode(k){
   inp.setAttribute("aria-label",`Intitulé de ${n.code}`); sp.replaceWith(inp); inp.focus(); inp.select(); let done=false;
   const stop=e=>{e.stopPropagation();if(e.type==="click")e.preventDefault();};
   inp.addEventListener("click",stop); inp.addEventListener("keyup",e=>{if(e.key===" ")e.preventDefault();});
-  const end=commit=>{if(done)return;done=true;const v=inp.value.trim();
+  const lvN=(nodeCtx(k)||{}).level==="lot"?0:1; inp.addEventListener("input",()=>{const p=inp.selectionStart;inp.value=normTitre(lvN,inp.value);try{inp.setSelectionRange(p,p);}catch(_){}});
+  const end=commit=>{if(done)return;done=true;const v=normTitre(lvN,inp.value.trim());
     if(commit&&v&&v!==n.titre){n.titre=v;save();toast(`${n.code} renommé`);}
     renderTree();renderPreview();};
   inp.addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter"){e.preventDefault();end(true);}if(e.key==="Escape"){e.preventDefault();end(false);}});
@@ -2583,7 +2601,8 @@ function renameLot(i){
   const sp=tree.querySelector(`[data-renlot="${i}"]`); if(!sp) return; const lot=state.data[i];
   const inp=document.createElement("input"); inp.type="text"; inp.value=lot.titre; inp.className="lot-in"; inp.setAttribute("aria-label",`Intitulé du lot ${lot.code}`);
   sp.replaceWith(inp); inp.focus(); inp.select(); let done=false;
-  const end=commit=>{if(done)return;done=true;const v=inp.value.trim();
+  inp.addEventListener("input",()=>{const p=inp.selectionStart;inp.value=normTitre(0,inp.value);try{inp.setSelectionRange(p,p);}catch(_){}});
+  const end=commit=>{if(done)return;done=true;const v=normTitre(0,inp.value.trim());
     if(commit&&v&&v!==lot.titre){setLotTitle(lot,v);save();toast(`Lot ${lot.code} renommé`);}
     renderTree();renderPreview();};
   inp.addEventListener("keydown",e=>{e.stopPropagation();if(e.key==="Enter"){e.preventDefault();end(true);}if(e.key==="Escape"){e.preventDefault();end(false);}});
@@ -2872,13 +2891,13 @@ function buildCctpPdf(J,info){
     y+=cont?4:2.5; ovChips(ar);
     if(cont){ // sous-titre : carré + intitulé bleu + filet
       doc.setFillColor(LC.s[0],LC.s[1],LC.s[2]); doc.rect(L+off,y+1.7,1.8,1.8,"F");
-      para(`${ar.code}  ${ar.titre}`.toUpperCase(),"bold",10.6,LC.s,{lh:5.4,indent:4.2});
+      para(`${ar.code}  ${ar.titre}`,"bold",10.6,LC.s,{lh:5.4,indent:4.2});
       doc.setDrawColor(LC.l[0],LC.l[1],LC.l[2]); doc.setLineWidth(0.3); doc.line(L+off,y+0.4,R,y+0.4); y+=1.4;
     }else{ // article : pastille du numéro + intitulé sombre
       const y0=y; font("bold",8,LC.s); const cw=doc.getTextWidth(wa(ar.code))+4.2;
       doc.setFillColor(LC.p[0],LC.p[1],LC.p[2]); doc.roundedRect(L+off,y0+0.3,cw,4.7,1.2,1.2,"F");
       font("bold",8,LC.s); doc.text(wa(ar.code),L+off+2.1,y0+3.6);
-      para(String(ar.titre).toUpperCase(),"bold",9.6,INK,{lh:5.1,indent:cw+2.2}); y+=0.9;
+      para(String(ar.titre),"bold",9.6,INK,{lh:5.1,indent:cw+2.2}); y+=0.9;
     }
     (ar.imgs||[]).forEach(i=>{const dd=dims(i.src);if(!dd)return;const w=clampW(i.w)*10,h=w*dd.r;queue.push({src:i.src,type:dd.type,w,h,r:dd.r});colW=Math.max(colW,w);});
     rightBottom=y; placed=false; placeQ();
@@ -4287,7 +4306,7 @@ function lotItems(lot){
   const arts=(list,d)=>list.forEach(ar=>{
     if(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar)))return;
     if(ar.sub.length||isTitle(ar)){const st=it.length;it.push({k:"par",d,code:ar.code,titre:ar.titre+ovTxt(ar)});arts(ar.sub,d+1);
-      if(hasLeaf(st)) it.push({k:"sub",lvl:"par",grp:"",titre:ar.titre,from:st,to:it.length});}
+      if(hasLeaf(st)) it.push({k:"sub",lvl:"par",d,grp:"",titre:ar.titre,from:st,to:it.length});}
     else it.push(leafItem(ar,d,false));
   });
   const node=(n,lvl)=>{if(!nodeHasBase(n))return;const st=it.length;it.push({k:"node",lvl,code:n.code,titre:n.titre});if(n.art)arts(n.art,1);(n.children||[]).forEach(c=>node(c,3));
@@ -4374,13 +4393,13 @@ async function buildBpuStyled(E,en,info,opts){
       const R=ws.getRow(x.row);
       if(x.k==="lot"){const c=ws.getCell(x.row,3);c.value=x.titre.toUpperCase();c.font=F(14,{bold:true,color:{argb:LSA}});c.alignment={vertical:"middle",wrapText:true};const a=ws.getCell(x.row,1);a.value=x.code;a.font=F(10,{bold:true,italic:true,color:{argb:LSA}});a.alignment={vertical:"middle"};R.height=28;for(let k=1;k<=10;k++)ws.getCell(x.row,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:LPA}};}
       else if(x.k==="node"){const c=ws.getCell(x.row,3);c.value=x.titre.toUpperCase();const big=x.lvl===2;c.font=F(big?12:10,{bold:big,color:{argb:BLUE}});c.alignment={vertical:"middle",wrapText:true};const a=ws.getCell(x.row,1);a.value=x.code;a.font=F(10,{bold:big,italic:true});a.alignment={vertical:"middle"};R.height=big?24:19;}
-      else if(x.k==="par"){const c=ws.getCell(x.row,3);c.value=x.titre.toUpperCase();c.font=F(10,{color:{argb:BLUE}});c.alignment={vertical:"middle",wrapText:true,indent:x.d};const a=ws.getCell(x.row,1);a.value=x.code;a.font=F(10,{italic:true});a.alignment={vertical:"middle"};R.height=19;}
+      else if(x.k==="par"){const c=ws.getCell(x.row,3);c.value=x.d>0?x.titre:x.titre.toUpperCase();c.font=F(10,{color:{argb:BLUE}});c.alignment={vertical:"middle",wrapText:true,indent:x.d};const a=ws.getCell(x.row,1);a.value=x.code;a.font=F(10,{italic:true});a.alignment={vertical:"middle"};R.height=19;}
       else if(x.k==="art"){
         const lines=Math.max(1,Math.ceil(x.titre.length/(58-x.d*2))); R.height=Math.max(19,13.5*lines+5);
         const set=(col,v,font,al,nf)=>{const c=ws.getCell(x.row,col);c.value=v;c.font=font;c.alignment={vertical:"middle",...al};if(nf)c.numFmt=nf;return c;};
         set(1,x.code,F(10,{italic:true}),{horizontal:"left"});
         set(2,x.id,F(8,{color:{argb:MUTED}}),{});
-        set(3,x.titre.toUpperCase(),F(10),{wrapText:true,indent:x.d});
+        set(3,x.titre,F(10),{wrapText:true,indent:x.d});
         const QNF=qd(x.u)?"#,##0.00":"#,##0";
         set(4,x.q,F(10,{italic:true}),{horizontal:"right"},QNF);
         set(5,x.u,F(10,{italic:true}),{horizontal:"center"});
@@ -4397,7 +4416,7 @@ async function buildBpuStyled(E,en,info,opts){
       else if(x.k==="ovs"){ws.mergeCells(x.row,1,x.row,10);const c=ws.getCell(x.row,1);c.value=x.txt;c.font=F(10,{bold:true,italic:true,color:{argb:ARGB(ovC(x.o).fg)}});c.alignment={vertical:"middle"};R.height=20;}
       else if(x.k==="ded"){const set=(col,v,font,al,nf)=>{const c=ws.getCell(x.row,col);c.value=v;c.font=font;c.alignment={vertical:"middle",...al};if(nf)c.numFmt=nf;return c;};
         const lines=Math.max(1,Math.ceil(x.titre.length/58));R.height=Math.max(19,13.5*lines+5);
-        set(1,x.code,F(10,{italic:true}),{horizontal:"left"});set(3,x.titre.toUpperCase(),F(10,{italic:true}),{wrapText:true});
+        set(1,x.code,F(10,{italic:true}),{horizontal:"left"});set(3,x.titre,F(10,{italic:true}),{wrapText:true});
         set(4,x.q,F(10,{italic:true}),{horizontal:"right"},qd(x.u)?"#,##0.00":"#,##0");set(5,x.u,F(10,{italic:true}),{horizontal:"center"});set(7,x.tva,F(10,{italic:true}),{horizontal:"right"},Number.isInteger(x.tva)?'0" %"':'0.0" %"');
         const m=set(9,x.baseRow?{formula:`I${x.baseRow}`,result:x.m}:0,F(10,{italic:true}),{horizontal:"right"},EUR);m.fill={type:"pattern",pattern:"solid",fgColor:{argb:GREY}};}
       else if(x.k==="dsub"){const rows=items.slice(x.from,x.to).map(y=>y.row),v=BV[x.o.id].vB;lineAt(x.row,"Sous-total de la déduction (HT)",`-SUM(${runs(rows)||"0"})`,-v,false,null,ARGB(ovC(x.o).fg));}
@@ -4411,7 +4430,7 @@ async function buildBpuStyled(E,en,info,opts){
         lineAt(x.row,`TVA ${ovLab(x.o).toUpperCase()}`,fT,Math.round((v.ttc-v.net)*100)/100,false,null,ARGB(cc.fg));}
       else if(x.k==="sub"){
         const L=sumOf(x), rows=L.map(y=>y.row), tot=Math.round(L.reduce((a,y)=>a+y.m,0)*100)/100;
-        ws.mergeCells(x.row,1,x.row,8); const a=ws.getCell(x.row,1);a.value="Sous-Total HT de "+x.titre.toUpperCase();a.font=F(10,{italic:true});a.alignment={vertical:"middle",horizontal:"left",wrapText:true,indent:x.lvl==="par"?1:0};
+        ws.mergeCells(x.row,1,x.row,8); const a=ws.getCell(x.row,1);a.value="Sous-Total HT de "+(x.lvl==="par"&&x.d>0?x.titre:x.titre.toUpperCase());a.font=F(10,{italic:true});a.alignment={vertical:"middle",horizontal:"left",wrapText:true,indent:x.lvl==="par"?1:0};
         const m=ws.getCell(x.row,9);m.value={formula:`SUM(${runs(rows)||"0"})`,result:tot};m.font=F(10,{italic:true,bold:x.lvl==="node2"});m.numFmt=EUR0;m.alignment={vertical:"middle",horizontal:"right"};
         if(x.lvl==="node2"){for(let k=1;k<=10;k++)ws.getCell(x.row,k).fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};}
         R.height=19;
@@ -4447,7 +4466,7 @@ async function buildBpuStyled(E,en,info,opts){
   if(info){rs.mergeCells(3,1,3,5); const t3=rs.getCell(3,1); t3.value=docTag(info); t3.font=F(9,{bold:true,color:{argb:BLUE}}); t3.alignment={horizontal:"center"};}
   ["Lot","Désignation","Montant HT","Montant TVA","Montant TTC"].forEach((t,k)=>{const c=rs.getCell(4,k+1);c.value=t;c.font=F(10,{bold:true,color:{argb:BLUE}});c.fill={type:"pattern",pattern:"solid",fgColor:{argb:PALE}};c.alignment={horizontal:k>1?"center":"left",vertical:"middle"};c.border={top:thin(BLUE),bottom:thin(BLUE)};}); rs.getRow(4).height=26;
   let q=5; const q0=q; let sH=0,sT=0,sC=0;
-  rec.forEach(x=>{const ref2=`'${x.sn.replace(/'/g,"''")}'`;rs.getCell(q,1).value=x.code;rs.getCell(q,1).font=F(10,{italic:true});rs.getCell(q,2).value=x.titre.toUpperCase();rs.getCell(q,2).font=F(10);
+  rec.forEach(x=>{const ref2=`'${x.sn.replace(/'/g,"''")}'`;rs.getCell(q,1).value=x.code;rs.getCell(q,1).font=F(10,{italic:true});rs.getCell(q,2).value=x.titre;rs.getCell(q,2).font=F(10);
     const put=(col,f,res)=>{const c=rs.getCell(q,col);c.value={formula:f,result:res};c.font=F(10);c.numFmt=EUR0;c.alignment={horizontal:"right"};};
     put(3,`${ref2}!I${x.rHT}`,x.ht); put(4,`${ref2}!I${x.rTTC}-${ref2}!I${x.rHT}`,Math.round((x.ttc-x.ht)*100)/100); put(5,`${ref2}!I${x.rTTC}`,x.ttc);
     sH+=x.ht;sT+=x.ttc-x.ht;sC+=x.ttc;rs.getRow(q).height=20;q++;});
@@ -4477,8 +4496,8 @@ function buildBpuBasic(X,en,info){
   const first=hdr+1, fr=[], baseN={}, mm=r=>pus[r.id]!=null?r.q*pus[r.id]:0;
   const flat=bpuFlat().filter(r=>r.k!=="btot"), BK=["ovh","ovs","ded","dsub","osum","otot"], isBlk=r=>BK.includes(r.k)||r.opt;
   const body=r=>{String(r.texte||"").split("\n").map(t=>t.trim()).filter(Boolean).forEach(t=>A(null,null,t));};
-  const artRow=r=>{const c=ovOf(r.ar),n=A(r.code,r.id,r.titre.toUpperCase(),r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:mm(r),tva:r.tva});baseN[r.id]=n;return n;};
-  flat.filter(r=>!isBlk(r)).forEach(r=>{if(r.k==="art")artRow(r);else A(r.code,null,r.titre.toUpperCase());body(r);});
+  const artRow=r=>{const c=ovOf(r.ar),n=A(r.code,r.id,r.titre,r.u,r.q,r.tva,pus[r.id]!=null?pus[r.id]:null,null,nts[r.id]||null,c.in||"B",c.base.length?","+c.base.join(",")+",":"");fr.push({n,m:mm(r),tva:r.tva});baseN[r.id]=n;return n;};
+  flat.filter(r=>!isBlk(r)).forEach(r=>{if(r.k==="art")artRow(r);else A(r.code,null,r.k==="par"&&r.d>0?r.titre:r.titre.toUpperCase());body(r);});
   const baseLast=aoa.length; A();
   const tH=A(null,null,"Total HT"), tT=A(null,null,"Total TVA"), tC=A(null,null,"Total TTC");
   const wsF=[]; // formules posées après création de la feuille
@@ -4489,7 +4508,7 @@ function buildBpuBasic(X,en,info){
   blk.forEach(r=>{
     if(r.k==="ovh"){A();A();cur={o:r.o,h:A(null,null,ovLab(r.o).toUpperCase()),ded:[],inn:[],fr:[]};}
     else if(r.k==="ovs")A(null,null,r.txt);
-    else if(r.k==="ded"){const n=A(r.code,null,r.titre.toUpperCase(),r.u,r.q,r.tva,null,null,null,"",","+r.o.id+",");cur.ded.push(n);cur.fr.push({n,m:baseN[r.id]?fr.find(f=>f.n===baseN[r.id]).m:0,tva:r.tva,ded:true,src:baseN[r.id]});}
+    else if(r.k==="ded"){const n=A(r.code,null,r.titre,r.u,r.q,r.tva,null,null,null,"",","+r.o.id+",");cur.ded.push(n);cur.fr.push({n,m:baseN[r.id]?fr.find(f=>f.n===baseN[r.id]).m:0,tva:r.tva,ded:true,src:baseN[r.id]});}
     else if(r.k==="dsub"){cur.dsubRow=A(null,null,"Sous-total de la déduction (HT)");}
     else if(r.k==="art"&&r.opt){const n=artRow(r);cur.inn.push(n);cur.fr.push({n,m:mm(r),tva:r.tva});body(r);}
     else if(r.k==="osum"){cur.osumRow=A(null,null,`Somme de ${ovWhat(cur.o)} (HT)`);}
@@ -4625,10 +4644,10 @@ function renderPortal(){
       h=h.slice(0,bs)+ovFrameRows(h.slice(bs)+`<tr class="st occ"><td colspan="6">Total HT${ovl().length?" (marché de base)":""}</td><td class="n" data-psum="bt" ${at}></td><td></td></tr><tr class="occ"><td colspan="6">TVA</td><td class="n" data-psum="bv" ${at}></td><td></td></tr><tr class="st occ"><td colspan="6">Total TTC${ovl().length?" (marché de base)":""}</td><td class="n" data-psum="bc" ${at}></td><td></td></tr>`,curLc.frame,"all",curLc.pale);}
     else if(r.k==="lotX") h+=`<tr class="lot"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}</td></tr>`;
     else if(r.k==="node") h+=`<tr class="node"><td class="code">${r.code}</td><td colspan="7">${esc(r.titre.toUpperCase())}${desc}</td></tr>`;
-    else if(r.k==="par") h+=`<tr class="par"><td class="code">${r.code}</td><td colspan="7" ${pad}>${esc(r.titre.toUpperCase())}${desc}</td></tr>`;
+    else if(r.k==="par") h+=`<tr class="par"><td class="code">${r.code}</td><td colspan="7" ${pad}>${esc(r.d>0?r.titre:r.titre.toUpperCase())}${desc}</td></tr>`;
     else if(r.k==="ovh"){h+=`<tr class="ovgap"><td colspan="8"></td></tr>`;os=h.length;h+=`<tr class="ovh occ"><td colspan="8">${esc(ovLab(r.o).toUpperCase())}</td></tr>`;}
     else if(r.k==="ovs") h+=`<tr class="ovs occ"><td colspan="8">${esc(r.txt)}</td></tr>`;
-    else if(r.k==="ded") h+=`<tr class="ded"><td class="code">${r.code}</td><td>${esc(r.titre.toUpperCase())}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td><td></td><td class="n" data-pdm="${r.id}"></td><td></td></tr>`;
+    else if(r.k==="ded") h+=`<tr class="ded"><td class="code">${r.code}</td><td>${esc(r.titre)}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td><td></td><td class="n" data-pdm="${r.id}"></td><td></td></tr>`;
     else if(r.k==="dsub") h+=`<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n" data-psum="d" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
     else if(r.k==="osum") h+=`<tr class="st"><td colspan="6">Somme de ${ovWhat(r.o)}</td><td class="n" data-psum="s" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
     else if(r.k==="otot"){const c=ovC(r.o),pv=r.hasDed?"plus-value / moins-value ":"",at=`data-pids="${r.inIds.join(",")}" data-pbas="${r.basIds.join(",")}"`,sy="";
@@ -4637,7 +4656,7 @@ function renderPortal(){
         +`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;
       h=h.slice(0,os)+ovFrameRows(h.slice(os),c.fg);}
     else{const p=PD.pus[r.id], miss=p==null&&r.q>0&&!PD.marks[r.id];
-      h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre.toUpperCase())}${desc}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
+      h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre)}${desc}</td><td class="n">${fq(r.q,r.u)}</td><td>${esc(r.u)}</td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>
         <td><input type="text" inputmode="decimal" class="pu" data-ppu="${r.id}" value="${p==null?"":money(p)}" placeholder="0,00 €" autocomplete="off" aria-label="Prix unitaire HT de ${esc(r.titre)}"><span class="mk-bar" data-mkbar="${r.id}">${p==null?mkBar(PD.marks[r.id]):""}</span></td>
         <td class="n" data-pm="${r.id}">${p==null?"":eur2(r.q*p)}</td>
         <td><input type="text" class="nt" data-pnt="${r.id}" value="${esc(PD.notes[r.id]||"")}" placeholder="Annotation" aria-label="Annotation sur ${esc(r.titre)}"></td></tr>`;}
@@ -4879,7 +4898,7 @@ async function devAnalyse(file){
   devSrc=name; devLots={B,lots};
   $("#devInfo").innerHTML=`<b>${esc(name)}</b> : ${c.lots} lot${c.lots>1?"s":""}, ${c.ch} chapitre${c.ch>1?"s":""}, ${c.arts} article${c.arts>1?"s":""} reconnus. Vérifiez la structure avant d'importer ; vous pourrez tout retoucher ensuite dans la rédaction.`;
   $("#devPrix").checked=true; $("#devLvl").value="auto"; $("#devTree").innerHTML=dvTreeHtml(lots);
-  const empty=state.data.length===1&&countArts(state.data[0])<=1&&/^Nouvel article$/i.test((firstList()||[{}])[0].titre||"");
+  const empty=state.data.length===1&&countArts(state.data[0])<=2&&/^(Nouvel article|Nouveau sous-chapitre)$/i.test((firstList()||[{}])[0].titre||"");
   document.querySelector(`input[name="devMode"][value="${empty?"replace":"add"}"]`).checked=true;
   $("#devDlg").showModal();
 }
