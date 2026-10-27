@@ -246,7 +246,7 @@ tr.ovtot td{font-weight:700}
 .rte ul.ck>li[data-ck="0"]{opacity:.5}
 .hl-bar{display:flex;align-items:center;gap:6px;margin:0 0 0 28px}
 .art-opts{display:flex;align-items:center;flex-wrap:wrap;margin:-6px 0 12px}
-.field.inl{display:flex;align-items:center;gap:12px}.field.inl>label{margin:0;flex:none}.field.inl>input{flex:1}
+.field.inl{display:flex;align-items:center;gap:12px}.field.inl>label{margin:0;flex:none}.field.inl>input{flex:1}.field.inl>textarea{flex:1;field-sizing:content;min-height:2.3em;max-height:9em;resize:vertical;font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:4px;line-height:1.35}
 h4.sec:empty{margin:12px 0 10px;padding-top:0}
 .metre-box{padding:8px 10px!important;margin-top:8px!important}.metre-box .mb-h{margin-bottom:4px}
 .metre-box .ligne{margin-bottom:3px;gap:6px}.metre-box .ligne input,.metre-box .ligne .x{padding-top:4px;padding-bottom:4px;height:30px;font-size:13px}
@@ -379,7 +379,7 @@ mark{background:#fff176;color:inherit;padding:0}
 .img-ctl .rw{display:flex;gap:8px;align-items:center;font-size:12.5px}
 .img-ctl input[type=range]{flex:1;min-width:80px;accent-color:var(--accent)}
 .img-ctl output{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
-#fLoc{background:var(--field-bg)}
+#fLoc{background:var(--field-bg)}.blk .loc,p.loc{white-space:pre-line}
 .sheet .cd{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:11px;letter-spacing:0;text-transform:none;padding:1px 8px;border-radius:10px;margin-right:9px;vertical-align:1px}
 .sheet .blk.lv1 .h{background:var(--band);color:#fff;font-size:17px;letter-spacing:.04em;padding:12px 16px;border-radius:0;clip-path:polygon(14px 0,100% 0,100% 100%,0 100%,0 14px);margin:6px 0 10px}
 .sheet .blk.lv1 .cd{background:rgba(255,255,255,.22);color:#fff}
@@ -407,7 +407,7 @@ mark{background:#fff176;color:inherit;padding:0}
 .sheet .blk.ar .h{color:var(--ink);font-size:13px}
 .sheet .blk.ar{border-left:2px solid var(--line)}
 .sheet .blk.cur{border-left-color:var(--accent)}
-.sheet .loc{text-align:right;color:var(--accent);font-style:italic}
+.sheet .loc{white-space:pre-line;text-align:right;color:var(--accent);font-style:italic}
 .sheet .empty{color:var(--muted);font-style:italic}
 
 /* consultation / analyse / synthèse */
@@ -1082,7 +1082,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.85.0", deploiement: 85};
+const APP = {version: "0.86.0", deploiement: 86};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1860,7 +1860,7 @@ function renderEditor(){
   <div class="art-head"><span class="art-code">${ar.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(ar.titre)}" aria-label="Intitulé de l'article"><span class="pctb" id="pctB"${pcLab(ar)?"":" hidden"}>${esc(pcLab(ar))}</span></div>
   <div class="art-opts">${f.depth===0?`<span class="hint" style="margin-right:6px">Sous-chapitre · non chiffré (le chiffrage commence au niveau 3)</span>`:`<label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>`}${hlBar(ar)}</div>
   ${rteField("",ar.texte,"Décrire la prestation : matériaux, mise en œuvre, sujétions…")}
-  <div class="field inl"><label for="fLoc">Localisation</label><input type="text" id="fLoc" data-k="loc" value="${esc(ar.loc)}"></div>
+  <div class="field inl"><label for="fLoc">Localisation</label><textarea id="fLoc" data-k="loc" rows="1" spellcheck="true" aria-label="Localisation (Entrée pour aller à la ligne)">${esc(ar.loc)}</textarea></div>
   ${imgsField(ar)}
   ${isTitle(ar)?""
    :`<h4 class="sec" aria-label="Chiffrage"></h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
