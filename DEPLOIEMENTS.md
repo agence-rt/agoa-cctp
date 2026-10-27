@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°79** — v0.79.0 — 2026-10-27 — Couleur de lot : sélecteur de couleur libre en plus des couleurs de base
 - **n°78** — v0.78.0 — 2026-10-27 — Contrôle avant export : uniquement quantités et unités (plus d'alerte sur les prix, titres, descriptions ou chapitres vides)
 - **n°77** — v0.77.0 — 2026-10-27 — Contrôle avant export : plus d'alerte sur les prix estimatifs non renseignés (quantités et unités seulement)
 - **n°76** — v0.76.0 — 2026-10-27 — Casse automatique : lots, chapitres et sous-chapitres en majuscules, articles en minuscules ; sous-chapitres (niveau 2) non chiffrés

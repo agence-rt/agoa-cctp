@@ -1,1 +1,1 @@
-Déploiement n°78 — Contrôle avant export : uniquement quantités et unités (plus d'alerte sur les prix, titres, descriptions ou chapitres vides)
+Déploiement n°79 — Couleur de lot : sélecteur de couleur libre en plus des couleurs de base
