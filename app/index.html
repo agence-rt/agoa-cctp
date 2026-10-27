@@ -447,6 +447,11 @@ td .ec.up{color:var(--ochre)}
 .synth h3{font-size:15px;font-weight:650;margin:28px 0 10px}
 .synth p.body{font-family:var(--doc);font-size:16px;line-height:1.65;max-width:68ch}
 .synth td,.synth th{font-size:14px}
+.syn-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.syn-ret{margin-left:auto;font-size:13px;color:var(--muted)}
+.stab{width:100%;border-collapse:collapse}.stab th{background:var(--accent-soft,#fbe8e8);text-align:left;padding:7px 8px;font-size:13px}.stab th.n,.stab td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stab td{padding:5px 8px;border-bottom:1px solid var(--line)}.stab td.ind{padding-left:26px}.stab td.out{background:#eee;color:#aaa}.stab td.best{color:#1e785a;font-weight:700}
+.stab tr.sl td{background:var(--lcp);color:var(--lcs);font-weight:700;font-size:15px;padding-top:10px}.stab tr.s-ch td,.stab tr.s-sub td,.stab tr.s-ttc td{font-weight:700}.stab tr.s-tva td{font-style:italic;color:var(--muted)}
+.stab tr.s-tot td{font-weight:700;font-size:15px;border-top:2px solid var(--ink);padding-top:9px}
 .bars{display:grid;gap:10px;margin:14px 0}
 .bar{display:grid;grid-template-columns:150px 1fr 120px;gap:12px;align-items:center;font-size:14px}
 .bar .track{height:14px;background:var(--paper);border-radius:2px}
@@ -1075,7 +1080,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.79.0", deploiement: 79};
+const APP = {version: "0.80.0", deploiement: 80};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1339,6 +1344,7 @@ async function saveAffaireFile(quiet){
       let p=state.filePath;
       if(p){await AG.writeFile(p,text);}
       else{p=await AG.saveAs(name,text); if(!p){if(!quiet)toast("Enregistrement annulé.");return;}}
+      if(!state.lib&&p!==state.filePath)AG.libLock("acquire",p);
       state.filePath=p; state.fileName=p.split(/[\\/]/).pop(); state.fileSaved=Date.now()+1; MAN_OV=OVV; bkMaybe(true);
       try{LS.setItem(KEY,JSON.stringify(store))}catch(e){} markDirty(); toast(`Fichier enregistré : ${state.fileName}`);
     }catch(e){toast("L'enregistrement du fichier a échoué : "+(e&&e.message||"erreur"));}
@@ -1365,6 +1371,14 @@ function autoSaveFile(){
         try{await AG.writeFile(s2.filePath,serializeAffaire(s2)); s2.fileSaved=Date.now()+1; markDirty(); autoToast();}
         catch(e2){toast("Enregistrement automatique impossible : "+(e2&&e2.message||"erreur")+". Utilisez le bouton Enregistrer.");}},4000);}},1200);
 }
+/* Verrou d'ouverture d'un fichier .cctp : un seul poste à la fois (fichier .verrou à côté du .cctp) */
+function affLockOk(a,fp){
+  if(!AG||a&&a.lib)return true; const p=fp||(a&&a.filePath); if(!p)return true;
+  let L; try{L=AG.libLock("acquire",p);}catch(_){return true;}
+  if(L.ok||!L.by)return true; // indisponible (dossier en lecture seule…) : on n'empêche pas le travail
+  alertLib(`Cette affaire est <b>déjà ouverte</b> par <b>${esc(L.by)}</b> sur ${esc(L.host)}. Une seule personne à la fois peut la modifier : réessayez quand elle l'aura fermée.<br><span class="hint">${esc(String(p).split(/[\\/]/).pop())}</span>`);
+  return false;
+}
 async function importAffaireText(text,fname,fpath){
   const a=parseCctp(text);
   if(!a){toast("Ce fichier n'est pas un fichier d'affaire .cctp lisible.");return;}
@@ -1376,6 +1390,7 @@ async function importAffaireText(text,fname,fpath){
       if(!L.ok){await alertLib(L.by?`La bibliothèque est <b>déjà ouverte</b> par <b>${esc(L.by)}</b> sur ${esc(L.host)}. Une seule personne à la fois peut la modifier : réessayez quand elle l'aura fermée.`:`Ouverture de la bibliothèque impossible : ${esc(L.err||"verrou indisponible")}`);return;}}
     a.libVer=3;
   }
+  if(!a.lib&&AG&&fpath&&!affLockOk(a,fpath))return;
   const ex=store.affaires.find(x=>x.id===a.id);
   if(ex){
     // même fichier : on relit simplement le fichier (c'est lui qui fait foi), sans question
@@ -4171,61 +4186,87 @@ function synthDefaults(M,BD,ret){
 function synText(k,D){const S=synObj();return S.txt[k]!=null?S.txt[k]:(D[k]||"");}
 
 /* ---------- Synthèse ---------- */
+/* Lignes du tableau de synthèse : lot / chapitre / sous-chapitre / sous-total du lot (HT, TVA, TTC) / total des lots TTC */
+function synRows(M){
+  const E=M.E, R=[], bestOf=v=>{let b=-1,m=Infinity;v.forEach((x,j)=>{if(x>0&&x<m){m=x;b=j;}});return b;};
+  M.lots.forEach(({l,li,rows,tot,n})=>{
+    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
+    R.push({k:"lot",lab:`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,l});
+    rows.forEach((w,wi)=>{if((w.k!=="ch"&&w.k!=="par")||w.d>1||w.ex||!w.sub||anaOvOnly(rows,wi))return;
+      const v=E.map(e=>w.sub.e[e.id].ht); if(w.k==="par"&&!v.some(x=>x>0))return;
+      R.push({k:w.d===0?"ch":"par",lab:`${w.o.code||""}  ${w.o.titre}`,v,out:OUT,best:bestOf(v)});});
+    const ht=E.map(e=>tot.e[e.id].ht), ttc=E.map(e=>tot.e[e.id].ttc);
+    R.push({k:"sub",lab:`Sous-total lot ${pad(li+1)} HT`,v:ht,out:OUT,best:bestOf(ht)});
+    R.push({k:"tva",lab:"TVA",v:E.map((e,j)=>ttc[j]-ht[j]),out:OUT});
+    R.push({k:"ttc",lab:`Sous-total lot ${pad(li+1)} TTC`,v:ttc,out:OUT,best:bestOf(ttc)});
+  });
+  const T=anaSums(M,()=>true), tt=E.map(e=>T[e.id+"T"]);
+  R.push({k:"tot",lab:"Total des lots TTC",v:tt,out:E.map(e=>!(T[e.id+"T"]>0)),best:bestOf(tt)});
+  return R;
+}
 function renderSynth(){
   const ents=offers(), o=state.op;
-  if(!ents.length){$("#synth").innerHTML=`<h2>${esc(o.objet||"Synthèse")}</h2><p class="sub">Aucune offre reçue pour le moment. La synthèse sera disponible dès qu'une offre aura été enregistrée.</p>`;return;}
-  const M=anaModel();
-  const com=anaSums(M,l=>l.charge==="Commune"), prv=anaSums(M,l=>l.charge!=="Commune");
-  const privLot=M.lots.filter(x=>x.l.charge!=="Commune"&&x.n>0).map(x=>x.l);
+  if(!ents.length){$("#synth").innerHTML=`<h2>${esc(o.objet||"Synthèse")}</h2><p class="sub">Aucune offre reçue pour le moment.</p>`;return;}
+  const M=anaModel(), E=M.E, R=synRows(M);
   const ret=ents.find(e=>e.id===state.retenue)||ents[0];
-  const max=Math.max(1,com.estT,...ents.map(e=>com[e.id+"T"]))*1.05;
-  const bar=(lab,v,cls)=>`<div class="bar ${cls}"><span>${lab}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><span class="val num">${eur(v)}</span></div>`;
-  const ec=com.est?(com[ret.id]/com.est-1)*100:0, rT=com[ret.id+"T"];
-  const BD=bilanData(M), D=synthDefaults(M,BD,ret), S=synObj();
-  const edBlock=([k,lab,rows])=>`<div class="syn-b"><label for="sy-${k}">${lab}</label><textarea id="sy-${k}" data-syk="${k}" rows="${rows}" spellcheck="true">${esc(synText(k,D))}</textarea><div class="syn-a">${S.txt[k]!=null?`<span class="hint">Texte modifié</span> `:`<span class="hint">Texte automatique</span> `}<button class="btn sm" data-syreset="${k}"${S.txt[k]!=null?"":" disabled"}>Rétablir le texte automatique</button></div></div>`;
-  const edit=ks=>ks.map(k=>edBlock(SY_KEYS.find(x=>x[0]===k))).join("");
+  const td=(r,j)=>r.out&&r.out[j]?`<td class="n out">–</td>`:`<td class="n${r.best===j?" best":""}">${r.k==="tva"?eur2(r.v[j]):eur2(r.v[j])}</td>`;
   $("#synth").innerHTML=`
-   <h2>${esc(o.objet)}${o.immeuble?`, ${esc(o.immeuble)}`:""}</h2>
-   <p class="sub">${esc(o.adresse)}${o.ville?`, ${esc(o.ville)}`:""}. Synthèse de la consultation présentée à l'assemblée générale des copropriétaires</p>
-   <div class="pick"><label for="selRet">Entreprise proposée par la maîtrise d'œuvre</label>
-     <select id="selRet">${ents.map(e=>`<option value="${e.id}" ${e.id===ret.id?"selected":""}>${e.nom}</option>`).join("")}</select> <button class="btn" id="expSynth" style="margin-left:12px">Exporter la synthèse (PDF)</button></div>
-   <p class="body" id="synCopro" style="white-space:pre-wrap">${esc(synText("copro",D))}</p>
-   <details class="syn-ed" open><summary>Rédiger la lettre d'analyse des offres (première page du PDF)</summary>
-   <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
-   <div class="syn-b"><label>N° de devis des entreprises</label><div class="syn-dv">${ents.map(e=>`<span>${esc(e.nom)} <input type="text" data-sydv="${esc(e.id)}" value="${esc(S.devis[e.id]||"")}" placeholder="n° de devis" style="max-width:110px"></span>`).join("")}</div></div>
-   ${edit(["intro","obs","reco","pj","conclu","sign"])}
-   <p class="hint">Les n° de devis renseignés sont repris dans le texte automatique de l'introduction ; une fois l'introduction modifiée à la main, elle n'est plus mise à jour (bouton « Rétablir »).</p></details>
-   <h3>Montants TTC des parties communes</h3>
-   <div class="bars">${bar("Chiffrage MOE",com.estT,"est")}${ents.map(e=>bar(e.nom,com[e.id+"T"],e.id===ret.id?"ret":"")).join("")}</div>
-   ${(()=>{const P=pickSummary(M);if(M.lots.length<2||!P.rows.length)return "";const LO=lotOffers(M);
-     return `<h3>Entreprises consultées par lot</h3>`+LO.filter(z=>z.list.length).map(z=>`<table class="syn-lot"><tr><th colspan="4">Lot ${pad(z.x.li+1)} ${esc(z.x.l.titre)} <span class="hint">· chiffrage MOE ${eur(z.x.tot.est)} HT</span></th></tr>
-       ${z.list.map(o=>`<tr class="${o.e.id===z.best?"best":""}"><td><b>${esc(o.e.nom)}</b>${o.e.id===z.best?` <span class="tag">mieux-disant</span>`:""}${o.inc?` <span class="hint">(offre incomplète)</span>`:""}<span class="hint ent-sub">${esc(entAdr(o.e))}</span></td><td class="n">${eur(o.ht)} HT</td><td class="n">${eur(o.ttc)} TTC</td><td class="n">${z.x.tot.est?((o.ht/z.x.tot.est-1)*100>=0?"+":"−")+fmt(Math.abs((o.ht/z.x.tot.est-1)*100),1)+" %":""}</td></tr>`).join("")}</table>`).join("")
-     +`<table><tr><td><b>Total des meilleures offres</b>${P.auto?` <span class="hint">(mieux-disant de chaque lot ; modifiable dans l'analyse des offres)</span>`:""}</td><td class="n"><b>${eur(P.ht)} HT</b></td><td class="n"><b>${eur(P.ttc)} TTC</b></td></tr></table>`;})()}
-   ${(()=>{const Q=quoteCfg(),P=pickSummary(M),base=P.rows.length?P.cttc:rT;
-     return `<h3>Calcul par copropriétaire</h3><label class="chk"><input type="checkbox" id="sy-quote" ${Q.on?"checked":""}> Afficher le calcul de la quote-part par copropriétaire (module optionnel)</label>`
-      +(Q.on?`<div class="syn-b" style="margin-top:8px"><label for="sy-base">Total des tantièmes</label> <input type="number" id="sy-base" value="${Q.base}" style="max-width:110px"> <label for="sy-tant" style="margin-left:10px">Tantièmes à présenter (séparés par des virgules)</label> <input type="text" id="sy-tant" value="${esc(Q.tant.join(", "))}" style="max-width:240px"></div>
-   <p class="hint">Base : parties communes ${P.rows.length?"des offres retenues":"de l'entreprise proposée"}, soit ${eur(base)} TTC.</p>
-   <table><tr><th>Pour un lot de</th><th class="n">Quote-part TTC</th></tr>${Q.tant.map(t=>`<tr><td>${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}<sup>e</sup></td><td class="n">${eur(base*t/Q.base)}</td></tr>`).join("")}</table>`:"");})()}
-   ${ovl().some(o=>{const O=M.ov[o.id];return O&&(O.est.in||O.est.base);})?`<h3>Options et variantes</h3>
-   <p class="body">Les options et variantes ne sont pas comprises dans les montants ci-dessus. Plus-value (+) ou moins-value (−) en TTC par rapport au marché de base :</p>
-   <table><tr><th></th><th class="n">Chiffrage MOE</th>${ents.map(e=>`<th class="n">${esc(e.nom)}</th>`).join("")}</tr>
-   ${ovl().filter(o=>{const O=M.ov[o.id];return O&&(O.est.in||O.est.base);}).map(o=>{const O=M.ov[o.id],nt=x=>x.inT-x.baseT;return `<tr><td><b>${esc(ovLab(o))}</b></td><td class="n">${sgn(nt(O.est))}</td>${ents.map(e=>`<td class="n${e.id===ret.id?" strong":""}">${sgn(nt(O.e[e.id]))}</td>`).join("")}</tr>`;}).join("")}</table>`:""}
-   ${privLot.length?`<h3>Travaux à charge privative</h3>
-   <p class="body">Les lots privatifs (${privLot.map(l=>esc(l.titre.toLowerCase())).join(", ")}) sont commandés individuellement par les copropriétaires qui le souhaitent, aux prix unitaires de l'entreprise retenue. Montant de référence pour l'ensemble des articles chiffrés : ${eur(prv[ret.id+"T"])} TTC.</p>`:""}`;
-  $("#selRet").onchange=e=>{state.retenue=e.target.value;save();renderSynth();};
-  {const q=$("#sy-quote");if(q)q.onchange=()=>{synObj().quote=q.checked;save();renderSynth();};
-   const bs=$("#sy-base");if(bs)bs.onchange=()=>{synObj().base=parseFloat(bs.value)||10000;save();renderSynth();};
-   const tn=$("#sy-tant");if(tn)tn.onchange=()=>{synObj().tant=tn.value.split(/[;,\s]+/).map(v=>parseFloat(String(v).replace(",",".")))
-      .filter(v=>v>0);save();renderSynth();};}
-  const sy=$("#synth");
-  sy.querySelectorAll("textarea[data-syk]").forEach(t=>{const fit=()=>{t.style.height="auto";t.style.height=Math.max(48,t.scrollHeight+2)+"px";};fit();
-    t.addEventListener("input",()=>{fit();const k=t.dataset.syk;synObj().txt[k]=t.value;save();const b=t.closest(".syn-b"),r=b.querySelector("[data-syreset]");if(r)r.disabled=false;const h=b.querySelector(".syn-a .hint");if(h)h.textContent="Texte modifié";if(k==="copro"){$("#synCopro").textContent=t.value;}});});
-  sy.querySelectorAll("[data-syreset]").forEach(b=>b.onclick=()=>{delete synObj().txt[b.dataset.syreset];save();renderSynth();});
-  sy.querySelectorAll("input[data-sydv]").forEach(i=>i.addEventListener("input",()=>{synObj().devis[i.dataset.sydv]=i.value.trim();save();}));
-  sy.querySelectorAll("input[data-sydv]").forEach(i=>i.addEventListener("change",()=>renderSynth()));
-  $("#sy-date").addEventListener("input",e=>{synObj().date=e.target.value;save();});
-  $("#sy-lieu").addEventListener("input",e=>{synObj().lieu=e.target.value;save();});
+   <div class="syn-bar"><button class="btn primary" id="expSynth">Exporter synthèse (PDF)</button><button class="btn" id="expSynthX">Exporter tableaux (Excel)</button>
+    <label class="syn-ret">Entreprise retenue <select id="selRet">${ents.map(e=>`<option value="${e.id}" ${e.id===ret.id?"selected":""}>${esc(e.nom)}</option>`).join("")}</select></label></div>
+   <div class="scroll"><table class="stab"><thead><tr><th>Lot / chapitre / sous-chapitre</th>${E.map(e=>`<th class="n">${esc(e.nom)}</th>`).join("")}</tr></thead><tbody>
+   ${R.map(r=>r.k==="lot"?`<tr class="sl" style="${lotStyle(r.l)}"><td colspan="${E.length+1}">${esc(r.lab)}</td></tr>`
+     :`<tr class="s-${r.k}"><td${r.k==="par"?' class="ind"':""}>${esc(r.lab)}</td>${E.map((e,j)=>td(r,j)).join("")}</tr>`).join("")}
+   </tbody></table></div>
+   <p class="hint">Montants HT, sauf mention contraire. Colonnes grisées : lot non chiffré par l'entreprise. Le mieux-disant de chaque ligne est en vert.</p>`;
+  $("#selRet").onchange=e=>{state.retenue=e.target.value;save();};
 }
+async function exportSynthXlsx(){
+  if(!state) return; if(!offers().length){toast("Aucune offre reçue.");return;}
+  let E; try{E=await loadExcelJS();}catch(e){toast("Le module Excel n'a pas pu être chargé : vérifiez la connexion.");return;}
+  try{
+    const M=anaModel(), Ent=M.E, R=synRows(M), wb=new E.Workbook(); wb.creator="AGOA CCTP"; wb.created=new Date();
+    const F=(sz,o)=>Object.assign({name:"Calibri",size:sz},o||{}), MON='#,##0.00;[Red]-#,##0.00', GREY={type:"pattern",pattern:"solid",fgColor:{argb:"FFEEEEEE"}}, PALE={type:"pattern",pattern:"solid",fgColor:{argb:"FFFBE8E8"}};
+    const ref=[state.op.ref,state.op.immeuble].filter(Boolean).join(" - ")||"Affaire";
+    /* Feuille 1 : synthèse */
+    const ws=wb.addWorksheet("Synthèse",{views:[{state:"frozen",ySplit:3}]});
+    ws.getColumn(1).width=62; Ent.forEach((e,j)=>ws.getColumn(2+j).width=18);
+    ws.getCell(1,1).value=`${ref} - Tableau de synthèse`; ws.getCell(1,1).font=F(14,{bold:true});
+    const h=ws.getRow(3); h.getCell(1).value="Lot / chapitre / sous-chapitre"; Ent.forEach((e,j)=>{h.getCell(2+j).value=e.nom;h.getCell(2+j).alignment={horizontal:"right",wrapText:true};});
+    h.eachCell(c=>{c.font=F(10,{bold:true});c.fill=PALE;}); h.height=30;
+    let r=4;
+    R.forEach(x=>{const row=ws.getRow(r++),c=row.getCell(1); c.value=x.lab;
+      if(x.k==="lot"){const lc=lotCol(x.l);c.font=F(12,{bold:true,color:{argb:"FF"+lc.strong.slice(1).toUpperCase()}});for(let j=1;j<=Ent.length+1;j++)row.getCell(j).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+lc.pale.slice(1).toUpperCase()}};return;}
+      const b=x.k==="ch"||x.k==="sub"||x.k==="ttc"||x.k==="tot"; c.font=F(10,{bold:b,italic:x.k==="tva"}); c.alignment={indent:x.k==="par"?2:0};
+      Ent.forEach((e,j)=>{const k=row.getCell(2+j); if(x.out&&x.out[j]){k.fill=GREY;k.value=null;return;} k.value=Math.round(x.v[j]*100)/100; k.numFmt=MON; k.font=F(10,{bold:b||x.best===j,color:x.best===j?{argb:"FF1E785A"}:undefined});});
+      if(x.k==="tot"){for(let j=1;j<=Ent.length+1;j++)row.getCell(j).border={top:{style:"medium"}};}});
+    ws.getCell(r+1,1).value="Montants HT sauf mention contraire. Cellules grisées : lot non chiffré par l'entreprise."; ws.getCell(r+1,1).font=F(9,{italic:true});
+    /* Feuille 2 : comparatif de tous les articles */
+    const wc=wb.addWorksheet("Comparatif",{views:[{state:"frozen",xSplit:2,ySplit:3}]});
+    wc.getColumn(1).width=11; wc.getColumn(2).width=52; [3,4].forEach(i=>wc.getColumn(i).width=9); wc.getColumn(5).width=13;
+    Ent.forEach((e,j)=>{wc.getColumn(6+2*j).width=13;wc.getColumn(7+2*j).width=15;});
+    wc.getCell(1,1).value=`${ref} - Tableau comparatif global`; wc.getCell(1,1).font=F(14,{bold:true});
+    const h1=wc.getRow(2),h2=wc.getRow(3); ["Code","Désignation","Unité","Quantité","Estimation MOE (PU)"].forEach((t,i)=>{h2.getCell(1+i).value=t;});
+    Ent.forEach((e,j)=>{h1.getCell(6+2*j).value=e.nom;wc.mergeCells(2,6+2*j,2,7+2*j);h1.getCell(6+2*j).alignment={horizontal:"center"};h2.getCell(6+2*j).value="PU HT";h2.getCell(7+2*j).value="Montant HT";});
+    [h1,h2].forEach(x=>x.eachCell(c=>{c.font=F(10,{bold:true});c.fill=PALE;c.alignment=Object.assign({wrapText:true,vertical:"middle"},c.alignment||{});}));
+    let q=4;
+    M.lots.forEach(({l,li,rows,out})=>{
+      const lr=wc.getRow(q++), lc=lotCol(l); lr.getCell(1).value=pad(li+1); lr.getCell(2).value=l.titre;
+      for(let j=1;j<=5+2*Ent.length;j++){lr.getCell(j).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+lc.pale.slice(1).toUpperCase()}};lr.getCell(j).font=F(11,{bold:true,color:{argb:"FF"+lc.strong.slice(1).toUpperCase()}});}
+      rows.forEach((w,wi)=>{if(w.ex||anaOvOnly(rows,wi))return; const o=w.o, row=wc.getRow(q++);
+        row.getCell(1).value=o.code||""; const c2=row.getCell(2); c2.value=o.titre; c2.alignment={indent:Math.min(w.d,4),wrapText:true,vertical:"top"};
+        if(!w.leaf){row.getCell(1).font=F(10,{bold:true});c2.font=F(10,{bold:true});return;}
+        row.getCell(3).value=o.u||""; row.getCell(4).value=w.q; row.getCell(4).numFmt='#,##0.##'; row.getCell(5).value=o.pu||0; row.getCell(5).numFmt=MON;
+        Ent.forEach((e,j)=>{const a=row.getCell(6+2*j),b=row.getCell(7+2*j);
+          if(out[e.id]){a.fill=GREY;b.fill=GREY;return;}
+          if(w.p[j]==null){const mk=w.mk&&w.mk[j];a.value=mk?(MARKS[mk]?MARKS[mk][0]:""):(w.miss[j]?"manquant":"");a.font=F(10,{italic:true,color:{argb:"FF999999"}});return;}
+          a.value=w.p[j];a.numFmt=MON;b.value=Math.round(w.a[j]*100)/100;b.numFmt=MON;
+          if(w.best!=null&&w.p[j]===w.best){a.font=F(10,{bold:true,color:{argb:"FF1E785A"}});b.font=F(10,{bold:true,color:{argb:"FF1E785A"}});}});});
+    });
+    const buf=await wb.xlsx.writeBuffer();
+    await saveXlsx(buf,safeName(codeTrav(state)+" - Synthèse tableaux")+".xlsx","Tableaux");
+  }catch(err){console.error(err);toast("L'export des tableaux a échoué : "+((err&&err.message)||err));}
+}
+document.addEventListener("click",e=>{if(e.target.closest("#expSynthX"))exportSynthXlsx();});
 
 
 /* ---------- Consultation : BPU Excel, page de saisie entreprise, import des offres ---------- */
@@ -4291,11 +4332,11 @@ function loadExcelJS(){
   return exP||(exP=loadScripts(["vendor/exceljs.min.js","https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js","https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"])
     .then(()=>window.ExcelJS||Promise.reject(new Error("exceljs"))).catch(e=>{exP=null;throw e;}));
 }
-async function saveXlsx(buf,name){
-  if(AG){try{const u8=typeof buf==="string"?new TextEncoder().encode(buf):new Uint8Array(buf.buffer?buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength):buf);const ok=await AG.saveFile(name,u8);toast(ok?`BPU enregistré : ${name}`:"Enregistrement annulé.");}catch(e){toast("L'enregistrement a échoué : "+(e&&e.message||"erreur"));}return;}
+async function saveXlsx(buf,name,label="BPU"){
+  if(AG){try{const u8=typeof buf==="string"?new TextEncoder().encode(buf):new Uint8Array(buf.buffer?buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength):buf);const ok=await AG.saveFile(name,u8);toast(ok?`${label} enregistré : ${name}`:"Enregistrement annulé.");}catch(e){toast("L'enregistrement a échoué : "+(e&&e.message||"erreur"));}return;}
   const dl=await (window.claude&&window.claude.use?window.claude.use("downloads"):Promise.resolve(null));
   if(!dl){toast("Le téléchargement de fichier n'est pas disponible dans cette vue.");return;}
-  try{await dl.save({filename:name,data:buf});toast(`BPU enregistré : ${name}`);}
+  try{await dl.save({filename:name,data:buf});toast(`${label} enregistré : ${name}`);}
   catch(e){const c=e&&e.code;if(c==="declined")toast("Téléchargement annulé.");else if(c==="rate_limited")toast("Une demande de téléchargement est déjà ouverte.");else toast("Le téléchargement a échoué ("+(c||"erreur")+").");}
 }
 function lotItems(lot){
@@ -4942,6 +4983,7 @@ function autoToast(){const b=document.getElementById("saveBtn");if(!b)return;b.c
 /* ---------- Affaires ---------- */
 function openAffaire(id){
   const a=store.affaires.find(x=>x.id===id); if(!a) return;
+  if(!affLockOk(a)) return;
   state=a; store.cur=id; openIds=new Set();
   if(!state.tvaDef){state.tvaDef=(state.data[0]&&rate(state.data[0].tva))?state.data[0].tva:"t10";}
   state.tvas=DEF_TVAS(); ensureNodeIds(); renumberAll();
@@ -5007,7 +5049,7 @@ $("#homeList").addEventListener("click",async e=>{
     const nat=AG&&s.filePath;
     if(await ask(s.lib?`Fermer la bibliothèque ? Elle sera de nouveau ouvrable par les autres. Vos modifications sont déjà enregistrées dans le fichier.`:nat?`Retirer l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} de la liste ? Son fichier .cctp n'est pas supprimé : vous pourrez le rouvrir.`
         :`Supprimer définitivement l'affaire <b>${esc(s.op.ref||"")}</b> ${esc(s.op.immeuble||"")} et tout son contenu ? Cette action ne peut pas être annulée.`,s.lib?"Fermer la bibliothèque":nat?"Retirer de la liste":"Supprimer l'affaire",!nat&&!s.lib)){
-      if(s.lib&&AG&&s.filePath){AG.libLock("release",s.filePath);libMtime=0;}
+      if(AG&&s.filePath){AG.libLock("release",s.filePath);if(s.lib)libMtime=0;}
       store.affaires=store.affaires.filter(x=>x!==s);try{LS.setItem(KEY,JSON.stringify(store))}catch(_){} renderHome();toast(s.lib?"Bibliothèque fermée : elle est de nouveau disponible":nat?"Affaire retirée de la liste":"Affaire supprimée");if(s.lib)libSync(true);}
     return;}
   if(e.target.closest("[data-avanc]"))return; const r=e.target.closest("[data-open]"); if(r) openAffaire(r.dataset.open);
