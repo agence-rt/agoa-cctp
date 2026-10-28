@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.92.0", deploiement: 92};
+const APP = {version: "0.93.0", deploiement: 93};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3060,7 +3060,7 @@ function pdfRichLetter(doc,wa,src,x0,w,y,o){
 }
 function buildSynthPdf(J,info){
   const o=state.op||{}, M=anaModel(), A=M.A, E=M.E, n=E.length, BD=bilanData(M);
-  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[214,214,214], DN=[236,236,236], GRN=[30,120,90], TGP=[238,238,238], TGD=[80,80,80], QCH=[200,200,200];
+  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90], TGP=[238,238,238], TGD=[80,80,80], QCH=[255,243,168], MKC={inc:[[221,241,231],[31,107,79]],ninc:[[251,224,221],[163,42,31]],so:[[230,233,237],[77,89,100]]};
   const wa=t=>String(t==null?"":t).replace(/[  -​ ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/−/g,"-").replace(/★/g,"*").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
   const doc=new J({unit:"mm",format:"a4",orientation:"portrait",compress:true});
   let PW=210,PH=297,R=PW-12,B=PH-17,W=R-12; const L=12,T=24; let land=false;
@@ -3094,9 +3094,7 @@ function buildSynthPdf(J,info){
       String(t).split("\n").forEach(raw=>{const bl=/^\s*[-•]\s+/.test(raw), line=raw.replace(/^\s*[-•]\s+/,""); const ind=bl?8:0;
         const ls=doc.splitTextToSize(wa(line),lw-ind-(bl?0:0)); ls.forEach((l,i)=>{ if(bl&&!i){fill(RED);doc.circle(lx+3,yy-1.2,0.7,"F");} doc.text(l,lx+ind,yy); yy+=5.4;}); });
       yy+=gap==null?4:gap;};
-    blk(txt("intro")); 
-    font("bold",10.5,RED); doc.text("OBSERVATIONS :",lx,yy); yy+=6; blk(txt("obs"));
-    blk(txt("reco"),"bold",6); blk(txt("pj")); blk(txt("conclu"),"normal",10); blk(txt("sign"),"bold");
+    blk(txt("letter"),"normal",0);
     if(yy>270)console.warn("lettre trop longue");
   }
   doc.addPage("a4","portrait"); y=T;
@@ -3199,7 +3197,9 @@ function buildSynthPdf(J,info){
           if(fl){fill(d>0?UP:DN);doc.rect(xp(j),y,cEp+cEm,h,"F");}
           if(qc){fill(QCH);doc.rect(xq(j),y,cEq,h,"F");font("bold",fs,INK);doc.text(wa(fq(w.qe[j],(w.ue&&w.ue[j])||w.o.u)),xq(j)+cEq-1,y+3.3,{align:"right"});}
           font("normal",fs,m?MUTED:INK);
-          if(m){doc.text("-",xmt(j)+cEm-1,y+3.3,{align:"right"});}
+          const mk=(w.mk&&w.mk[j])||"";
+          if(mk&&MKC[mk]){fill(MKC[mk][0]);doc.rect(xp(j),y,cEp+cEm,h,"F");font("bold",fs-0.4,MKC[mk][1]);doc.text(wa(MARKS[mk][0]),xmt(j)+cEm-1,y+3.3,{align:"right"});}
+          else if(m){doc.text("-",xmt(j)+cEm-1,y+3.3,{align:"right"});}
           else{if(showPU){doc.text(nf(p),xp(j)+cEp-1,y+3.3,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xp(j)+0.8,y+3.3);font("normal",fs,INK);}}doc.text(nf(w.a[j]),xmt(j)+cEm-1,y+3.3,{align:"right"});}});
       }else if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});
       sepV(y,h);y+=h;});
@@ -3213,7 +3213,7 @@ function buildSynthPdf(J,info){
   tl("TOTAL TTC",e=>T0[e.id+"T"],true);
   doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yT,W,y-yT);y+=3;
   font("normal",7.4,MUTED); gneed(8);
-  doc.text(doc.splitTextToSize(wa(`Cases gris foncé : prix supérieur d'au moins ${A.seuil} % à la référence (${A.ref==="moe"?"estimation de la MOE":"médiane des offres"}) ; gris clair : inférieur d'au moins ${A.seuil} % ; Qté ent. grisée : quantité modifiée par l'entreprise (elle prévaut sur la quantité du BPU) ; "-" : prix non renseigné.`),W),L,y+3);
+  doc.text(doc.splitTextToSize(wa(`Cases orangées : prix supérieur d'au moins ${A.seuil} % à la référence (${A.ref==="moe"?"estimation de la MOE":"médiane des offres"}) ; cases bleues : inférieur d'au moins ${A.seuil} % ; Qté ent. surlignée en jaune : quantité modifiée par l'entreprise (elle prévaut sur la quantité du BPU) ; Compris / Non compris / Sans objet : mention de l'architecte ; "-" : prix non renseigné.`),W),L,y+3);
 
   /* en-têtes et pieds */
   const N=doc.getNumberOfPages();
@@ -4164,6 +4164,7 @@ function renderAnalyse(){
 
 /* ---------- Synthèse : textes rédigeables ---------- */
 const SY_KEYS=[
+ ["letter","Lettre d'analyse des offres (texte unique)",20],
  ["intro","Introduction (entreprises ayant répondu)",5],
  ["obs","Observations",3],
  ["reco","Entreprise mieux disante / proposée",2],
@@ -4225,7 +4226,15 @@ function recoText(M){
   if(M.lots.length<2||!asg.length) return `Sur l'ensemble des offres, les entreprises les mieux disantes sont :\n`+byE.map(e=>`- ${e.nom}, avec un montant de travaux de ${eur2(T[e.id+"T"])} TTC`).join("\n");
   return `Sur l'ensemble des offres, les entreprises les mieux disantes sont :\n`+asg.map(a=>`- Lot ${pad(a.li+1)} ${a.lot.titre} : ${a.e.nom}, ${eur2(a.ttc)} TTC`).join("\n")+`\nSoit un montant total de travaux de ${eur2(asg.reduce((s,a)=>s+a.ttc,0))} TTC`;
 }
-function synText(k,D){const S=synObj();return S.txt[k]!=null?S.txt[k]:(D[k]||"");}
+function letterHtml(D){ // assemble les parties de la lettre en un seul texte enrichi (les anciennes modifications sont reprises)
+  const esc2=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const conv=t=>{if(isRich(t))return t.slice(RT.length); const out=[]; let ul=false;
+    String(t||"").split("\n").forEach(l=>{const m=/^\s*[-•]\s+(.*)$/.exec(l); if(m){if(!ul){out.push("<ul>");ul=true;}out.push("<li>"+esc2(m[1])+"</li>");}else{if(ul){out.push("</ul>");ul=false;}if(l.trim())out.push("<p>"+esc2(l)+"</p>");}});
+    if(ul)out.push("</ul>"); return out.join("");};
+  const g=k=>synText(k,D), bold=h=>h?h.replace(/<p>/g,"<p><b>").replace(/<\/p>/g,"</b></p>"):"";
+  return RT+conv(g("intro"))+"<p><br></p><p><b>OBSERVATIONS :</b></p>"+conv(g("obs"))+"<p><br></p>"+bold(conv(g("reco")))+"<p><br></p>"+conv(g("pj"))+"<p><br></p>"+conv(g("conclu"))+"<p><br></p>"+bold(conv(g("sign")));
+}
+function synText(k,D){const S=synObj(); if(k==="letter"&&S.txt.letter==null)return letterHtml(D); return S.txt[k]!=null?S.txt[k]:(D[k]||"");}
 
 /* ---------- Synthèse ---------- */
 /* Lignes du tableau de synthèse : lot / chapitre / sous-chapitre / sous-total du lot (HT, TVA, TTC) / total des lots TTC */
@@ -4261,9 +4270,8 @@ function renderSynth(){
    <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
    <div class="syn-b"><label>Entreprises consultées : n° de devis <span class="hint">(les noms et adresses viennent de la consultation)</span></label><div class="syn-dv">${ents.map(e=>`<span><b>${esc(e.nom)}</b>${e.adresse?` <span class="hint">${esc(e.adresse)}</span>`:""} <input type="text" data-sydv="${esc(e.id)}" value="${esc(S.devis[e.id]||"")}" placeholder="n° de devis" style="max-width:110px"></span>`).join("")}</div></div>
    ${rteBar()}
-   ${edit(["intro","obs"])}
    <div class="syn-b"><label>Entreprise(s) mieux-disante(s) <span class="hint">${Array.isArray(S.best)&&S.best.length?"choix manuel":"automatique : mieux-disant de chaque lot"}</span></label><div class="syn-dv">${ents.map(e=>`<label class="chk"><input type="checkbox" data-sybest="${esc(e.id)}" ${selB.includes(e.id)?"checked":""}> ${esc(e.nom)}</label>`).join("")}</div>${Array.isArray(S.best)&&S.best.length?`<button class="btn sm" id="syBestAuto">Choix automatique</button>`:""}</div>
-   ${edit(["reco","pj","conclu","sign"])}
+   ${edit(["letter"])}
    <p class="hint">Les textes automatiques se mettent à jour tant qu'ils n'ont pas été modifiés à la main (bouton « Rétablir » pour revenir au texte automatique).</p></details>
    <div class="scroll"><table class="stab"><thead><tr><th>Lot / chapitre</th>${E.map(e=>`<th class="n">${esc(entShort(e))}</th>`).join("")}</tr></thead><tbody>
    ${R.map(r=>r.k==="lot"?`<tr class="sl" style="${lotStyle(lotById(r.l.id))}"><td colspan="${E.length+1}">${esc(r.lab)}</td></tr>`
