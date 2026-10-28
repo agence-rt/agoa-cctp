@@ -728,6 +728,12 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 .mk-inc{background:#DDF1E7;color:#1F6B4F;border-color:#8FCDB3}.mk-ninc{background:#FBE0DD;color:#A32A1F;border-color:#E6A39B}.mk-so{background:#E6E9ED;color:#4D5964;border-color:#B6BEC7}
 .mk-bar{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}.mk-bar button.mk{cursor:pointer;opacity:.45;background:var(--surface);color:var(--muted);border-color:var(--line)}.mk-bar button.mk:hover{opacity:.85}
 .mk-bar button.mk.on{opacity:1}.mk-bar button.mk-inc.on{background:#DDF1E7;color:#1F6B4F;border-color:#8FCDB3}.mk-bar button.mk-ninc.on{background:#FBE0DD;color:#A32A1F;border-color:#E6A39B}.mk-bar button.mk-so.on{background:#E6E9ED;color:#4D5964;border-color:#B6BEC7}
+#cmpTable td.qchg{background:#fff3a8;color:#6b5a00;font-weight:700}
+#cmpTable td.hasnote{position:relative}#cmpTable td.hasnote::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 9px 9px 0;border-color:transparent #e8830c transparent transparent}
+.legend i.nt-i{background:#e8830c;border-color:#e8830c;clip-path:polygon(0 0,100% 0,100% 100%)}
+#anaTip{position:fixed;z-index:200;max-width:340px;background:#2b2b2b;color:#fff;font-size:12.5px;line-height:1.4;padding:7px 10px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.3);pointer-events:none;white-space:pre-wrap}
+#cmpTable tr.subt td{font-style:italic;font-weight:600;background:var(--surface)}#cmpTable tr.subt.subc td{background:var(--lcp,var(--paper))}
+#cmpTable button.afold{border:0;background:transparent;cursor:pointer;padding:0 4px 0 0;font-size:12px;color:var(--muted)}#cmpTable button.afold:hover{color:var(--ink,#222)}
 #cmpTable td.mkcell{cursor:pointer}#cmpTable td.mkcell:hover{outline:1px dashed var(--muted);outline-offset:-2px}
 #cmpTable td.st-v{font-weight:700}
 .ent-hist{list-style:none;margin:6px 0 0;padding:0;font-size:11.5px;color:var(--muted);display:flex;flex-direction:column;gap:2px}.ent-hist time{color:var(--ink,#333);font-weight:600;margin-right:4px}
@@ -1083,7 +1089,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.89.0", deploiement: 89};
+const APP = {version: "0.90.0", deploiement: 90};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3813,7 +3819,9 @@ function anaSync(){
   return live;
 }
 const medianOf=a=>{const v=a.slice().sort((x,y)=>x-y),n=v.length;return n?(n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2):null;};
-const uTag=(w,j)=>{const u=w.ue&&w.ue[j], q=w.qe&&w.qe[j]!=null&&Math.abs(w.qe[j]-w.q)>0.0001?w.qe[j]:null; if(!u&&q==null)return "";
+const qChg=(w,j)=>w.qe&&w.qe[j]!=null&&Math.abs(w.qe[j]-w.q)>0.0001;
+const qeCell=(w,j)=>qChg(w,j)?`<td class="n e1 qchg" title="Quantité modifiée par l'entreprise (BPU : ${fmt(w.q,2)})">${fq(w.qe[j],(w.ue&&w.ue[j])||w.o.u)}</td>`:`<td class="n e1"></td>`;
+const uTag=(w,j)=>{const u=w.ue&&w.ue[j], q=null; if(!u&&q==null)return "";
   return ` <span class="uchg" title="${u?`Unité de l'entreprise : ${esc(u)} (BPU : ${esc(w.o.u||"")}) · `:""}${q!=null?`Quantité de l'entreprise : ${fmt(q,2)} (BPU : ${fmt(w.q,2)})`:""}">${u?"/"+esc(u):""}${q!=null?" × "+fmt(q,2).replace(/,00$/,""):""}</span>`;};
 function anaModel(){
   const live=anaSync(), A=state.ana, E=offers();
@@ -3834,7 +3842,7 @@ function anaModel(){
       E.forEach(e=>{const out=!!lotObj&&entSkip(e).has(lotObj.nid), mk=out?"":markOf(e,ar.id), m=!out&&!!e.offre&&(e.offre.pus||{})[ar.id]==null&&w.q>0&&!mk, p=(m||out||(mk&&(e.offre.pus||{})[ar.id]==null))?null:puEnt(ar,e);
         (w.mk=w.mk||[]).push((e.offre&&(e.offre.pus||{})[ar.id]==null)?mk:"");w.miss.push(m); w.p.push(p);
         const ue=(!out&&e.offre&&(e.offre.units||{})[ar.id])||"", qe=!out&&e.offre&&e.offre.qents&&e.offre.qents[ar.id]!=null?e.offre.qents[ar.id]:w.q; // unité et quantité de l'entreprise : elles prévalent sur le BPU
-        (w.ue=w.ue||[]).push(ue); (w.qe=w.qe||[]).push(qe); w.a.push(p==null?null:qe*p);});
+        (w.ue=w.ue||[]).push(ue); (w.qe=w.qe||[]).push(qe); (w.nt=w.nt||[]).push((!out&&e.offre&&e.offre.notes&&String(e.offre.notes[ar.id]||"").trim())||""); w.a.push(p==null?null:qe*p);});
       if(!w.ex&&w.q>0){
         const vals=w.p.filter((p,i)=>p!=null&&p>0&&!w.miss[i]&&!w.ue[i]);
         const ref=A.ref==="moe"?(ar.pu>0?ar.pu:null):(vals.length>=2?medianOf(vals):null);
@@ -3883,10 +3891,10 @@ function ovFoot(M,Ev,E){
   const L=ovl().filter(o=>{const O=M.ov[o.id];return O&&(O.est.in||O.est.base||Ev.some(e=>O.e[e.id].in||O.e[e.id].base));}); if(!L.length) return "";
   const all=[];M.lots.forEach(x=>x.rows.forEach(w=>{if(w.leaf&&!w.ex)all.push(w);}));
   const idx=e=>E.indexOf(e);
-  const cells=(w,neg)=>`<td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${neg?"−":""}${eur2(w.est)}</td>`+Ev.map(e=>{const j=idx(e),m=w.miss[j];return `<td class="n e1 ${m?"miss":""}">${m?"–":eur2(w.p[j])}</td><td class="n ${m?"miss":""}">${m?"–":(neg?"−":"")+eur2(w.a[j])}</td>`;}).join("");
+  const cells=(w,neg)=>`<td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${neg?"−":""}${eur2(w.est)}</td>`+Ev.map(e=>{const j=idx(e),m=w.miss[j];return `${qeCell(w,j)}<td class="n ${m?"miss":""}">${m?"–":eur2(w.p[j])}</td><td class="n ${m?"miss":""}">${m?"–":(neg?"−":"")+eur2(w.a[j])}</td>`;}).join("");
   const art=(w,neg)=>`<tr class="art hov ded${neg?" dd":""}"><td class="c1">${esc(w.o.code||"")}</td><td class="c2" style="padding-left:14px">${esc(w.o.titre)}</td><td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td>${cells(w,neg)}</tr>`;
-  const sum=(lab,get,cls,st)=>`<tr class="${cls||"st"}" ${st||""}><td class="c1"></td><td class="c2" colspan="3">${lab}</td><td class="n e1 mo"></td><td class="n mo">${get(null)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${get(e)}</td>`).join("")}</tr>`;
-  const span=1+3+2+Ev.length*2;
+  const sum=(lab,get,cls,st)=>`<tr class="${cls||"st"}" ${st||""}><td class="c1"></td><td class="c2" colspan="3">${lab}</td><td class="n e1 mo"></td><td class="n mo">${get(null)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n">${get(e)}</td>`).join("")}</tr>`;
+  const span=1+3+2+Ev.length*3;
   return L.map(o=>{const O=M.ov[o.id],c=ovC(o),bas=all.filter(w=>ovOf(w.o).base.includes(o.id)),inn=all.filter(w=>ovOf(w.o).in===o.id),st="";
     const x=e=>e?O.e[e.id]:O.est, v=(e,k)=>x(e)[k];
     let h=`<tr class="ovh occ"><td class="c1"></td><td class="c2" colspan="${span-1}"><b>${esc(ovLab(o).toUpperCase())}</b></td></tr>`;
@@ -3937,17 +3945,17 @@ function cmpBands(tbl,n,M,Ev){ // sépare les entreprises par des traits ; lots 
   tbl.querySelectorAll("tr").forEach(tr=>{const c=[...tr.children];
     if(tr.parentElement.tagName==="THEAD"){
       if(c.length&&c[0].classList.contains("c1")){c.filter(x=>x.classList.contains("ent")&&!x.classList.contains("mo")).forEach(x=>x.classList.add("cg"));}
-      else{const L=c.slice(-2*n);if(L.length===2*n)L.forEach((x,i)=>{x.classList.add("cg");if(i%2===0)x.classList.add("cg1");});}
+      else{const L=c.slice(-3*n);if(L.length===3*n)L.forEach((x,i)=>{x.classList.add("cg");if(i%3===0)x.classList.add("cg1");});}
       return;}
-    const L=c.slice(-2*n); if(L.length<2*n)return;
-    L.forEach((x,i)=>{x.classList.add("cg");if(i%2===0)x.classList.add("cg1");});});
+    const L=c.slice(-3*n); if(L.length<3*n)return;
+    L.forEach((x,i)=>{x.classList.add("cg");if(i%3===0)x.classList.add("cg1");});});
   const tb=tbl.tBodies[0]; if(!tb||!M)return; let k=-1;
   [...tb.querySelectorAll("tr")].forEach(tr=>{
     if(tr.classList.contains("lot")){k++;if(k>0){const g=document.createElement("tr");g.className="lotgap";g.innerHTML=`<td colspan="${tr.children.length}"></td>`;tr.before(g);}}
-    const x=M.lots[k]; if(!x||!x.out)return; const c=[...tr.children]; if(c.length<2*n+4)return;
-    Ev.forEach((e,j)=>{if(!x.out[e.id])return;const pair=c.slice(c.length-2*n+2*j,c.length-2*n+2*j+2);pair.forEach(cell=>{cell.textContent="";cell.classList.add("hatch");cell.classList.remove("up","dn","best","miss");});});});
+    const x=M.lots[k]; if(!x||!x.out)return; const c=[...tr.children]; if(c.length<3*n+4)return;
+    Ev.forEach((e,j)=>{if(!x.out[e.id])return;const pair=c.slice(c.length-3*n+3*j,c.length-3*n+3*j+3);pair.forEach(cell=>{cell.textContent="";cell.classList.add("hatch");cell.classList.remove("up","dn","best","miss","qchg","hasnote");cell.removeAttribute("data-note");});});});
 }
-let anaLotOpen=null,anaLotSelOpen=false;
+let anaLotOpen=null,anaLotSelOpen=false; const anaFold=new Set(); // lignes réduites (lots : "L"+id)
 function renderAnalyse(){
   if(!state) return;
   const bar=$("#anaBar"), tbl=$("#cmpTable"), leg=$("#anaLegend");
@@ -3955,6 +3963,7 @@ function renderAnalyse(){
   const M=anaModel(), A=M.A, E=M.E, det=A.mode!=="lot"; $("#anaSum").innerHTML=""; A.hide=A.hide||[]; const Ev=E.filter(e=>!A.hide.includes(e.id)); const col=A.colors!==false;
   const sc=document.querySelector("#v-analyse .scroll"), st=sc?[sc.scrollTop,sc.scrollLeft]:[0,0];
   bar.innerHTML=`<div class="seg" role="group" aria-label="Affichage"><button data-anamode="detail" aria-pressed="${det}">Détail du BPU</button><button data-anamode="lot" aria-pressed="${!det}">Par lot et chapitre</button></div>
+    <span class="seg" role="group" aria-label="Niveaux affichés"><button data-afl="lot" title="Afficher les lots seulement">Lots</button><button data-afl="0" title="Lots et chapitres">Chapitres</button><button data-afl="1" title="Jusqu'aux sous-chapitres">Sous-chapitres</button><button data-afl="all" title="Tout déplier">Tout</button></span>
     <span class="sep"></span>
     <label title="Un prix unitaire est signalé quand il s'écarte d'au moins ce pourcentage de la référence">Écart signalé à partir de <input type="number" id="anaSeuil" min="1" max="500" step="1" value="${A.seuil}"> %</label>
     <label>par rapport à <select id="anaRef"><option value="med" ${A.ref!=="moe"?"selected":""}>la médiane des offres</option><option value="moe" ${A.ref==="moe"?"selected":""}>l'estimation de la MOE</option></select></label>
@@ -3969,53 +3978,60 @@ function renderAnalyse(){
     </span>
     <span class="sep"></span>
     <button class="btn sm" id="anaReset" title="Revenir à la structure du CCTP">Réinitialiser la structure</button>`;
-  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="2">${esc(entShort(e))}</th>`;}).join("")}</tr>
-    <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
+  const th=`<thead><tr><th class="c1" rowspan="2">N° CCTP</th><th class="c2" rowspan="2">Désignation</th><th class="n" rowspan="2">Qté</th><th rowspan="2">U</th><th class="ent mo" colspan="2">Estimation MOE</th>${Ev.map(e=>{const m=missingFor(e);return `<th class="ent" colspan="3">${esc(entShort(e))}</th>`;}).join("")}</tr>
+    <tr><th class="n mo">PU HT</th><th class="n mo">Montant HT</th>${Ev.map(()=>`<th class="n" title="Quantité de l'entreprise, renseignée seulement si elle diffère de la quantité du BPU">Qté ent.</th><th class="n">PU HT</th><th class="n">Montant HT</th>`).join("")}</tr></thead>`;
   const ec=()=>"";
   let body="";
   if(det){
     M.lots.forEach(({l,li,rows,tot})=>{
-      body+=`<tr class="lot" style="${lotStyle(lotById(l.id))}"><td class="c1"><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
+      body+=`<tr class="lot" style="${lotStyle(lotById(l.id))}"><td class="c1"><button type="button" class="afold" data-alfold="${l.id}" title="${anaFold.has("L"+l.id)?"Déplier":"Réduire"} le lot" aria-expanded="${!anaFold.has("L"+l.id)}">${anaFold.has("L"+l.id)?"▸":"▾"}</button><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
         <td class="c2"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span> <select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select>
           ${l.rows.length?"":`<button class="x" data-lotdel="${li}" title="Supprimer le lot vide" aria-label="Supprimer le lot vide">×</button>`}</td>
-        <td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
-      let hide=null;
+        <td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
+      let hideD=null; const open=[]; // blocs ouverts : sous-total à la fermeture
+      const subRow=b=>{const t=b.w.sub,st=b.w.k==="ch"?"":"";return `<tr class="subt${b.w.k==="ch"?" subc":""}" ${b.w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""}><td class="c1"></td><td class="c2" style="padding-left:${b.w.d*14}px">Sous-total HT de ${esc(b.w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(t.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n st-v">${eur2(t.e[e.id].ht)}</td>`).join("")}</tr>`;};
+      const closeTo=d=>{while(open.length&&open[open.length-1].w.d>=d){body+=subRow(open.pop());}};
+      if(anaFold.has("L"+l.id)) return;
       rows.forEach((w,i)=>{
         if(anaOvOnly(rows,i)) return;
+        if(hideD!==null&&w.d>hideD) return; hideD=null;
+        closeTo(w.d);
         if(A.only){ // lignes avec écart, et leurs titres
           if(w.leaf&&!w.flagged) return;
           if(!w.leaf){let any=false;for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++)if(rows[j].leaf&&rows[j].flagged){any=true;break;}if(!any)return;}
         }
-        const cls=`${w.k==="ch"?"ch":w.k==="par"?"par":"art"}${w.ex?" xc":""} hov`, ind=`padding-left:${w.d*14}px`;
+        const rid=l.rows[w.ri].id, cls=`${w.k==="ch"?"ch":w.k==="par"?"par":"art"}${w.ex?" xc":""} hov`, ind=`padding-left:${w.d*14}px`;
         const ctl=`<span class="ana-grip" draggable="true" data-agrip="${li}:${w.ri}" title="Glisser pour déplacer cette ligne${w.leaf?"":" et son contenu"}">⋮⋮</span><input type="checkbox" class="ana-inc" data-ainc="${li}:${w.ri}" ${w.x?"":"checked"} title="${w.x?"Réintégrer ce poste":"Écarter ce poste de l'analyse"}"> `;
         const mv=`<span class="ana-ctl"><button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button><button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
-        body+=`<tr class="${cls}" ${w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""} data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
+        body+=`<tr class="${cls}" ${w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""} data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${w.leaf?"":`<button type="button" class="afold" data-afold="${rid}" title="${anaFold.has(rid)?"Déplier":"Réduire"}" aria-expanded="${!anaFold.has(rid)}">${anaFold.has(rid)?"▸":"▾"}</button>`}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
         if(w.leaf){
           body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
             const p=w.p[j], m=w.miss[j], d=w.dev[j], fl=col&&!w.ex&&d!=null&&Math.abs(d)>=A.seuil;
-            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}${col&&!w.ex&&w.best!=null&&p===w.best?" best":""}`, mk=(w.mk&&w.mk[j])||"", can=e.offre&&p==null&&!entSkip(e).has(l.id)?` data-amark="${esc(e.id)}|${esc(w.o.id)}" title="Cliquer pour indiquer : compris / non compris / sans objet"`:"";
-            body+=`<td class="n e1 ${c}${can?" mkcell":""}"${can}>${mk?markPill(mk):m?"–":eur2(p)+uTag(w,j)}</td><td class="n ${m?"miss":""}">${m||mk?"–":eur2(w.a[j])}</td>`;});
+            const c=`${m?"miss":""}${fl?(d>0?" up":" dn"):""}`, nt=(w.nt&&w.nt[j])||"", mk=(w.mk&&w.mk[j])||"", can=e.offre&&p==null&&!entSkip(e).has(l.id)?` data-amark="${esc(e.id)}|${esc(w.o.id)}" title="Cliquer pour indiquer : compris / non compris / sans objet"`:"";
+            body+=`${qeCell(w,j)}<td class="n ${c}${can?" mkcell":""}${nt?" hasnote":""}"${can}${nt?` data-note="${esc(nt)}"`:""}>${mk?markPill(mk):m?"–":eur2(p)+uTag(w,j)}</td><td class="n ${m?"miss":""}">${m||mk?"–":eur2(w.a[j])}</td>`;});
         }else{
-          const st=w.k==="ch"&&!w.ex&&w.sub?w.sub:null;
-          body+=st?`<td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(st.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n st-v">${eur2(st.e[e.id].ht)}${ec(st.e[e.id].ht,st.est)}</td>`).join("")}`
-            :`<td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(()=>`<td class="n e1"></td><td class="n"></td>`).join("")}`;
+          const folded=!w.leaf&&anaFold.has(rid), st=!w.ex&&w.sub&&folded?w.sub:null;
+          if(!w.ex&&w.sub&&!folded)open.push({w}); if(folded)hideD=w.d;
+          body+=st?`<td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(st.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n st-v">${eur2(st.e[e.id].ht)}${ec(st.e[e.id].ht,st.est)}</td>`).join("")}`
+            :`<td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(()=>`<td class="n e1"></td><td class="n"></td><td class="n"></td>`).join("")}`;
         }
         body+=`</tr>`;
       });
+      closeTo(-1);
     });
   }else{
     M.lots.forEach(({l,li,rows,tot})=>{
-      const cell=(v,est)=>`<td class="n e1"></td><td class="n">${eur2(v)}${ec(v,est)}</td>`;
+      const cell=(v,est)=>`<td class="n e1"></td><td class="n"></td><td class="n">${eur2(v)}${ec(v,est)}</td>`;
       body+=`<tr class="lot" style="${lotStyle(lotById(l.id))}"><td class="c1">Lot ${pad(li+1)}</td><td class="c2">${esc(l.titre)} <span class="hint">(${esc((l.charge||"Commune").toLowerCase())})</span></td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>cell(tot.e[e.id].ht,tot.est)).join("")}</tr>`;
       rows.forEach((w,wi)=>{if(w.k!=="ch"||w.ex||anaOvOnly(rows,wi))return;const t=w.sub;
         body+=`<tr class="ch" style="${lotStyle(lotById(l.id))}"><td class="c1">${esc(w.o.code||"")}</td><td class="c2">${esc(w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(t.est)}</td>${Ev.map(e=>cell(t.e[e.id].ht,t.est)).join("")}</tr>`;});
     });
   }
   const T=anaSums(M,()=>true), C=anaSums(M,l=>l.charge==="Commune"), V=anaSums(M,l=>l.charge!=="Commune");
-  const frow=(lab,o,key,cls="tot")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(o[key==="T"?"estT":"est"])}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(o[e.id+(key==="T"?"T":"")])}${key==="T"?"":ec(o[e.id],o.est)}</td>`).join("")}</tr>`;
+  const frow=(lab,o,key,cls="tot")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(o[key==="T"?"estT":"est"])}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n">${eur2(o[e.id+(key==="T"?"T":"")])}${key==="T"?"":ec(o[e.id],o.est)}</td>`).join("")}</tr>`;
   const rates=Object.keys(T.rt).map(Number).sort((a,b)=>b-a);
-  const trow=(lab,get,cls="")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n">${eur2(get(e))}</td>`).join("")}</tr>`;
+  const trow=(lab,get,cls="")=>`<tr class="${cls}"><td class="c1"></td><td class="c2">${lab}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(get(null))}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n">${eur2(get(e))}</td>`).join("")}</tr>`;
   const tvaRows=rates.map(tx=>{const R=T.rt[tx];return (rates.length>1?trow(`Base HT soumise à ${pct(tx)}`,e=>e?R.e[e.id]:R.est):"")+trow(`TVA à ${pct(tx)}`,e=>(e?R.e[e.id]:R.est)*tx/100);}).join("");
   let pickRows="";
   if(M.lots.length>1){
@@ -4027,17 +4043,25 @@ function renderAnalyse(){
     let selHt=0,selTtc=0,selEst=0,nSel=0;
     const lr=lotInfo.map(({x,best,ok})=>{const pk=A.pick[x.l.id], valid=pk&&ok.has(pk);if(valid){selHt+=x.tot.e[pk].ht;selTtc+=x.tot.e[pk].ttc;selEst+=x.tot.est;nSel++;}
       return `<tr class="pickr"><td class="c1">Lot ${pad(x.li+1)}</td><td class="c2">${esc(x.l.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(x.tot.est)}</td>${Ev.map(e=>{const v=x.tot.e[e.id].ht,can=ok.has(e.id);
-        return `<td class="n e1"></td><td class="n">${x.out[e.id]?"":can?`<button type="button" class="pk${pk===e.id?" on":""}${best===e.id?" best":""}" data-apick="${esc(x.l.id)}|${esc(e.id)}" aria-pressed="${pk===e.id}" title="${best===e.id?"Mieux-disant du lot : ":""}retenir ${esc(e.nom)} pour ce lot${incomp(x,e)?" (offre incomplète : prix manquants)":""}">${eur2(v)}${incomp(x,e)?" *":""}</button>`:`<span class="hint" title="Aucun chiffrage pour ce lot">–</span>`}</td>`;}).join("")}</tr>`;}).join("");
-    const totTd=`<td colspan="${2*nEv}" class="pk-tot">${nSel?`<b>${eur2(selHt)} HT</b> · TVA ${eur2(selTtc-selHt)} · <b>${eur2(selTtc)} TTC</b>${selEst?` · estimation des lots retenus ${eur2(selEst)}${ec(selHt,selEst)}`:""}`:`<span class="hint">Aucun lot retenu</span>`}</td>`;
-    pickRows=`<tr class="pickh"><td class="c1"></td><td class="c2" colspan="3"><b>Offres retenues par lot</b> <button type="button" class="btn sm" data-apickauto="1" title="Retenir automatiquement le mieux-disant de chaque lot">Mieux-disants</button> <button type="button" class="btn sm" data-apickclr="1">Effacer</button> <span class="hint">* offre incomplète</span></td><td class="n e1 mo"></td><td class="n mo">Estimation</td><td colspan="${2*nEv}"></td></tr>`+lr
+        return `<td class="n e1"></td><td class="n"></td><td class="n">${x.out[e.id]?"":can?`<button type="button" class="pk${pk===e.id?" on":""}${best===e.id?" best":""}" data-apick="${esc(x.l.id)}|${esc(e.id)}" aria-pressed="${pk===e.id}" title="${best===e.id?"Mieux-disant du lot : ":""}retenir ${esc(e.nom)} pour ce lot${incomp(x,e)?" (offre incomplète : prix manquants)":""}">${eur2(v)}${incomp(x,e)?" *":""}</button>`:`<span class="hint" title="Aucun chiffrage pour ce lot">–</span>`}</td>`;}).join("")}</tr>`;}).join("");
+    const totTd=`<td colspan="${3*nEv}" class="pk-tot">${nSel?`<b>${eur2(selHt)} HT</b> · TVA ${eur2(selTtc-selHt)} · <b>${eur2(selTtc)} TTC</b>${selEst?` · estimation des lots retenus ${eur2(selEst)}${ec(selHt,selEst)}`:""}`:`<span class="hint">Aucun lot retenu</span>`}</td>`;
+    pickRows=`<tr class="pickh"><td class="c1"></td><td class="c2" colspan="3"><b>Offres retenues par lot</b> <button type="button" class="btn sm" data-apickauto="1" title="Retenir automatiquement le mieux-disant de chaque lot">Mieux-disants</button> <button type="button" class="btn sm" data-apickclr="1">Effacer</button> <span class="hint">* offre incomplète</span></td><td class="n e1 mo"></td><td class="n mo">Estimation</td><td colspan="${3*nEv}"></td></tr>`+lr
       +`<tr class="pickt"><td class="c1"></td><td class="c2">Montant global retenu</td><td></td><td></td>${blank2}${totTd}</tr>`;
   }
   const foot=`<tfoot>${ovFrameRows(frow("Total HT",T,"")+(V.est||E.some(e=>V[e.id])?frow("dont parties communes (HT)",C,"","")+frow("dont lots à charge privative (HT)",V,"",""):"")+tvaRows+frow("Total TTC",T,"T","tot"),BLUEC,"bot")}${ovFoot(M,Ev,E)}${pickRows}</tfoot>`;
   tbl.className=A.hideMoe?"nomoe":""; tbl.innerHTML=th+`<tbody>${ovFrameRows(body,BLUEC,"top")}</tbody>`+foot; cmpBands(tbl,Ev.length,M,Ev);
-  leg.innerHTML=det?`${col?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff;border-color:#2e8b6e;box-shadow:inset 3px 0 0 #2e8b6e"></i>Prix le plus bas de la ligne</span>`:""}<span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
+  leg.innerHTML=det?`${col?`<span><i style="background:var(--ochre-soft);border-color:var(--ochre)"></i>Prix supérieur de plus de ${A.seuil} % à la référence</span><span><i style="background:#E6EEF8;border-color:#1d4f8c"></i>Prix inférieur de plus de ${A.seuil} %</span><span><i style="background:#fff3a8;border-color:#d4b800"></i>Quantité modifiée par l'entreprise</span><span><i class="nt-i"></i>Annotation de l'entreprise (survoler)</span>`:`<span><i style="background:#fff3a8;border-color:#d4b800"></i>Quantité modifiée par l'entreprise</span>`}<span>Case à cocher : écarter un poste. ⋮⋮ : glisser une ligne (avec son contenu) vers une autre place ou un autre lot. ⇢ : déplacer vers un lot.</span>`
     :`<span>Écart exprimé par rapport à l'estimation de la maîtrise d'œuvre.</span>`;
   const sc2=document.querySelector("#v-analyse .scroll"); if(sc2){sc2.scrollTop=st[0];sc2.scrollLeft=st[1];}
 }
+(function anaTip(){ // bulle d'annotation de l'entreprise
+  let tip=null;
+  document.addEventListener("mouseover",e=>{const c=e.target.closest&&e.target.closest("#cmpTable td[data-note]");
+    if(!c){if(tip){tip.remove();tip=null;}return;}
+    if(!tip){tip=document.createElement("div");tip.id="anaTip";document.body.appendChild(tip);}
+    tip.textContent=c.dataset.note; const r=c.getBoundingClientRect(); const w=tip.offsetWidth,h=tip.offsetHeight;
+    tip.style.left=Math.max(6,Math.min(innerWidth-w-6,r.left+r.width/2-w/2))+"px"; tip.style.top=(r.top-h-8<6?r.bottom+8:r.top-h-8)+"px";});
+})();
 (function anaEvents(){
   const V=document.getElementById("v-analyse"); let drag=null;
   const idx=v=>v.split(":").map(Number);
@@ -4055,6 +4079,12 @@ function renderAnalyse(){
   const newLot=(titre,charge)=>{const l={id:"al"+nid(),titre:titre||"Nouveau lot",charge,rows:[]};state.ana.lots.push(l);return l;};
   V.addEventListener("click",async e=>{
     const t=e.target, A=state.ana; if(!A) return;
+    {const f=t.closest("[data-afold]");if(f){const k=f.dataset.afold;anaFold.has(k)?anaFold.delete(k):anaFold.add(k);renderAnalyse();return;}
+     const fl=t.closest("[data-alfold]");if(fl){const k="L"+fl.dataset.alfold;anaFold.has(k)?anaFold.delete(k):anaFold.add(k);renderAnalyse();return;}
+     const lv=t.closest("[data-afl]");if(lv){const v=lv.dataset.afl;anaFold.clear();
+       if(v==="lot"){A.lots.forEach(l=>anaFold.add("L"+l.id));}
+       else if(v!=="all"){const M=anaModel();M.lots.forEach(x=>x.rows.forEach(w=>{if(!w.leaf&&w.d>=+v)anaFold.add(x.l.rows[w.ri].id);}));}
+       renderAnalyse();return;}}
     const md=t.closest("[data-anamode]"); if(md){A.mode=md.dataset.anamode;redo();return;}
     if(t.id==="anaValid"){A.seuil=Math.max(1,parseFloat($("#anaSeuil").value)||25);A.ref=$("#anaRef").value;A.colors=true;redo();toast(`Écarts à partir de ${A.seuil} % affichés`);return;}
     if(t.id==="anaNewLot"){const r=await openDlg({title:"Nouveau lot",msg:"Lot vide de l'analyse : déplacez-y ensuite des lignes ou des chapitres.",txt:{label:"Nom du lot",value:""},ch:true,ok:"Créer"});if(r){newLot(r.txt,r.ch);redo();toast("Lot créé");}return;}
