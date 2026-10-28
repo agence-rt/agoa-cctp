@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.91.0", deploiement: 91};
+const APP = {version: "0.92.0", deploiement: 92};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3060,7 +3060,7 @@ function pdfRichLetter(doc,wa,src,x0,w,y,o){
 }
 function buildSynthPdf(J,info){
   const o=state.op||{}, M=anaModel(), A=M.A, E=M.E, n=E.length, BD=bilanData(M);
-  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90];
+  const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[214,214,214], DN=[236,236,236], GRN=[30,120,90], TGP=[238,238,238], TGD=[80,80,80], QCH=[200,200,200];
   const wa=t=>String(t==null?"":t).replace(/[  -​ ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/−/g,"-").replace(/★/g,"*").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
   const doc=new J({unit:"mm",format:"a4",orientation:"portrait",compress:true});
   let PW=210,PH=297,R=PW-12,B=PH-17,W=R-12; const L=12,T=24; let land=false;
@@ -3071,7 +3071,7 @@ function buildSynthPdf(J,info){
   let y=T;
   const np=()=>{doc.addPage("a4",land?"landscape":"portrait");PW=land?297:210;PH=land?210:297;R=PW-12;B=PH-17;W=R-L;y=T;};
   const need=h=>{if(y+h>B){np();return true;}return false;};
-  const cut=(x,yy,w,h,c)=>{fill(RED);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,yy,[1,1],"F",true);};
+  const cut=(x,yy,w,h,c,col)=>{fill(col||RED);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,yy,[1,1],"F",true);};
   const h2=t=>{need(16);y+=3;cut(L,y,W,7,2.6);font("bold",10,WHITE);doc.text(wa(t),L+3.5,y+4.9);y+=11;};
   const para=(t,sz=9.5,st="normal",c)=>{font(st,sz,c);const lh=sz*0.3528*1.45;doc.splitTextToSize(wa(t),W).forEach(l=>{need(lh);doc.text(l,L,y+lh*0.8);y+=lh;});y+=1.2;};
   const bullet=(t,sz=9.2)=>{font("normal",sz);const lh=sz*0.3528*1.45;doc.splitTextToSize(wa(t),W-6).forEach((l,i)=>{need(lh);if(!i){fill(RED);doc.circle(L+1.6,y+lh*0.55,0.6,"F");}doc.text(l,L+5,y+lh*0.8);y+=lh;});y+=0.8;};
@@ -3108,7 +3108,7 @@ function buildSynthPdf(J,info){
   /* 1. tableau de synthèse */
   h2("TABLEAU DE SYNTHÈSE");
   const labW=Math.max(62,W-n*Math.min(32,(W-62)/n)), cw=(W-labW)/n;
-  const head=()=>{fill(PALE);doc.rect(L,y,W,7,"F");font("bold",8.5,RED);doc.text("Lot / chapitre",L+2,y+4.8);
+  const head=()=>{fill(TGP);doc.rect(L,y,W,7,"F");font("bold",8.5,TGD);doc.text("Lot / chapitre",L+2,y+4.8);
     E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
     y+=7;};
   head();
@@ -3117,11 +3117,10 @@ function buildSynthPdf(J,info){
     const lines=doc.splitTextToSize(wa(lab),labW-4-(o2.ind||0)).slice(0,2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
     if(o2.fill){fill(o2.fill);doc.rect(L,y,W,h,"F");}
-    if(o2.out)o2.out.forEach((z,j)=>{if(!z)return;const x0=L+labW+cw*j;fill(OUTG);doc.rect(x0+0.7,y,cw-1.4,h,"F");});
     font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
-    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;const best=o2.best===j;font(o2.b||best?"bold":"normal",o2.sz||8.5,best?GRN:o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
-    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.15);doc.line(L,y+h,R,y+h);y+=h;};
+    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;const best=false;font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
+    y+=h;};
   const bestOf=vals=>{let b=-1,m=Infinity;vals.forEach((v,j)=>{if(v>0&&v<m){m=v;b=j;}});return b;};
   M.lots.forEach(({l,li,rows,tot},k)=>{
     const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), lc=lotCol(lotById(l.id)), lp=hexRgb(lc.pale), ls=hexRgb(lc.strong);
@@ -3133,72 +3132,88 @@ function buildSynthPdf(J,info){
   });
   const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
   const vals=(o3,sfx)=>E.map(e=>nf(o3[e.id+(sfx||"")]));
-  y+=4; row("TOTAL HT",vals(T0),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id]))});
+  y+=4; need(34); const yFr=y; row("TOTAL HT",vals(T0),{b:true,fill:TGP});
   if(V0.est||E.some(e=>V0[e.id])){row("dont parties communes (HT)",vals(C0),{ind:3,sz:8});row("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:8});}
   Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];row(`TVA à ${pct(tx)}`,E.map(e=>nf(Rr.e[e.id]*tx/100)),{sz:8});});
-  row("TOTAL TTC",vals(T0,"T"),{b:true,fill:PALE,best:bestOf(E.map(e=>T0[e.id+"T"]))});
+  row("TOTAL TTC",vals(T0,"T"),{b:true,fill:TGP});
+  doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yFr,W,y-yFr);
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
-  if(OV.length){y+=3;need(16);font("bold",9,RED);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
+  if(OV.length){y+=3;need(16);font("bold",9,TGD);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
     OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgn2(nt(O.e[e.id]))),{ind:3});});}
 
   {const P=pickSummary(M), LO=lotOffers(M);
    if(M.lots.length>1&&P.rows.length){
-    y+=3;need(20);font("bold",9,RED);doc.text("Entreprises consultées par lot",L,y+3.5);y+=6;
-    LO.filter(z=>z.list.length).forEach(z=>{need(12+z.list.length*8);fill(PALE);doc.rect(L,y,W,5.6,"F");font("bold",8.5,RED);doc.text(wa(`Lot ${pad(z.x.li+1)} - ${doc.splitTextToSize(wa(z.x.l.titre),W-60)[0]}`),L+2,y+3.9);font("normal",8,MUTED);doc.text(wa("MOE : "+nf(z.x.tot.est)+" HT"),R-1,y+3.9,{align:"right"});y+=5.6;
-      z.list.forEach(o=>{need(9);const a2=entAdr(o.e);const bs=o.e.id===z.best;if(bs){fill([225,243,235]);doc.rect(L,y,W,4.6+(a2?3.8:0),"F");}
-        font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(doc.splitTextToSize(entShort(o.e)+(bs?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
-        font(bs?"bold":"normal",8.5,bs?GRN:INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
+    y+=3;need(20);font("bold",9,TGD);doc.text("Entreprises consultées par lot",L,y+3.5);y+=6;
+    LO.filter(z=>z.list.length).forEach(z=>{need(12+z.list.length*8);{const zc=lotCol(lotById(z.x.l.id));fill(hexRgb(zc.pale));doc.rect(L,y,W,5.6,"F");font("bold",8.5,hexRgb(zc.strong));doc.text(wa(`Lot ${pad(z.x.li+1)} - ${doc.splitTextToSize(wa(z.x.l.titre),W-60)[0]}`),L+2,y+3.9);y+=5.6;}
+      z.list.forEach(o=>{need(9);const a2=entAdr(o.e);const bs=o.e.id===z.best;font(bs?"bold":"normal",8.5,INK);doc.text(wa(doc.splitTextToSize(entShort(o.e)+(bs?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
+        font(bs?"bold":"normal",8.5,INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
         if(a2){font("normal",7.5,MUTED);doc.text(wa(doc.splitTextToSize(a2,W-8)[0]),L+4,y+2.6);y+=3.8;}});y+=1.5;});
-    y+=1;need(10);    doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.line(L,y,R,y);fill(PALE);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nf(P.ht)+" HT"),R-34,y+4,{align:"right"});doc.text(wa(nf(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
+    y+=1;need(10);fill(TGP);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nf(P.ht)+" HT"),R-34,y+4,{align:"right"});doc.text(wa(nf(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
    const Q=quoteCfg();
    if(Q.on){const retE=E.find(e=>e.id===state.retenue)||E[0], base=(M.lots.length>1&&P.rows.length)?P.cttc:(retE?T0[retE.id+"T"]*0+C0[retE.id+"T"]:0);
-    if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,RED);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
+    if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,TGD);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
       Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(wa(nf(base*t/Q.base)),R-1,y+3.6,{align:"right"});y+=5;});}}}
   /* 3. tableau comparatif global */
-  land=n>6; np(); h2("2. Tableau comparatif global de tous les articles");
-  const showPU=n<=3, fs=n>4?6.6:7.2;
-  const cCode=15,cU=7,cQ=11,cMp=0,cMm=0, cEp=showPU?14:0,cEm=showPU?19:Math.max(16,Math.min(24,(W-15-7-11-50)/n));
-  const fixed=cCode+cU+cQ+cMp+cMm, cDes=Math.max(38,W-fixed-n*(cEp+cEm));
-  const xs={code:L,des:L+cCode,u:L+cCode+cDes,q:L+cCode+cDes+cU};
-  const xm=L+cCode+cDes+cU+cQ; const xe=j=>xm+cMp+cMm+j*(cEp+cEm);
-  const GB=[240,240,238], GL=[190,190,185]; let LOUT=[]; const bandH=(yy,h)=>{E.forEach((e,j)=>{if(LOUT[j]){fill(OUTG);doc.rect(xe(j)+0.7,yy,cEp+cEm-1.4,h,"F");}});};
-  const sepV=(yy,h)=>{doc.setDrawColor(GL[0],GL[1],GL[2]);doc.setLineWidth(0.25);E.forEach((e,j)=>{doc.line(xe(j),yy,xe(j),yy+h);});doc.line(xe(n-1)+cEp+cEm,yy,xe(n-1)+cEp+cEm,yy+h);};
-  const gh=()=>{fill(PALE);doc.rect(L,y,W,showPU?11:7,"F");font("bold",7.6,RED);
-    const t1=showPU?y+4.3:y+4.6; doc.text("N°",xs.code+1,t1);doc.text("Désignation",xs.des+1,t1);doc.text("U",xs.u+cU-1,t1,{align:"right"});doc.text("Qté",xs.q+cQ-1,t1,{align:"right"});
-    E.forEach((e,j)=>{doc.text(wa(doc.splitTextToSize(wa(entShort(e)),cEp+cEm-1)[0]),xe(j)+(cEp+cEm)/2,t1,{align:"center"});});
-    if(showPU){const t2=y+8.8;E.forEach((e,j)=>{doc.text("PU",xe(j)+cEp-1,t2,{align:"right"});doc.text("Montant",xe(j)+cEp+cEm-1,t2,{align:"right"});});}
-    sepV(y,showPU?11:7); y+=showPU?11:7;};
+  land=n>2; np(); h2("2. Tableau comparatif global");
+  const showPU=n<=5, fs=n>4?6.6:7.2, eurS=v=>wa(fmt(v,2)+" €");
+  const cCode=15,cU=7,cQ=11, avail=Math.max(1,W-cCode-cU-cQ-60), per=Math.min(avail/n,n<=3?56:50);
+  const cEq=Math.min(12,Math.max(9,per*.2)), cEp=showPU?Math.min(16,per*.3):0, cEm=per-cEq-cEp;
+  const cDes=W-cCode-cU-cQ-n*per;
+  const fit=(t,w)=>{t=wa(t);if(doc.getTextWidth(t)<=w)return t;while(t.length>1&&doc.getTextWidth(t+"...")>w)t=t.slice(0,-1);return t.trimEnd()+"...";};
+  const xs={code:L,des:L+cCode,q:L+cCode+cDes,u:L+cCode+cDes+cQ};
+  const xm=L+cCode+cDes+cQ+cU; const xe=j=>xm+j*per, xq=j=>xe(j), xp=j=>xe(j)+cEq, xmt=j=>xe(j)+cEq+cEp;
+  const GL=[190,190,185]; let LOUT=[];
+  const sepV=(yy,h)=>{doc.setDrawColor(GL[0],GL[1],GL[2]);doc.setLineWidth(0.25);E.forEach((e,j)=>{doc.line(xe(j),yy,xe(j),yy+h);});doc.line(xe(n-1)+per,yy,xe(n-1)+per,yy+h);};
+  const hh=11;
+  const gh=()=>{fill(TGP);doc.rect(L,y,W,hh,"F");font("bold",7.6,TGD);
+    const t1=y+4.3; doc.text("N°",xs.code+1,t1);doc.text("Désignation",xs.des+1,t1);doc.text("Qté",xs.q+cQ-1,t1,{align:"right"});doc.text("U",xs.u+cU/2,t1,{align:"center"});
+    E.forEach((e,j)=>{doc.text(wa(doc.splitTextToSize(wa(entShort(e)),per-1)[0]),xe(j)+per/2,t1,{align:"center"});});
+    const t2=y+8.8;E.forEach((e,j)=>{doc.text("Qté ent.",xq(j)+cEq-1,t2,{align:"right"});if(showPU)doc.text("PU",xp(j)+cEp-1,t2,{align:"right"});doc.text("Montant",xmt(j)+cEm-1,t2,{align:"right"});});
+    sepV(y,hh); y+=hh;};
   gh();
   const gneed=h=>{if(y+h>B){np();gh();}};
   M.lots.forEach(({l,li,rows,tot})=>{
     LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
-    gneed(14); cut(L,y,W,6,2.2); font("bold",8.6,WHITE); doc.text(wa(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`),L+3.2,y+4.2); y+=6;
+    const lcg=lotCol(lotById(l.id)), lcs=hexRgb(lcg.strong), lcp=hexRgb(lcg.pale);
+    gneed(14); cut(L,y,W,6,2.2,lcs); font("bold",8.6,WHITE); doc.text(wa(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`),L+3.2,y+4.2); y+=6;
+    const open=[];
+    const subLine=b=>{const w=b.w, ind=Math.min(w.d,4)*2, h=5; gneed(h);
+      if(w.k==="ch"){fill(TGP);doc.rect(L,y,W,h,"F");}
+      font("bold",fs,TGD); doc.text(fit("Sous-total HT de "+w.o.titre,cDes-ind-2),xs.des+1+ind,y+3.5);
+      E.forEach((e,j)=>{if(!LOUT[j])doc.text(eurS(w.sub.e[e.id].ht),xmt(j)+cEm-1,y+3.5,{align:"right"});});
+      sepV(y,h); y+=h;};
+    const closeTo=x=>{while(open.length&&!inBlk(open[open.length-1].w,x)){subLine(open.pop());}};
     rows.forEach((w,wi)=>{
       if(w.ex||anaOvOnly(rows,wi)) return;
+      closeTo(w);
       const ind=Math.min(w.d,4)*2;
-      font(w.k==="ch"?"bold":w.k==="par"?"bold":"normal",fs);
-      const lines=doc.splitTextToSize(wa(w.o.titre),cDes-ind-2).slice(0,2), h=Math.max(5,lines.length*3.3+1.8);
-      gneed(h);
-      if(w.k==="ch"){fill(PALE);doc.rect(L,y,W,h,"F");} bandH(y,h);
-      font(w.k==="art"?"normal":"bold",fs,w.k==="ch"?RED:INK);
-      doc.text(wa(w.o.code||""),xs.code+1,y+3.5);
-      lines.forEach((t,i)=>doc.text(t,xs.des+1+ind,y+3.5+i*3.3));
+      font(w.k==="art"?"normal":"bold",fs);
+      gneed(4.6);const lines=[fit(w.o.titre,cDes-ind-2)], h=4.6;
+      if(w.k==="ch"){fill(TGP);doc.rect(L,y,W,h,"F");}
+      font(w.k==="art"?"normal":"bold",fs,w.k==="ch"?TGD:INK);
+      doc.text(wa(w.o.code||""),xs.code+1,y+3.3);
+      doc.text(lines[0],xs.des+1+ind,y+3.3);
       if(w.leaf){
-        font("normal",fs); doc.text(wa(w.o.u||""),xs.u+cU-1,y+3.5,{align:"right"}); doc.text(wa(fq(w.q,w.o.u)),xs.q+cQ-1,y+3.5,{align:"right"});
-        E.forEach((e,j)=>{if(LOUT[j])return;const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil, bst=w.best!=null&&p===w.best;
-          if(fl){fill(d>0?UP:DN);doc.rect(xe(j),y,cEp+cEm,h,"F");}
-          font(bst?"bold":"normal",fs,m?MUTED:bst?GRN:INK);
-          if(m){doc.text("-",xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}
-          else{if(showPU){doc.text(nf(p),xe(j)+cEp-1,y+3.5,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xe(j)+0.8,y+3.5);font(bst?"bold":"normal",fs,bst?GRN:INK);}}doc.text(nf(w.a[j]),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});}});
-      }else if(w.k==="ch"&&w.sub){
-        font("bold",fs,RED);
-        E.forEach((e,j)=>{if(!LOUT[j])doc.text(nf(w.sub.e[e.id].ht),xe(j)+cEp+cEm-1,y+3.5,{align:"right"});});}
-      sepV(y,h);doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.1);doc.line(L,y+h,R,y+h);y+=h;});
+        font("normal",fs); doc.text(wa(fq(w.q,w.o.u)),xs.q+cQ-1,y+3.3,{align:"right"}); doc.text(wa(w.o.u||""),xs.u+cU/2,y+3.3,{align:"center"});
+        E.forEach((e,j)=>{if(LOUT[j])return;const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil, qc=qChg(w,j);
+          if(fl){fill(d>0?UP:DN);doc.rect(xp(j),y,cEp+cEm,h,"F");}
+          if(qc){fill(QCH);doc.rect(xq(j),y,cEq,h,"F");font("bold",fs,INK);doc.text(wa(fq(w.qe[j],(w.ue&&w.ue[j])||w.o.u)),xq(j)+cEq-1,y+3.3,{align:"right"});}
+          font("normal",fs,m?MUTED:INK);
+          if(m){doc.text("-",xmt(j)+cEm-1,y+3.3,{align:"right"});}
+          else{if(showPU){doc.text(nf(p),xp(j)+cEp-1,y+3.3,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xp(j)+0.8,y+3.3);font("normal",fs,INK);}}doc.text(nf(w.a[j]),xmt(j)+cEm-1,y+3.3,{align:"right"});}});
+      }else if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});
+      sepV(y,h);y+=h;});
+    closeTo({d:-1,leaf:false,o:{}});
   });
-  y+=2; gneed(10); font("bold",8.5,RED); doc.text("TOTAL HT du marché de base",xs.des+1,y+4);
-  E.forEach((e,j)=>doc.text(nf(T0[e.id]),xe(j)+cEp+cEm-1,y+4,{align:"right"})); y+=7;
+  /* totaux : présentation comptable, encadrés */
+  y+=3; gneed(26); const yT=y;
+  const tl=(lab,get,b)=>{const h=5.6;fill(TGP);if(b)doc.rect(L,y,W,h,"F");font(b?"bold":"normal",fs+1,INK);doc.text(wa(lab),xs.des+1,y+4);E.forEach((e,j)=>doc.text(eurS(get(e)),xmt(j)+cEm-1,y+4,{align:"right"}));sepV(y,h);y+=h;};
+  tl("TOTAL HT du marché de base",e=>T0[e.id],true);
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];tl(`TVA à ${pct(tx)}`,e=>Rr.e[e.id]*tx/100,false);});
+  tl("TOTAL TTC",e=>T0[e.id+"T"],true);
+  doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yT,W,y-yT);y+=3;
   font("normal",7.4,MUTED); gneed(8);
-  doc.text(doc.splitTextToSize(wa(`Cases orangées : prix supérieur d'au moins ${A.seuil} % à la référence (${A.ref==="moe"?"estimation de la MOE":"médiane des offres"}) ; cases bleues : inférieur d'au moins ${A.seuil} % ; vert : prix le plus bas ; "-" : prix non renseigné.`),W),L,y+3);
+  doc.text(doc.splitTextToSize(wa(`Cases gris foncé : prix supérieur d'au moins ${A.seuil} % à la référence (${A.ref==="moe"?"estimation de la MOE":"médiane des offres"}) ; gris clair : inférieur d'au moins ${A.seuil} % ; Qté ent. grisée : quantité modifiée par l'entreprise (elle prévaut sur la quantité du BPU) ; "-" : prix non renseigné.`),W),L,y+3);
 
   /* en-têtes et pieds */
   const N=doc.getNumberOfPages();

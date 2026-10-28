@@ -1,1 +1,1 @@
-Déploiement n°91 — Analyse des offres : tableau condensé (lignes serrées, titres sur une seule ligne avec infobulle), flèches monter/descendre retirées pour les articles, sous-total placé uniquement en fin de bloc
+Déploiement n°92 — Impression de la synthèse : tableaux en gris (lots seuls en couleur), sans lignes horizontales ni zones grisées, sans vert mieux-disant, totaux HT/TVA/TTC encadrés, « MOE » retiré de la liste par lot ; « Tableau comparatif global » aligné sur l'analyse (Qté ent., sous-totaux de chapitres, totaux HT/TVA/TTC comptables en €)
