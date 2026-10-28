@@ -1,1 +1,1 @@
-Déploiement n°94 — Rédaction : duplication par clic glissé + Ctrl (articles, sous-articles, sous-chapitres avec leur contenu, chapitres) ; la copie est déposée à l'endroit visé, l'original reste en place
+Déploiement n°95 — Rédaction : boutons « Pour mémoire » et « Hors lots » à côté de « Article chiffré » (article sans métré, unité PM au BPU, non compté dans les quantités manquantes) ; mention affichée en pastille orange à côté du titre, comme les pourcentages

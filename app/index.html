@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.94.0", deploiement: 94};
+const APP = {version: "0.95.0", deploiement: 95};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1454,7 +1454,8 @@ function evalMetre(src){
 const pcF=l=>{const raw=String(l&&l.pc!=null?l.pc:"").trim().replace(",","."); if(raw==="")return null; const v=parseFloat(raw); return Number.isFinite(v)?v:null;};
 const lineVal=l=>evalMetre(l.expr)*(pcF(l)==null?1:pcF(l)/100);
 const pcList=ar=>{const o=[]; (ar&&ar.lignes||[]).forEach(l=>{const v=pcF(l); if(v!=null&&l.expr.trim()&&Number.isFinite(evalMetre(l.expr))&&!o.includes(v))o.push(v);}); return o;};
-const pcLab=ar=>pcList(ar).map(v=>fmt(v,v%1?1:0)+" %").join(" / ");
+const PMLAB={pm:"Pour mémoire",hl:"Hors lots"};
+const pcLab=ar=>ar&&PMLAB[ar.pm]?PMLAB[ar.pm]:pcList(ar).map(v=>fmt(v,v%1?1:0)+" %").join(" / ");
 const pcB=ar=>{const t=pcLab(ar);return t?`<span class="pctb">${esc(t)}</span>`:"";};
 const pctTxt=ar=>{const t=pcLab(ar);return t?` (${t})`:"";};
 const mLine=l=>`${l.expr}${pcF(l)!=null?" x "+fmt(pcF(l),pcF(l)%1?1:0)+" %":""} = ${fmt(lineVal(l),2)}`;
@@ -1762,14 +1763,14 @@ function lvActive(L,lv){ // niveau k actif : niveaux 1..k ouverts, niveaux suiva
   for(const k of lv){if(lv.every(j=>j<=k?L[j].every(id=>openIds.has(id)):L[j].every(id=>!openIds.has(id))))return k;}return 0;}
 function missingQty(){
   const r=[]; if(!state) return r;
-  leaves((ar,lot,ch)=>{if(!ar.id)return;
+  leaves((ar,lot,ch)=>{if(!ar.id||ar.pm)return;
     const badLine=ar.lignes.some(x=>x.expr.trim()&&!Number.isFinite(evalMetre(x.expr)));
     if(qty(ar)<=0||badLine) r.push({ar,lot,ch,why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});});
   return r;
 }
 function allIssues(){
   const r=[]; if(!state) return r;
-  leaves((ar,lot,ch)=>{if(!ar.id)return;
+  leaves((ar,lot,ch)=>{if(!ar.id||ar.pm)return;
     const badLine=(ar.lignes||[]).some(x=>x.expr.trim()&&!Number.isFinite(evalMetre(x.expr)));
     if(qty(ar)<=0||badLine) r.push({ar,sev:"err",why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});
     if(!String(ar.u||"").trim()) r.push({ar,sev:"err",why:"Unité manquante"});
@@ -1878,11 +1879,12 @@ function renderEditor(){
   const {art:ar,lot,ch,list,i,owner}=f, hasSub=ar.sub.length>0, prev=list[i-1];
   el.innerHTML=`
   <div class="art-head"><span class="art-code">${ar.code}</span><input type="text" id="fTitre" data-k="titre" value="${esc(ar.titre)}" aria-label="Intitulé de l'article"><span class="pctb" id="pctB"${pcLab(ar)?"":" hidden"}>${esc(pcLab(ar))}</span></div>
-  <div class="art-opts">${f.depth===0?`<span class="hint" style="margin-right:6px">Sous-chapitre · non chiffré (le chiffrage commence au niveau 3)</span>`:`<label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>`}${hlBar(ar)}</div>
+  <div class="art-opts">${f.depth===0?`<span class="hint" style="margin-right:6px">Sous-chapitre · non chiffré (le chiffrage commence au niveau 3)</span>`:`<label class="chk sm"><input type="checkbox" id="artChif" ${isTitle(ar)?"":"checked"}> Article chiffré</label>${isTitle(ar)||hasSub?"":`<label class="chk sm" style="margin-left:10px"><input type="checkbox" id="artPm" data-pm="pm" ${ar.pm==="pm"?"checked":""}> Pour mémoire</label><label class="chk sm" style="margin-left:10px"><input type="checkbox" id="artHl" data-pm="hl" ${ar.pm==="hl"?"checked":""}> Hors lots</label>`}`}${hlBar(ar)}</div>
   ${rteField("",ar.texte,"Décrire la prestation : matériaux, mise en œuvre, sujétions…")}
   <div class="field inl"><label for="fLoc">Localisation</label><textarea id="fLoc" data-k="loc" rows="1" spellcheck="true" aria-label="Localisation (Entrée pour aller à la ligne)">${esc(ar.loc)}</textarea></div>
   ${imgsField(ar)}
   ${isTitle(ar)?""
+   :ar.pm?`<p class="hint" style="margin:14px 0">Article « ${esc(PMLAB[ar.pm].toLowerCase())} » : pas de métré ni de chiffrage, il figure au BPU avec l'unité PM.</p>`
    :`<h4 class="sec" aria-label="Chiffrage"></h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
   ${ovBox(ar)}
   <div class="actions">
@@ -2495,6 +2497,8 @@ $("#editor").addEventListener("input",e=>{
 $("#editor").addEventListener("input",e=>{
   const ci=curItem(); if(!ci) return; const o=ci.it, t=e.target, k=t.dataset.k;
   if(k==="titre"&&t.tagName==="INPUT"){const lv=ci.node?(ci.nc.level==="lot"?0:1):(ci.f.depth===0?2:3),nv=normTitre(lv,t.value);if(nv!==t.value){const p=t.selectionStart;t.value=nv;try{t.setSelectionRange(p,p);}catch(_){}}}
+  if(t.dataset&&t.dataset.pm&&!ci.node){const v=t.dataset.pm; if(t.checked){o.pm=v;o.u="PM";o.qman=null;o.lignes=[];o.pu=0;}else{delete o.pm;if(o.u==="PM")o.u="u";}
+    save();renderTree();renderEditor();toast(t.checked?`${o.code} : ${PMLAB[v].toLowerCase()}, sans métré (unité PM)`:`${o.code} : article chiffré`);return;}
   if(t.id==="artChif"&&!ci.node){o.type=t.checked?undefined:"titre";save();renderTree();renderEditor();
     toast(t.checked?`${o.code} est un article chiffré`:`${o.code} est un titre, non chiffré`);return;}
   if(t.id==="nodeArt"){
