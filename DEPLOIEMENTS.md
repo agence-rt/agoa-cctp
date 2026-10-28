@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°94** — v0.94.0 — 2026-10-28 — Rédaction : duplication par clic glissé + Ctrl (articles, sous-articles, sous-chapitres avec leur contenu, chapitres) ; la copie est déposée à l'endroit visé, l'original reste en place
 - **n°93** — v0.93.0 — 2026-10-28 — Synthèse : une seule zone de saisie pour la lettre (introduction, observations, mieux-disant, pièces jointes, politesse, signature) ; impression : couleurs des lignes de devis rétablies (écarts orange/bleu, quantité entreprise surlignée, Compris / Non compris / Sans objet)
 - **n°92** — v0.92.0 — 2026-10-28 — Impression de la synthèse : tableaux en gris (lots seuls en couleur), sans lignes horizontales ni zones grisées, sans vert mieux-disant, totaux HT/TVA/TTC encadrés, « MOE » retiré de la liste par lot ; « Tableau comparatif global » aligné sur l'analyse (Qté ent., sous-totaux de chapitres, totaux HT/TVA/TTC comptables en €)
 - **n°91** — v0.91.0 — 2026-10-28 — Analyse des offres : tableau condensé (lignes serrées, titres sur une seule ligne avec infobulle), flèches monter/descendre retirées pour les articles, sous-total placé uniquement en fin de bloc

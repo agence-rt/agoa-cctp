@@ -1,1 +1,1 @@
-Déploiement n°93 — Synthèse : une seule zone de saisie pour la lettre (introduction, observations, mieux-disant, pièces jointes, politesse, signature) ; impression : couleurs des lignes de devis rétablies (écarts orange/bleu, quantité entreprise surlignée, Compris / Non compris / Sans objet)
+Déploiement n°94 — Rédaction : duplication par clic glissé + Ctrl (articles, sous-articles, sous-chapitres avec leur contenu, chapitres) ; la copie est déposée à l'endroit visé, l'original reste en place
