@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°91** — v0.91.0 — 2026-10-28 — Analyse des offres : tableau condensé (lignes serrées, titres sur une seule ligne avec infobulle), flèches monter/descendre retirées pour les articles, sous-total placé uniquement en fin de bloc
 - **n°90** — v0.90.0 — 2026-10-28 — Analyse des offres : tableau au plus près du BPU Excel (Qté et U de la rédaction, colonne Qté ent. par entreprise avec quantités modifiées surlignées, bulle d'annotation de l'entreprise au survol, sous-totaux de chapitres et sous-chapitres, réduction par niveau lots/chapitres/sous-chapitres) ; barres vertes des PU les moins chers retirées
 - **n°89** — v0.89.0 — 2026-10-27 — Consultation : plus d'analyse automatique du dossier Dropbox (import via « Importer une offre ») ; l'offre importée ou saisie manuellement devient un nouveau BPU Excel « …_BPU_analyse.xlsx » (le fichier de l'entreprise n'est plus touché) ; le BPU _analyse reprend désormais les quantités entreprise, unités et prix unitaires modifiés
 - **n°88** — v0.88.0 — 2026-10-27 — Consultation : la saisie manuelle affiche et permet de modifier quantités et unités de l'entreprise (lues dans le BPU, colonnes Qté ou Qté ent.) ; montants et analyse calculés avec elles

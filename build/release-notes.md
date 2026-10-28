@@ -1,1 +1,1 @@
-Déploiement n°90 — Analyse des offres : tableau au plus près du BPU Excel (Qté et U de la rédaction, colonne Qté ent. par entreprise avec quantités modifiées surlignées, bulle d'annotation de l'entreprise au survol, sous-totaux de chapitres et sous-chapitres, réduction par niveau lots/chapitres/sous-chapitres) ; barres vertes des PU les moins chers retirées
+Déploiement n°91 — Analyse des offres : tableau condensé (lignes serrées, titres sur une seule ligne avec infobulle), flèches monter/descendre retirées pour les articles, sous-total placé uniquement en fin de bloc

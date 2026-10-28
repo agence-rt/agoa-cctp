@@ -728,6 +728,12 @@ tr:hover .ana-ctl button,tr.lot .ana-ctl button{opacity:1}
 .mk-inc{background:#DDF1E7;color:#1F6B4F;border-color:#8FCDB3}.mk-ninc{background:#FBE0DD;color:#A32A1F;border-color:#E6A39B}.mk-so{background:#E6E9ED;color:#4D5964;border-color:#B6BEC7}
 .mk-bar{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}.mk-bar button.mk{cursor:pointer;opacity:.45;background:var(--surface);color:var(--muted);border-color:var(--line)}.mk-bar button.mk:hover{opacity:.85}
 .mk-bar button.mk.on{opacity:1}.mk-bar button.mk-inc.on{background:#DDF1E7;color:#1F6B4F;border-color:#8FCDB3}.mk-bar button.mk-ninc.on{background:#FBE0DD;color:#A32A1F;border-color:#E6A39B}.mk-bar button.mk-so.on{background:#E6E9ED;color:#4D5964;border-color:#B6BEC7}
+#cmpTable{font-size:12px}
+#cmpTable th,#cmpTable td{padding:1px 5px;line-height:1.25}
+#cmpTable thead th{padding:3px 5px;font-size:11.5px}#cmpTable thead tr:nth-child(2) th{top:24px}
+#cmpTable td.c1,#cmpTable th.c1{width:118px;min-width:118px;max-width:118px;overflow:hidden}
+#cmpTable td.c2,#cmpTable th.c2{left:118px;width:330px;min-width:330px;max-width:330px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cmpTable tr.lot td{font-size:12.5px}#cmpTable select.lotch{font-size:11px;padding:0}
 #cmpTable td.qchg{background:#fff3a8;color:#6b5a00;font-weight:700}
 #cmpTable td.hasnote{position:relative}#cmpTable td.hasnote::after{content:"";position:absolute;top:0;right:0;border-style:solid;border-width:0 9px 9px 0;border-color:transparent #e8830c transparent transparent}
 .legend i.nt-i{background:#e8830c;border-color:#e8830c;clip-path:polygon(0 0,100% 0,100% 100%)}
@@ -1089,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.90.0", deploiement: 90};
+const APP = {version: "0.91.0", deploiement: 91};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3818,6 +3824,7 @@ function anaSync(){
   });
   return live;
 }
+const inBlk=(w,x)=>x.d>w.d||(x.leaf&&!!w.o.code&&String(x.o.code||"").startsWith(w.o.code+"."));
 const medianOf=a=>{const v=a.slice().sort((x,y)=>x-y),n=v.length;return n?(n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2):null;};
 const qChg=(w,j)=>w.qe&&w.qe[j]!=null&&Math.abs(w.qe[j]-w.q)>0.0001;
 const qeCell=(w,j)=>qChg(w,j)?`<td class="n e1 qchg" title="Quantité modifiée par l'entreprise (BPU : ${fmt(w.q,2)})">${fq(w.qe[j],(w.ue&&w.ue[j])||w.o.u)}</td>`:`<td class="n e1"></td>`;
@@ -3859,7 +3866,7 @@ function anaModel(){
       if(w.leaf&&!w.ex){const oc=ovOf(w.o);if(oc.in)ovAcc(oc.in,"in",w);oc.base.forEach(id=>ovAcc(id,"base",w));}
       if(w.leaf&&!w.ex&&!ovOf(w.o).in){const tx=tvaOf(w.o,null), R=tot.rt[tx]||(tot.rt[tx]={est:0,e:Object.fromEntries(E.map(e=>[e.id,0]))});R.est+=w.est;E.forEach((e,j)=>{if(w.a[j]!=null)R.e[e.id]+=w.a[j];});
         tot.est+=w.est;tot.estT+=w.estT;n++;E.forEach((e,j)=>{if(w.a[j]!=null){tot.e[e.id].ht+=w.a[j];tot.e[e.id].ttc+=w.a[j]*(1+tvaOf(w.o,null)/100);}});}
-      if(!w.leaf){const t=emptyT(),grp=ovOf(w.o).in||"";for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++){const x=rows[j];if(!x.leaf||x.ex||(ovOf(x.o).in||"")!==grp)continue;t.est+=x.est;E.forEach((e,q)=>{if(x.a[q]!=null)t.e[e.id].ht+=x.a[q];});}w.sub=t;}
+      if(!w.leaf){const t=emptyT(),grp=ovOf(w.o).in||"";for(let j=i+1;j<rows.length&&inBlk(w,rows[j]);j++){const x=rows[j];if(!x.leaf||x.ex||(ovOf(x.o).in||"")!==grp)continue;t.est+=x.est;E.forEach((e,q)=>{if(x.a[q]!=null)t.e[e.id].ht+=x.a[q];});}w.sub=t;}
     });
     M.lots.push({l,li,rows,tot,n,out:Object.fromEntries(E.map(e=>[e.id,!!lotObj&&entSkip(e).has(lotObj.nid)]))});
   });
@@ -3985,25 +3992,25 @@ function renderAnalyse(){
   if(det){
     M.lots.forEach(({l,li,rows,tot})=>{
       body+=`<tr class="lot" style="${lotStyle(lotById(l.id))}"><td class="c1"><button type="button" class="afold" data-alfold="${l.id}" title="${anaFold.has("L"+l.id)?"Déplier":"Réduire"} le lot" aria-expanded="${!anaFold.has("L"+l.id)}">${anaFold.has("L"+l.id)?"▸":"▾"}</button><span class="ana-ctl"><button data-lotup="${li}" title="Monter le lot">▲</button><button data-lotdn="${li}" title="Descendre le lot">▼</button></span>Lot ${pad(li+1)}</td>
-        <td class="c2"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span> <select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select>
+        <td class="c2" title="${esc(l.titre)}"><span data-lotren="${li}" title="Renommer le lot" style="cursor:text">${esc(l.titre)}</span>
           ${l.rows.length?"":`<button class="x" data-lotdel="${li}" title="Supprimer le lot vide" aria-label="Supprimer le lot vide">×</button>`}</td>
-        <td></td><td></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
+        <td colspan="2" style="padding:0 2px"><select class="lotch" data-lotch="${li}" title="Charge du lot">${["Commune","Privative"].map(c=>`<option ${((l.charge||"Commune")===c||(c==="Privative"&&l.charge==="Privatif"))?"selected":""}>${c}</option>`).join("")}</select></td><td class="n e1 mo"></td><td class="n mo">${eur2(tot.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n">${eur2(tot.e[e.id].ht)}${ec(tot.e[e.id].ht,tot.est)}</td>`).join("")}</tr>`;
       let hideD=null; const open=[]; // blocs ouverts : sous-total à la fermeture
-      const subRow=b=>{const t=b.w.sub,st=b.w.k==="ch"?"":"";return `<tr class="subt${b.w.k==="ch"?" subc":""}" ${b.w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""}><td class="c1"></td><td class="c2" style="padding-left:${b.w.d*14}px">Sous-total HT de ${esc(b.w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(t.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n st-v">${eur2(t.e[e.id].ht)}</td>`).join("")}</tr>`;};
-      const closeTo=d=>{while(open.length&&open[open.length-1].w.d>=d){body+=subRow(open.pop());}};
+      const subRow=b=>{const t=b.w.sub,st=b.w.k==="ch"?"":"";return `<tr class="subt${b.w.k==="ch"?" subc":""}" ${b.w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""}><td class="c1"></td><td class="c2" style="padding-left:${b.w.d*10}px" title="${esc(b.w.o.titre)}">Sous-total HT de ${esc(b.w.o.titre)}</td><td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(t.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n st-v">${eur2(t.e[e.id].ht)}</td>`).join("")}</tr>`;};
+      const closeTo=(d,x)=>{while(open.length&&(x?!inBlk(open[open.length-1].w,x):open[open.length-1].w.d>=d)){body+=subRow(open.pop());}};
       if(anaFold.has("L"+l.id)) return;
       rows.forEach((w,i)=>{
         if(anaOvOnly(rows,i)) return;
-        if(hideD!==null&&w.d>hideD) return; hideD=null;
-        closeTo(w.d);
+        if(hideD!==null&&inBlk(hideD,w)) return; hideD=null;
+        closeTo(w.d,w);
         if(A.only){ // lignes avec écart, et leurs titres
           if(w.leaf&&!w.flagged) return;
           if(!w.leaf){let any=false;for(let j=i+1;j<rows.length&&rows[j].d>w.d;j++)if(rows[j].leaf&&rows[j].flagged){any=true;break;}if(!any)return;}
         }
         const rid=l.rows[w.ri].id, cls=`${w.k==="ch"?"ch":w.k==="par"?"par":"art"}${w.ex?" xc":""} hov`, ind=`padding-left:${w.d*14}px`;
         const ctl=`<span class="ana-grip" draggable="true" data-agrip="${li}:${w.ri}" title="Glisser pour déplacer cette ligne${w.leaf?"":" et son contenu"}">⋮⋮</span><input type="checkbox" class="ana-inc" data-ainc="${li}:${w.ri}" ${w.x?"":"checked"} title="${w.x?"Réintégrer ce poste":"Écarter ce poste de l'analyse"}"> `;
-        const mv=`<span class="ana-ctl"><button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button><button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
-        body+=`<tr class="${cls}" ${w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""} data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}">${mv}${w.leaf?"":`<button type="button" class="afold" data-afold="${rid}" title="${anaFold.has(rid)?"Déplier":"Réduire"}" aria-expanded="${!anaFold.has(rid)}">${anaFold.has(rid)?"▸":"▾"}</button>`}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
+        const mv=`<span class="ana-ctl">${w.leaf?"":`<button data-aup="${li}:${w.ri}" title="Monter">▲</button><button data-adn="${li}:${w.ri}" title="Descendre">▼</button>`}<button data-amv="${li}:${w.ri}" title="Déplacer vers un autre lot">⇢</button></span>`;
+        body+=`<tr class="${cls}" ${w.k==="ch"?`style="${lotStyle(lotById(l.id))}"`:""} data-arow="${li}:${w.ri}"><td class="c1">${ctl}${esc(w.o.code||"")}</td><td class="c2" style="${ind}" title="${esc(w.o.titre)}">${mv}${w.leaf?"":`<button type="button" class="afold" data-afold="${rid}" title="${anaFold.has(rid)?"Déplier":"Réduire"}" aria-expanded="${!anaFold.has(rid)}">${anaFold.has(rid)?"▸":"▾"}</button>`}${esc(w.o.titre)}${ovBadge(w.o)}</td>`;
         if(w.leaf){
           body+=`<td class="n">${fq(w.q,w.o.u)}</td><td>${esc(w.o.u)}</td><td class="n e1 mo">${eur2(w.o.pu)}</td><td class="n mo">${eur2(w.est)}</td>`;
           E.forEach((e,j)=>{ if(A.hide.includes(e.id)) return;
@@ -4012,7 +4019,7 @@ function renderAnalyse(){
             body+=`${qeCell(w,j)}<td class="n ${c}${can?" mkcell":""}${nt?" hasnote":""}"${can}${nt?` data-note="${esc(nt)}"`:""}>${mk?markPill(mk):m?"–":eur2(p)+uTag(w,j)}</td><td class="n ${m?"miss":""}">${m||mk?"–":eur2(w.a[j])}</td>`;});
         }else{
           const folded=!w.leaf&&anaFold.has(rid), st=!w.ex&&w.sub&&folded?w.sub:null;
-          if(!w.ex&&w.sub&&!folded)open.push({w}); if(folded)hideD=w.d;
+          if(!w.ex&&w.sub&&!folded)open.push({w}); if(folded)hideD=w;
           body+=st?`<td></td><td></td><td class="n e1 mo"></td><td class="n mo st-v">${eur2(st.est)}</td>${Ev.map(e=>`<td class="n e1"></td><td class="n"></td><td class="n st-v">${eur2(st.e[e.id].ht)}${ec(st.e[e.id].ht,st.est)}</td>`).join("")}`
             :`<td></td><td></td><td class="n e1 mo"></td><td class="n mo"></td>${Ev.map(()=>`<td class="n e1"></td><td class="n"></td><td class="n"></td>`).join("")}`;
         }
