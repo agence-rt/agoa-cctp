@@ -1,1 +1,1 @@
-Déploiement n°95 — Rédaction : boutons « Pour mémoire » et « Hors lots » à côté de « Article chiffré » (article sans métré, unité PM au BPU, non compté dans les quantités manquantes) ; mention affichée en pastille orange à côté du titre, comme les pourcentages
+Déploiement n°96 — Bibliothèque : l'import d'un article conserve ses lignes de métré détaillé (enregistrées avec l'article) ; Rédaction : titres d'articles en saisie libre, plus de minuscules ni de première lettre majuscule forcées

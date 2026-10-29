@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.95.0", deploiement: 95};
+const APP = {version: "0.96.0", deploiement: 96};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1466,7 +1466,7 @@ const isTitle=ar=>ar.type==="titre";
 /* Niveaux : lot, chapitre (niveau 1) et sous-chapitre (niveau 2) en MAJUSCULES, jamais chiffrés ; articles (niveau 3 et +) : 1re lettre en majuscule.
    Un titre entièrement en capitales est ramené en minuscules ; un titre déjà en casse mixte (sigles, noms propres) n'est modifié que sur sa 1re lettre. */
 const capFirst=t=>{t=String(t==null?"":t);const i=t.search(/[A-Za-zÀ-ÿ]/);if(i<0)return t;const b=/[a-zà-ÿ]/.test(t)?t:t.toLowerCase();return b.slice(0,i)+b.charAt(i).toUpperCase()+b.slice(i+1);};
-const normTitre=(lvl,t)=>lvl<=2?String(t==null?"":t).toUpperCase():capFirst(t);
+const normTitre=(lvl,t)=>lvl<=2?String(t==null?"":t).toUpperCase():String(t==null?"":t); // articles : saisie libre (plus de minuscules forcées)
 function enforceLevels(){
   const sub=(a,lv)=>{a.titre=normTitre(lv,a.titre);(a.sub||[]).forEach(x=>sub(x,3));};
   state.data.forEach(lot=>{lot.titre=normTitre(0,lot.titre);
@@ -3542,7 +3542,7 @@ const libEditing=()=>!!(store&&store.affaires.some(a=>a.lib));
 const libRO=()=>!!AG;
 const libNoEdit=()=>{toast("La bibliothèque se modifie en ouvrant le fichier BIBLIOTHEQUE.cctp : bouton « Ouvrir la bibliothèque ».");};
 const toAffArt=a=>{const {q,...r}=a;return {...r,code:"",loc:a.loc||"",lignes:a.lignes||[],tva:a.tva==null?null:a.tva,qman:q==null?null:q,u:a.u||"",pu:a.pu||0,sub:(a.sub||[]).map(toAffArt)};};
-const fromAffArt=a=>{const {code,lignes,loc,qman,tva,sub,...r}=a;const q=(lignes&&lignes.length)?qty(a):qman;return {...r,q:Number.isFinite(q)?q:null,sub:(sub||[]).map(fromAffArt)};};
+const fromAffArt=a=>{const {code,lignes,loc,qman,tva,sub,...r}=a;const hasM=lignes&&lignes.some(l=>l.expr&&l.expr.trim()&&Number.isFinite(evalMetre(l.expr)));const q=hasM?null:qman;return {...r,...(hasM?{lignes:JSON.parse(JSON.stringify(lignes))}:{}),q:Number.isFinite(q)?q:null,sub:(sub||[]).map(fromAffArt)};};
 const libToData=L=>L.map(t=>{const {id,...r}=t;return {...r,nid:id,charge:"Commune",children:(t.children||[]).map(c=>{const {id:cid,...cr}=c;return {...cr,nid:cid,art:(c.art||[]).map(toAffArt)};})};});
 const affToLib=D=>D.map(l=>{const {nid,charge,code,children,...r}=l;return {...r,id:nid,children:(children||[]).map(c=>{const {nid:cn,code:cc,art,children:_x,...cr}=c;return {...cr,id:cn,art:(art||[]).map(fromAffArt)};})};});
 function libFileText(L){
@@ -3604,8 +3604,8 @@ function lib(){
   return store.lib;
 }
 const libArtCount=list=>list.reduce((s,a)=>s+1+libArtCount(a.sub||[]),0);
-const fromLib=it=>({id:nid(),libId:it.id,code:"",imgs:(it.imgs||[]).map(i=>({...i,id:nid()})),titre:it.titre,type:it.type,texte:it.texte||"",loc:"",u:it.u||"u",pu:Number(it.pu)||0,tva:null,qman:Number(it.q)===1?1:null,lignes:[],sub:(it.sub||[]).map(fromLib)});
-const toLibArt=(ar,reuse)=>{const id=(reuse&&ar.libId)||"l"+nid(); ar.libId=id; return {id,imgs:(ar.imgs||[]).map(i=>({...i,id:nid()})),titre:ar.titre,type:ar.type,texte:ar.texte||"",u:ar.u,pu:ar.pu,q:metreOn(ar)?null:(ar.qman??null),sub:(ar.sub||[]).map(x=>toLibArt(x,reuse))};};
+const fromLib=it=>({id:nid(),libId:it.id,code:"",imgs:(it.imgs||[]).map(i=>({...i,id:nid()})),titre:it.titre,type:it.type,texte:it.texte||"",loc:"",u:it.u||"u",pu:Number(it.pu)||0,tva:null,qman:Number(it.q)===1?1:null,lignes:Array.isArray(it.lignes)?JSON.parse(JSON.stringify(it.lignes)):[],sub:(it.sub||[]).map(fromLib)});
+const toLibArt=(ar,reuse)=>{const id=(reuse&&ar.libId)||"l"+nid(); ar.libId=id; return {id,imgs:(ar.imgs||[]).map(i=>({...i,id:nid()})),titre:ar.titre,type:ar.type,texte:ar.texte||"",u:ar.u,pu:ar.pu,q:metreOn(ar)?null:(ar.qman??null),...(validLines(ar).length?{lignes:JSON.parse(JSON.stringify(ar.lignes))}:{}),sub:(ar.sub||[]).map(x=>toLibArt(x,reuse))};};
 const toLibSub=ch=>({id:"l"+nid(),titre:ch.titre,texte:ch.texte||"",art:(ch.art||[]).map(toLibArt)});
 function libFind(id){
   const inArts=(list,t,s,parent)=>{for(const a of list){if(a.id===id)return{kind:"article",it:a,t,s,parent,list};const r=inArts(a.sub||[],t,s,a);if(r)return r;}return null;};
