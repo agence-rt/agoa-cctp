@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°99** — v0.99.0 — 2026-10-30 — Flèches clavier dans l'arbre, Entrée déplie, exclusivité option/base
 - **n°98** — v0.98.0 — 2026-10-30 — Rédaction : boutons « Désélectionner » et « Supprimer la sélection » retirés ; la touche Suppr supprime directement tous les articles sélectionnés (avec confirmation), Échap désélectionne
 - **n°97** — v0.97.0 — 2026-10-30 — Rédaction : suppression de plusieurs articles sélectionnés en une seule fois (bouton « Supprimer la sélection » ou touche Suppr), avec confirmation et envoi à la corbeille
 - **n°96** — v0.96.0 — 2026-10-29 — Bibliothèque : l'import d'un article conserve ses lignes de métré détaillé (enregistrées avec l'article) ; Rédaction : titres d'articles en saisie libre, plus de minuscules ni de première lettre majuscule forcées

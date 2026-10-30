@@ -1,1 +1,1 @@
-Déploiement n°98 — Rédaction : boutons « Désélectionner » et « Supprimer la sélection » retirés ; la touche Suppr supprime directement tous les articles sélectionnés (avec confirmation), Échap désélectionne
+Déploiement n°99 — Flèches clavier dans l'arbre, Entrée déplie, exclusivité option/base

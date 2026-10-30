@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.98.0", deploiement: 98};
+const APP = {version: "0.99.0", deploiement: 99};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1938,12 +1938,13 @@ function ovBox(it){
   const L=ovl(), c=ovOf(it), inh=c.in&&it.ovIn!==c.in?ovById(c.in):null;
   const hd=`<h4 class="sec">Option / variante</h4>`;
   if(!L.length) return `<div class="ovbox">${hd}<p class="hint" style="margin-top:0">Aucune option ni variante n'est définie. Utilisez le bouton « Options » en haut à gauche, rubrique Options et variantes, pour en créer.</p></div>`;
+  const inOv=!!(c.in||(it.ovIn&&ovById(it.ovIn))), hasB=(it.ovBase||[]).length>0;
   return `<div class="ovbox">${hd}
-    <div class="field"><span class="flabel">Cet ouvrage fait partie de</span>
-      <div class="ov-in"><label class="chk sm"><input type="checkbox" data-ovin="" ${it.ovIn&&ovById(it.ovIn)?"":"checked"}> Marché de base</label>${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovin="${o.id}" ${it.ovIn===o.id?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
+    <div class="field" style="${hasB?"opacity:.4":""}"><span class="flabel">Cet ouvrage fait partie de</span>
+      <div class="ov-in"><label class="chk sm"><input type="checkbox" data-ovin="" ${it.ovIn&&ovById(it.ovIn)?"":"checked"}> Marché de base</label>${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovin="${o.id}" ${it.ovIn===o.id?"checked":""} ${hasB?"disabled":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
       ${inh?`<div class="hint">Hérité du niveau supérieur : ${esc(ovLab(inh))}. Son montant n'est pas compté dans le marché de base.</div>`:""}</div>
-    <div class="field"><span class="flabel">Base à décompter</span>
-      <div class="ov-bases">${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovb="${o.id}" ${(it.ovBase||[]).includes(o.id)?"checked":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
+    <div class="field" style="${inOv?"opacity:.4":""}"><span class="flabel">Base à décompter</span>
+      <div class="ov-bases">${L.map(o=>`<label class="chk sm" style="color:${ovC(o).fg};font-weight:650"><input type="checkbox" data-ovb="${o.id}" ${(it.ovBase||[]).includes(o.id)?"checked":""} ${inOv?"disabled":""}> ${esc(ovLab(o))}</label>`).join("")}</div>
       <div class="hint">À cocher lorsque cet ouvrage est remplacé par l'option ou la variante : son montant est alors déduit du total de celle-ci.</div></div></div>`;
 }
 function chiffrage(ar,lot){
@@ -2401,8 +2402,8 @@ const rteField=(label,t,ph)=>`<div class="field dcard">${label?`<div class="dcar
 })();
 $("#editor").addEventListener("change",e=>{const t=e.target,ci=curItem();if(!ci)return;
   const all=cb=>{cb(ci.it);const w=x=>{(x.sub||[]).concat(x.art||[],x.children||[]).forEach(y=>{cb(y);w(y);});};w(ci.it);};
-  if(t.dataset&&t.dataset.ovin!==undefined){const v=t.checked?t.dataset.ovin:"";all(x=>{if(v)x.ovIn=v;else delete x.ovIn;});ovRefresh();}
-  else if(t.dataset&&t.dataset.ovb){const id=t.dataset.ovb;all(x=>{const a=new Set(x.ovBase||[]);t.checked?a.add(id):a.delete(id);if(a.size)x.ovBase=[...a];else delete x.ovBase;});ovRefresh();}});
+  if(t.dataset&&t.dataset.ovin!==undefined){const v=t.checked?t.dataset.ovin:"";all(x=>{if(v){x.ovIn=v;delete x.ovBase;}else delete x.ovIn;});ovRefresh();}
+  else if(t.dataset&&t.dataset.ovb){const id=t.dataset.ovb;all(x=>{const a=new Set(x.ovBase||[]);t.checked?(a.add(id),delete x.ovIn):a.delete(id);if(a.size)x.ovBase=[...a];else delete x.ovBase;});ovRefresh();}});
 function ovRefresh(){save();renderTree();renderEditor();renderPreview();renderTotal();}
 $("#editor").addEventListener("click",e=>{const an=e.target.closest("[data-imgann]");if(an){annOpen(an.dataset.imgann);return;}const cr=e.target.closest("[data-imgcrop]");if(cr){cropOpen(cr.dataset.imgcrop);return;}const nw=e.target.closest("[data-ovnew]");if(nw){ovAdd(nw.dataset.ovnew,true);return;}if(e.target.closest("#ovManage")){openOv();return;}});
 $("#ovBtn").onclick=()=>openOv();
@@ -2696,6 +2697,18 @@ document.addEventListener("change",e=>{if(e.target.id!=="lotColorPick")return;co
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&msel.size){msClear();return;}
+  if(e.target.closest("input,textarea,select,[contenteditable]")) return;
+  const rid=el=>el.classList.contains("art")?el.dataset.id:(el.closest("details[data-oid]")||{dataset:{}}).dataset.oid;
+  const rowEl=e.target.closest(".art,summary.lot,summary.chs");
+  if(rowEl&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&(e.key==="ArrowUp"||e.key==="ArrowDown")){
+    const rows=[...tree.querySelectorAll(".art,summary.lot,summary.chs")].filter(x=>x.offsetParent!==null);
+    const i=rows.indexOf(rowEl),n=rows[i+(e.key==="ArrowDown"?1:-1)];
+    e.preventDefault();if(n&&rid(n)){if(e.shiftKey&&n.classList.contains("art")&&rowEl.classList.contains("art")){msel.add(rowEl.dataset.id);msel.add(n.dataset.id);}select(rid(n));(tree.querySelector(".art.cur,summary.cur")||{focus(){}}).focus();}return;}
+  if(rowEl&&rowEl.tagName==="SUMMARY"&&!e.altKey&&["Enter"," ","ArrowRight","ArrowLeft"].includes(e.key)){
+    const d=rowEl.closest("details");e.preventDefault();
+    const want=e.key==="ArrowRight"?true:e.key==="ArrowLeft"?false:!d.open, k=d.dataset.oid;
+    if(rid(rowEl)!==state.sel)select(rid(rowEl));
+    want?openIds.add(k):openIds.delete(k);renderTree();(tree.querySelector("summary.cur,.art.cur")||{focus(){}}).focus();return;}
   const a=e.target.closest(".art"); if(!a) return;
   if(e.key==="Enter"||e.key===" "){e.preventDefault();select(a.dataset.id);focusCur();return;}
   if(!e.altKey) return;
