@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.97.0", deploiement: 97};
+const APP = {version: "0.98.0", deploiement: 98};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1807,7 +1807,7 @@ const hlBar=it=>`<div class="hl-bar" role="group" aria-label="Surligner dans la 
 const msel=new Set(); let msAnchor=null;
 function msBar(){
   const b=$("#msBar"); if(!b) return;
-  b.hidden=msel.size<2; if(msel.size>=2) b.innerHTML=`<b>${msel.size} articles sélectionnés</b> : glissez l'un d'eux pour les déplacer ensemble <button class="btn sm" id="msClear">Désélectionner</button> <button class="btn sm danger" id="msDel" title="Supprimer les articles sélectionnés (touche Suppr)">Supprimer la sélection</button>`;
+  b.hidden=msel.size<2; if(msel.size>=2) b.innerHTML=`<b>${msel.size} articles sélectionnés</b>  : glissez l'un d'eux pour les déplacer ensemble (Ctrl + glisser pour les copier), <kbd>Suppr</kbd> pour les supprimer, <kbd>Échap</kbd> pour désélectionner`;
 }
 async function msDelete(){
   const ids=msTop().reverse(); if(ids.length<1) return;
@@ -2688,14 +2688,14 @@ tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(a
   if(e.ctrlKey||e.metaKey){e.preventDefault();if(!msel.size&&state.sel&&locate(state.sel))msel.add(state.sel);msel.has(id)?msel.delete(id):msel.add(id);msAnchor=id;state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
   msel.clear();msAnchor=id;select(id);}});
 document.addEventListener("change",e=>{const t=e.target; if(t&&t.id==="lotNoBpu"){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){if(t.checked)nc.node.noBpu=true; else delete nc.node.noBpu; save(); renderTree(); toast(t.checked?`Lot ${nc.node.code} masqué dans le BPU publié`:`Lot ${nc.node.code} de nouveau présent dans le BPU publié`);}}});
-document.addEventListener("click",e=>{if(e.target.closest("#msDel")){msDelete();return;} if(e.target.closest("#msClear"))msClear();
+document.addEventListener("keydown",e=>{if(e.key==="Delete"&&msel.size>1&&!e.target.closest("input,textarea,select,[contenteditable],dialog")&&!document.querySelector("dialog[open]")){e.preventDefault();msDelete();}});
+document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();
   {const pk=e.target.closest("[data-lotpick]");if(pk){const pp=pk.parentNode.querySelector(".lotpop");pp.hidden=!pp.hidden;return;}else if(!e.target.closest(".lotpop")){document.querySelectorAll(".lotpop").forEach(x=>x.hidden=true);}}
   const lc=e.target.closest("[data-lotcolor]"); if(lc){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){const k=lc.dataset.lotcolor; if(k==="gris")delete nc.node.color; else nc.node.color=k; save(); renderEditor(); renderPreview(); toast(`Couleur du lot ${nc.node.code} : ${LOT_COLORS[k].n.toLowerCase()}`);}}});
 document.addEventListener("change",e=>{if(e.target.id!=="lotColorPick")return;const nc=nodeCtx(state.sel);if(nc&&nc.level==="lot"){nc.node.color=e.target.value.toLowerCase();save();renderEditor();renderPreview();toast(`Couleur du lot ${nc.node.code} personnalisée`);}});
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{
   if(e.key==="Escape"&&msel.size){msClear();return;}
-  if((e.key==="Delete")&&msel.size>1&&!e.target.closest("input,textarea,[contenteditable]")){e.preventDefault();msDelete();return;}
   const a=e.target.closest(".art"); if(!a) return;
   if(e.key==="Enter"||e.key===" "){e.preventDefault();select(a.dataset.id);focusCur();return;}
   if(!e.altKey) return;

@@ -1,1 +1,1 @@
-Déploiement n°97 — Rédaction : suppression de plusieurs articles sélectionnés en une seule fois (bouton « Supprimer la sélection » ou touche Suppr), avec confirmation et envoi à la corbeille
+Déploiement n°98 — Rédaction : boutons « Désélectionner » et « Supprimer la sélection » retirés ; la touche Suppr supprime directement tous les articles sélectionnés (avec confirmation), Échap désélectionne
