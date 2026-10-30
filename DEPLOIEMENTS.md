@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°97** — v0.97.0 — 2026-10-30 — Rédaction : suppression de plusieurs articles sélectionnés en une seule fois (bouton « Supprimer la sélection » ou touche Suppr), avec confirmation et envoi à la corbeille
 - **n°96** — v0.96.0 — 2026-10-29 — Bibliothèque : l'import d'un article conserve ses lignes de métré détaillé (enregistrées avec l'article) ; Rédaction : titres d'articles en saisie libre, plus de minuscules ni de première lettre majuscule forcées
 - **n°95** — v0.95.0 — 2026-10-28 — Rédaction : boutons « Pour mémoire » et « Hors lots » à côté de « Article chiffré » (article sans métré, unité PM au BPU, non compté dans les quantités manquantes) ; mention affichée en pastille orange à côté du titre, comme les pourcentages
 - **n°94** — v0.94.0 — 2026-10-28 — Rédaction : duplication par clic glissé + Ctrl (articles, sous-articles, sous-chapitres avec leur contenu, chapitres) ; la copie est déposée à l'endroit visé, l'original reste en place

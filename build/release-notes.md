@@ -1,1 +1,1 @@
-Déploiement n°96 — Bibliothèque : l'import d'un article conserve ses lignes de métré détaillé (enregistrées avec l'article) ; Rédaction : titres d'articles en saisie libre, plus de minuscules ni de première lettre majuscule forcées
+Déploiement n°97 — Rédaction : suppression de plusieurs articles sélectionnés en une seule fois (bouton « Supprimer la sélection » ou touche Suppr), avec confirmation et envoi à la corbeille
