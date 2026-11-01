@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°101** — v0.101.0 — 2026-11-01 — Animation colorée sur les articles créés ou insérés
 - **n°100** — v0.100.0 — 2026-11-01 — Bouton Bibliothèque (fenêtre séparée) dans la colonne de gauche
 - **n°99** — v0.99.0 — 2026-10-30 — Flèches clavier dans l'arbre, Entrée déplie, exclusivité option/base
 - **n°98** — v0.98.0 — 2026-10-30 — Rédaction : boutons « Désélectionner » et « Supprimer la sélection » retirés ; la touche Suppr supprime directement tous les articles sélectionnés (avec confirmation), Échap désélectionne
