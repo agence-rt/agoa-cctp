@@ -1,1 +1,1 @@
-Déploiement n°99 — Flèches clavier dans l'arbre, Entrée déplie, exclusivité option/base
+Déploiement n°100 — Bouton Bibliothèque (fenêtre séparée) dans la colonne de gauche

@@ -814,7 +814,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
       <div class="tree-res" id="treeRes" hidden></div>
       <div class="ms-bar" id="msBar" hidden></div>
       <div class="tree-body" id="tree"></div>
-      <div class="tree-foot"><button class="btn sm" id="addLotBtn">Ajouter un lot</button><button class="btn sm" id="trashBtn">Corbeille</button></div>
+      <div class="tree-foot"><button class="btn sm" id="addLotBtn">Ajouter un lot</button><button class="btn sm" id="libTreeBtn" title="Ouvrir la bibliothèque dans une fenêtre séparée">Bibliothèque ⧉</button><button class="btn sm" id="trashBtn">Corbeille</button></div>
     </aside>
     <div class="pane editor" id="editor"></div>
     <aside class="pane preview" id="preview"></aside>
@@ -901,7 +901,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
 </dialog>
 
 <dialog id="libDlg" class="wide lib" aria-labelledby="libTitle">
-  <div class="opt-h"><div><h3 id="libTitle">Bibliothèque d'articles</h3><span id="libTarget" class="hint"></span></div><span style="display:flex;gap:6px"><button class="btn" id="detachLib" title="Ouvrir la bibliothèque dans une fenêtre séparée (à placer sur un second écran)">Fenêtre séparée ⧉</button><button class="btn" id="closeLib">Fermer</button></span></div>
+  <div class="opt-h"><div><h3 id="libTitle">Bibliothèque d'articles</h3><span id="libTarget" class="hint"></span></div><span style="display:flex;gap:6px"><button class="btn" id="detachLib" hidden style="display:none" title="Ouvrir la bibliothèque dans une fenêtre séparée (à placer sur un second écran)">Fenêtre séparée ⧉</button><button class="btn" id="closeLib">Fermer</button></span></div>
   <div class="lib-body">
     <div class="lib-left">
       <div class="rg-row"><input type="search" id="libQ" placeholder="Rechercher (flèches et Entrée pour insérer)" aria-label="Rechercher dans la bibliothèque" autocomplete="off"><button class="btn" id="libNew">Nouveau titre</button><button class="btn" id="libOpenFile" hidden>Ouvrir la bibliothèque</button></div>
@@ -1095,7 +1095,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.99.0", deploiement: 99};
+const APP = {version: "0.100.0", deploiement: 100};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1902,7 +1902,7 @@ function renderEditor(){
    :`<h4 class="sec" aria-label="Chiffrage"></h4>${hasSub?subSummary(ar):chiffrage(ar,lot)}`}
   ${ovBox(ar)}
   <div class="actions">
-    <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${libOrigin(ar)?`<button class="btn maj" data-act="majBdd" title="Remplace l'article modèle de la bibliothèque par cette version">MAJ BDD</button>`:""}</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${libOrigin(ar)?`<button class="btn maj" data-act="majBdd" title="Remplace l'article modèle de la bibliothèque par cette version">MAJ BDD</button>`:""}</span>
     <button class="btn primary" data-act="addAfter">Ajouter un article après ${ar.code}</button>
   </div>`;
   updateLive();
@@ -1931,7 +1931,7 @@ function renderNodeEditor(nc){
   ${isLot?`<label class="chk" style="margin:6px 0 12px"><input type="checkbox" id="lotNoBpu" ${n.noBpu?"checked":""}> Masquer ce lot dans le BPU publié (Excel et page de saisie des entreprises)</label>`:imgsField(n,true)}
   ${ovBox(n)}
   <div class="actions"><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn danger" data-act="${isLot?"delLotEd":"delNode"}">Supprimer le ${nc.level}</button>${isLot?"":`<button class="btn" data-act="chToArt" ${lot.children.indexOf(n)>0?"":"disabled"} title="Le chapitre devient un titre (sous-article) à la fin du chapitre précédent">Passer en sous-article</button>`}</span>
-    <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="openLib">Insérer depuis la bibliothèque</button><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn quiet" data-act="toLib">Enregistrer dans la bibliothèque</button>${isLot?`<button class="btn primary" data-act="addChap">Ajouter un chapitre</button>`:`<button class="btn" data-act="addChapAfter">Ajouter un chapitre après</button><button class="btn primary" data-act="addInNode">Ajouter un article</button>`}</span></div>`;
   updateLive();
 }
 function ovBox(it){
@@ -3809,6 +3809,7 @@ function libDetach(){
 }
 window.addEventListener("beforeunload",()=>{if(LIBWIN&&!LIBWIN.closed){try{LIBWIN.close();}catch(e){}}});
 $("#libBtn").onclick=openLib;
+$("#libTreeBtn").onclick=()=>{if(LIBWIN&&!LIBWIN.closed){LIBWIN.focus();return;}openLib();libDetach();};
 if(AG){$("#libNew").hidden=true;$("#libOpenFile").hidden=false;}
 $("#detachLib").onclick=libDetach;
 $("#closeLib").onclick=()=>{if(LIBWIN&&!LIBWIN.closed){const w=LIBWIN;libAttach();w.close();}$("#libDlg").close();};
