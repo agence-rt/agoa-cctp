@@ -1097,7 +1097,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.102.0", deploiement: 102};
+const APP = {version: "0.103.0", deploiement: 103};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1570,7 +1570,7 @@ document.addEventListener("contextmenu",e=>{
   const lf=a&&locate(a.dataset.id), aTop=!!lf&&lf.depth===0;
   if(a){m.innerHTML=`<button role="menuitem" data-amact="dup">Dupliquer</button><button role="menuitem" data-amact="new">${aTop?"Nouveau sous-chapitre":"Nouvel article"}</button><button role="menuitem" data-amact="sub">${aTop?"Ajouter un article":"Ajouter un sous-article"}</button><hr><button role="menuitem" data-amact="up">Monter d'un niveau</button><button role="menuitem" data-amact="down">Descendre d'un niveau</button>`;m.dataset.id=a.dataset.id;}
   else{const isLot=nd.matches(".lot"), k=isLot?nd.querySelector("[data-lotnid]").dataset.lotnid:nd.dataset.chnid;
-    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un sous-chapitre"}</button><hr>${isLot?"":`<button role="menuitem" data-amact="up">Monter d'un niveau (en lot)</button>`}<button role="menuitem" data-amact="down">Descendre d'un niveau${isLot?" (en chapitre)":" (en sous-chapitre)"}</button>${isLot?"":`<hr><button role="menuitem" data-amact="fo0">Replier ce chapitre</button><button role="menuitem" data-amact="fo1">Dérouler sur 1 niveau</button><button role="menuitem" data-amact="fo2">Dérouler sur 2 niveaux</button><button role="menuitem" data-amact="fo3">Dérouler sur 3 niveaux</button>`}`;m.dataset.id=k;} document.body.appendChild(m);
+    m.innerHTML=`<button role="menuitem" data-amact="ndup">Dupliquer</button><button role="menuitem" data-amact="nnew">${isLot?"Nouveau lot":"Nouveau chapitre"}</button><button role="menuitem" data-amact="nin">${isLot?"Ajouter un chapitre":"Ajouter un sous-chapitre"}</button><hr>${isLot?"":`<button role="menuitem" data-amact="up">Monter d'un niveau (en lot)</button>`}<button role="menuitem" data-amact="down">Descendre d'un niveau${isLot?" (en chapitre)":" (en sous-chapitre)"}</button><hr><button role="menuitem" data-amact="fo0">Replier ${isLot?"ce lot":"ce chapitre"}</button><button role="menuitem" data-amact="fo1">Dérouler sur 1 niveau</button><button role="menuitem" data-amact="fo2">Dérouler sur 2 niveaux</button><button role="menuitem" data-amact="fo3">Dérouler sur 3 niveaux</button>`;m.dataset.id=k;} document.body.appendChild(m);
   const w=m.offsetWidth,h=m.offsetHeight; m.style.left=Math.min(e.clientX,innerWidth-w-6)+"px"; m.style.top=Math.min(e.clientY,innerHeight-h-6)+"px";
 });
 document.addEventListener("click",e=>{const b=e.target.closest("#artMenu button");
@@ -1753,8 +1753,11 @@ function openPath(id){
 }
 function chUnfold(k,n){
   const f=findAnyNode(k);if(!f)return;
-  const walk=(list,d)=>(list||[]).forEach(a=>{if(a.sub&&a.sub.length){(n>=d+2)?openIds.add(a.id):openIds.delete(a.id);walk(a.sub,d+1);}});
-  n>=1?openIds.add(k):openIds.delete(k);walk(f.art,0);
+  const walk=(list,d,m)=>(list||[]).forEach(a=>{if(a.sub&&a.sub.length){(m>=d+2)?openIds.add(a.id):openIds.delete(a.id);walk(a.sub,d+1,m);}});
+  const chap=(c,m)=>{m>=1?openIds.add(c.nid):openIds.delete(c.nid);walk(c.art,0,m);};
+  const isLot=state.data.includes(f);
+  if(isLot){n>=1?openIds.add(k):openIds.delete(k);(f.children||[]).forEach(c=>chap(c,n-1));}
+  else chap(f,n);
   renderTree();}
 function levelIds(){
   const L={1:[],2:[]};
