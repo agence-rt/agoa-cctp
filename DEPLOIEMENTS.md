@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°102** — v0.102.0 — 2026-11-02 — Clic droit chapitre : dérouler sur 1, 2 ou 3 niveaux
 - **n°101** — v0.101.0 — 2026-11-01 — Animation colorée sur les articles créés ou insérés
 - **n°100** — v0.100.0 — 2026-11-01 — Bouton Bibliothèque (fenêtre séparée) dans la colonne de gauche
 - **n°99** — v0.99.0 — 2026-10-30 — Flèches clavier dans l'arbre, Entrée déplie, exclusivité option/base
