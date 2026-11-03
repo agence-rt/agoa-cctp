@@ -1,1 +1,1 @@
-Déploiement n°104 — Options et variantes : nom complet dans le BPU, le CCTP et les totaux
+Déploiement n°105 — Variantes : suppression des mentions répétées dans le paragraphe de la variante
