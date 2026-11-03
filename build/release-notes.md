@@ -1,1 +1,1 @@
-Déploiement n°105 — Variantes : suppression des mentions répétées dans le paragraphe de la variante
+Déploiement n°106 — BPU : retrait des mentions Base variante derrière les articles

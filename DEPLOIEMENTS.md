@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°106** — v0.106.0 — 2026-11-03 — BPU : retrait des mentions Base variante derrière les articles
 - **n°105** — v0.105.0 — 2026-11-03 — Variantes : suppression des mentions répétées dans le paragraphe de la variante
 - **n°104** — v0.104.0 — 2026-11-03 — Options et variantes : nom complet dans le BPU, le CCTP et les totaux
 - **n°103** — v0.103.0 — 2026-11-02 — Clic droit lot : dérouler sur 1, 2 ou 3 niveaux

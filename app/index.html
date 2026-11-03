@@ -1097,7 +1097,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.105.0", deploiement: 105};
+const APP = {version: "0.106.0", deploiement: 106};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1191,9 +1191,9 @@ function ovMap(){
   OVC={s:state,v:OVV,m}; return m;
 }
 const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
-const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovLab(b));});return a.join(", ");};
+const ovTag=it=>"";const ovTagOld=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovLab(b));});return a.join(", ");};
 const ovBadge=(it,noBase)=>{const c=ovOf(it);let h="";if(!noBase)c.base.forEach(id=>{const b=ovById(id);if(b)h+=ovChip(b,true,1);});return h;};
-const ovTxt=it=>{const t=ovTag(it);return (t?` [${t.toUpperCase()}]`:"")+pctTxt(it);};
+const ovTxt=it=>pctTxt(it);
 function ovLeavesOf(roots){const r=[];const art=l=>l.forEach(a=>{if(a.sub.length)art(a.sub);else if(!isTitle(a))r.push(a);});const nd=n=>{art(n.art||[]);(n.children||[]).forEach(nd);};roots.forEach(nd);return r;}
 function ovBlocksOf(roots){const L=ovLeavesOf(roots);return ovl().map(o=>({o,inn:L.filter(a=>ovOf(a).in===o.id),bas:L.filter(a=>!ovOf(a).in&&ovOf(a).base.includes(o.id))})).filter(b=>b.inn.length||b.bas.length);}
 const hasBaseArt=a=>a.sub.length?a.sub.some(hasBaseArt):!ovOf(a).in;
@@ -2024,7 +2024,7 @@ function bpuRows(list,mode,lot,d=0,force=false){
   return list.map(ar=>{
     if(!force&&(ovOf(ar).in||(ar.sub.length&&!hasBaseArt(ar))))return "";
     const has=ar.sub.length||isTitle(ar), cur=ar.id===state.sel&&!ent?" cur":"", pad=`style="padding-left:${8+d*16}px"`, idA=ent?"":`data-id="${ar.id}"`;
-    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre)}${ovBadge(ar,force)}${pcB(ar)}</td>`;
+    let h=`<tr class="${has?"par":""}${cur}" ${idA}><td class="code">${ar.code}</td><td ${pad}>${esc(ar.titre)}${ovBadge(ar,true)}${pcB(ar)}</td>`;
     if(has) h+=ent?`<td></td><td></td><td></td><td></td><td></td><td></td></tr>`:`<td></td><td></td><td></td><td></td><td class="n">${ar.sub.length?fmt(total(ar)):""}</td></tr>`;
     else{
       h+=`<td class="n">${fq(qty(ar),ar.u)}</td><td>${esc(ar.u)}</td><td class="n">${pct(tvaOf(ar,lot))}</td>`+(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(ar.pu)}</td><td class="n">${fmt(total(ar))}</td>`)+`</tr>`;
@@ -2046,7 +2046,7 @@ function ovBlocksHtml(root,lot){
     return `<tr class="ovgap"><td colspan="7"></td></tr>`+ovFrameRows(h,c.fg);}).join("");}
 function nodeRow(n,lot,mode,cls="chap"){
   const ent=mode==="ent", span=ent?7:6, cur=!ent&&n.nid===state.sel?" cur":"", idA=ent?"":`data-nid="${n.nid}"`;
-  if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n)}</td></tr>`;
+  if(!n.isArt) return `<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td colspan="${span}">${esc(cls==="chap"?n.titre.toUpperCase():n.titre)}${ovBadge(n,true)}</td></tr>`;
   let h=`<tr class="${cls}${cur}" ${idA}><td class="code">${n.code}</td><td>${esc(n.titre)}</td><td class="n">${fq(qty(n),n.u)}</td><td>${esc(n.u)}</td><td class="n">${pct(tvaOf(n,lot))}</td>`
     +(ent?`<td class="blank"></td><td class="blank"></td><td class="blank"></td>`:`<td class="n">${fmt(n.pu)}</td><td class="n">${fmt(ownNode(n))}</td>`)+`</tr>`;
   if(metreOn(n)&&showMetre(n)) h+=validLines(n).map(l=>`<tr class="metre${cur}" ${idA}><td class="code">Métré</td><td colspan="${span}">${esc(mLine(l))}${l.note?`<em>${esc(l.note)}</em>`:""}</td></tr>`).join("");
