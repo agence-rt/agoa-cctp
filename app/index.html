@@ -1097,7 +1097,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.103.0", deploiement: 103};
+const APP = {version: "0.104.0", deploiement: 104};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1175,7 +1175,7 @@ let OVV=0, OVC=null, MAN_OV=0;
 const ovl=()=>state.ovs||(state.ovs=[]);
 const OVP=[["Orange","#FFE0B2","#8A4B00"],["Mauve","#D7C4F0","#47267F"],["Bleu","#BBDEFB","#0D47A1"],["Vert","#C8E6C9","#1B5E20"],["Rose","#F8BBD9","#880E4F"],["Jaune","#FFF59D","#6D5A00"],["Turquoise","#B2EBF2","#006064"],["Rouge","#FFCDD2","#B71C1C"]];
 const ovC=o=>{const i=(o&&o.col!=null&&OVP[o.col])?o.col:(o&&o.kind==="variante"?1:0);return{bg:OVP[i][1],fg:OVP[i][2],n:OVP[i][0]};};
-const ovChip=(o,base)=>{const c=ovC(o);return base?`<span class="ovb base" style="color:${c.fg};border-color:${c.fg}">Base ${esc(ovShort(o))}</span>`:`<span class="ovb" style="background:${c.bg};color:${c.fg}">${esc(ovShort(o))}</span>`;};
+const ovChip=(o,base,full)=>{const c=ovC(o),t=full?ovLab(o):ovShort(o);return base?`<span class="ovb base" style="color:${c.fg};border-color:${c.fg}">Base ${esc(t)}</span>`:`<span class="ovb" style="background:${c.bg};color:${c.fg}">${esc(t)}</span>`;};
 const ovNum=o=>ovl().filter(x=>x.kind===o.kind).indexOf(o)+1;
 const ovShort=o=>(o.kind==="variante"?"Variante ":"Option ")+ovNum(o);
 const ovAbr=o=>(o.kind==="variante"?"Var. ":"Opt. ")+ovNum(o);
@@ -1191,8 +1191,8 @@ function ovMap(){
   OVC={s:state,v:OVV,m}; return m;
 }
 const ovOf=it=>ovMap().get(it)||{in:"",base:[]};
-const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovShort(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovShort(b));});return a.join(", ");};
-const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?ovChip(o):"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=ovChip(b,true);});return h;};
+const ovTag=it=>{const a=[],c=ovOf(it);const o=c.in&&ovById(c.in);if(o)a.push(ovLab(o));c.base.forEach(id=>{const b=ovById(id);if(b)a.push("base "+ovLab(b));});return a.join(", ");};
+const ovBadge=it=>{const c=ovOf(it),o=c.in&&ovById(c.in);let h=o?ovChip(o,false,1):"";c.base.forEach(id=>{const b=ovById(id);if(b)h+=ovChip(b,true,1);});return h;};
 const ovTxt=it=>{const t=ovTag(it);return (t?` [${t.toUpperCase()}]`:"")+pctTxt(it);};
 function ovLeavesOf(roots){const r=[];const art=l=>l.forEach(a=>{if(a.sub.length)art(a.sub);else if(!isTitle(a))r.push(a);});const nd=n=>{art(n.art||[]);(n.children||[]).forEach(nd);};roots.forEach(nd);return r;}
 function ovBlocksOf(roots){const L=ovLeavesOf(roots);return ovl().map(o=>({o,inn:L.filter(a=>ovOf(a).in===o.id),bas:L.filter(a=>!ovOf(a).in&&ovOf(a).base.includes(o.id))})).filter(b=>b.inn.length||b.bas.length);}
@@ -2036,7 +2036,7 @@ function bpuRows(list,mode,lot,d=0,force=false){
 
 function ovBlocksHtml(root,lot){
   return ovBlocksOf([root]).map(b=>{const o=b.o,c=ovC(o),sum=a=>a.reduce((t,x)=>t+qty(x)*x.pu,0),sI=sum(b.inn),sB=sum(b.bas);
-    const vat=[...b.inn.map(a=>qty(a)*a.pu*tvaOf(a)/100),...b.bas.map(a=>-qty(a)*a.pu*tvaOf(a)/100)].reduce((x,y)=>x+y,0), pv=b.bas.length?"plus-value / moins-value ":"", N=esc(ovShort(o).toUpperCase());
+    const vat=[...b.inn.map(a=>qty(a)*a.pu*tvaOf(a)/100),...b.bas.map(a=>-qty(a)*a.pu*tvaOf(a)/100)].reduce((x,y)=>x+y,0), pv=b.bas.length?"plus-value / moins-value ":"", N=esc(ovLab(o).toUpperCase());
     let h=`<tr class="ovh occ"><td colspan="7">${esc(ovLab(o).toUpperCase())}</td></tr>`;
     if(b.bas.length)h+=`<tr class="ovs occ"><td colspan="7">Ouvrages du marché de base à déduire</td></tr>${bpuRows(b.bas,"moe",lot,0,true)}<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n">−${eur2(sB)}</td></tr>`;
     h+=`<tr class="ovs occ"><td colspan="7">Ouvrages de ${ovWhat(o)}</td></tr>${bpuRows(b.inn,"moe",lot,0,true)}<tr class="st"><td colspan="6">Somme de ${ovWhat(o)}</td><td class="n">${eur2(sI)}</td></tr>`;
@@ -3948,7 +3948,7 @@ function anaModel(){
 function bilanData(M){
   const E=M.E, T=anaSums(M,()=>true), est=T.est, meds=E.map(e=>T[e.id]).filter(v=>v>0), med=meds.length>1?medianOf(meds):null, lim=M.A.seuilOffre||20;
   const rows=E.map(e=>{const ht=T[e.id], notes=Object.values((e.offre&&e.offre.notes)||{}).filter(x=>String(x).trim()).length;
-    const opts=ovl().map(o=>{const O=M.ov[o.id],x=O&&O.e[e.id];return x&&(x.in||x.base)?{lab:ovShort(o),net:x.in-x.base}:null;}).filter(Boolean);
+    const opts=ovl().map(o=>{const O=M.ov[o.id],x=O&&O.e[e.id];return x&&(x.in||x.base)?{lab:ovLab(o),net:x.in-x.base}:null;}).filter(Boolean);
     return {e,ht,ttc:T[e.id+"T"],ecart:ht-est,pct:est?(ht/est-1)*100:null,vsMed:med?(ht/med-1)*100:null,miss:M.miss[e.id]||0,flags:M.flags[e.id]||0,notes,opts,alert:[],rank:null};});
   rows.filter(r=>r.ht>0&&!r.miss).sort((a,b)=>a.ht-b.ht).forEach((r,i)=>r.rank=i+1);
   rows.forEach(r=>{if(r.pct!=null){if(r.pct<=-lim)r.alert.push(["low","Offre anormalement basse : vérifier la complétude et les prestations"]);else if(r.pct>=lim)r.alert.push(["high","Offre nettement supérieure à l'estimation"]);}
@@ -3981,9 +3981,9 @@ function ovFoot(M,Ev,E){
     if(bas.length)h+=`<tr class="ovs occ"><td class="c1"></td><td class="c2" colspan="${span-1}">Ouvrages du marché de base à déduire</td></tr>${bas.map(w=>art(w,true)).join("")}${sum("Sous-total de la déduction",e=>"−"+eur2(v(e,"base")))}`;
     h+=`<tr class="ovs occ"><td class="c1"></td><td class="c2" colspan="${span-1}">Ouvrages de ${ovWhat(o)}</td></tr>${inn.map(w=>art(w,false)).join("")}${sum(`Somme de ${ovWhat(o)}`,e=>eur2(v(e,"in")))}`;
     const pv=bas.length?"plus-value / moins-value ":"";
-    h+=sum(`TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}HT`,e=>sgn(v(e,"in")-v(e,"base")),"st ovtot occ",st);
-    h+=sum(`TVA ${esc(ovShort(o).toUpperCase())}`,e=>sgn((v(e,"inT")-v(e,"baseT"))-(v(e,"in")-v(e,"base"))),"ovtot2 occ",st);
-    h+=sum(`TOTAL ${esc(ovShort(o).toUpperCase())} · ${pv}TTC`,e=>sgn(v(e,"inT")-v(e,"baseT")),"st ovtot occ",st);
+    h+=sum(`TOTAL ${esc(ovLab(o).toUpperCase())} · ${pv}HT`,e=>sgn(v(e,"in")-v(e,"base")),"st ovtot occ",st);
+    h+=sum(`TVA ${esc(ovLab(o).toUpperCase())}`,e=>sgn((v(e,"inT")-v(e,"baseT"))-(v(e,"in")-v(e,"base"))),"ovtot2 occ",st);
+    h+=sum(`TOTAL ${esc(ovLab(o).toUpperCase())} · ${pv}TTC`,e=>sgn(v(e,"inT")-v(e,"baseT")),"st ovtot occ",st);
     return `<tr class="ovgap"><td colspan="${span}"></td></tr>`+ovFrameRows(h,c.fg);}).join("");
 }
 function anaSums(M,pred){
@@ -4641,7 +4641,7 @@ async function buildBpuStyled(E,en,info,opts){
   {const ovAll=ovl().filter(o=>rec.some(x=>(x.ovs||[]).some(y=>y.id===o.id)));
    if(ovAll.length){let z=q+3;rs.mergeCells(z,1,z,5);const hh=rs.getCell(z,1);hh.value="Options et variantes : plus-values / moins-values (non comprises dans le montant total)";hh.font=F(10,{bold:true,color:{argb:BLUE}});z++;
     ovAll.forEach(o=>{const parts=rec.map(x=>{const y=(x.ovs||[]).find(v=>v.id===o.id);return y?{sn:`'${x.sn.replace(/'/g,"''")}'`,y}:null;}).filter(Boolean);
-      rs.getCell(z,1).value=ovShort(o);rs.getCell(z,1).font=F(10,{italic:true});rs.getCell(z,2).value=(o.nom||"").toUpperCase();rs.getCell(z,2).font=F(10);
+      rs.getCell(z,1).value=ovLab(o);rs.getCell(z,1).font=F(10,{italic:true});rs.getCell(z,2).value=(o.nom||"").toUpperCase();rs.getCell(z,2).font=F(10);
       const vN=parts.reduce((a,p)=>a+p.y.net,0), vT=parts.reduce((a,p)=>a+p.y.ttc,0);
       const put=(col,f,res)=>{const c=rs.getCell(z,col);c.value={formula:f,result:Math.round(res*100)/100};c.font=F(10);c.numFmt=EUR0;c.alignment={horizontal:"right"};};
       put(3,parts.map(p=>`${p.sn}!I${p.y.rN}`).join("+"),vN);put(5,parts.map(p=>`${p.sn}!I${p.y.rT}`).join("+"),vT);put(4,`E${z}-C${z}`,vT-vN);rs.getRow(z).height=20;z++;});}}
@@ -4820,9 +4820,9 @@ function renderPortal(){
     else if(r.k==="dsub") h+=`<tr class="st"><td colspan="6">Sous-total de la déduction</td><td class="n" data-psum="d" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
     else if(r.k==="osum") h+=`<tr class="st"><td colspan="6">Somme de ${ovWhat(r.o)}</td><td class="n" data-psum="s" data-pids="${r.ids.join(",")}"></td><td></td></tr>`;
     else if(r.k==="otot"){const c=ovC(r.o),pv=r.hasDed?"plus-value / moins-value ":"",at=`data-pids="${r.inIds.join(",")}" data-pbas="${r.basIds.join(",")}"`,sy="";
-      h+=`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}HT</td><td class="n" data-psum="t" ${at}></td><td></td></tr>`
-        +`<tr class="ovtot2 occ" ${sy}><td colspan="6">TVA ${esc(ovShort(r.o).toUpperCase())}</td><td class="n" data-psum="v" ${at}></td><td></td></tr>`
-        +`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovShort(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;
+      h+=`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovLab(r.o).toUpperCase())} · ${pv}HT</td><td class="n" data-psum="t" ${at}></td><td></td></tr>`
+        +`<tr class="ovtot2 occ" ${sy}><td colspan="6">TVA ${esc(ovLab(r.o).toUpperCase())}</td><td class="n" data-psum="v" ${at}></td><td></td></tr>`
+        +`<tr class="st ovtot occ" ${sy}><td colspan="6">TOTAL ${esc(ovLab(r.o).toUpperCase())} · ${pv}TTC</td><td class="n" data-psum="c" ${at}></td><td></td></tr>`;
       h=h.slice(0,os)+ovFrameRows(h.slice(os),c.fg);}
     else{const p=PD.pus[r.id], miss=p==null&&r.q>0&&!PD.marks[r.id];
       h+=`<tr class="${miss?"miss":""}" data-pid="${r.id}"><td class="code">${r.code}</td><td ${pad}>${esc(r.titre)}${desc}</td><td class="n"><input type="text" inputmode="decimal" class="pq${PD.qents[r.id]!=null?" chg":""}" data-pq="${r.id}" value="${fq(pQ(r.id,r.q),PD.units[r.id]||r.u)}" autocomplete="off" aria-label="Quantité de l'entreprise pour ${esc(r.titre)}" title="${PD.qents[r.id]!=null?"Quantité de l'entreprise (BPU : "+fq(r.q,r.u)+")":"Quantité du BPU : modifiable si l'entreprise a chiffré une autre quantité"}"></td><td><input type="text" class="pun${PD.units[r.id]?" chg":""}" data-pun="${r.id}" value="${esc(PD.units[r.id]||r.u)}" autocomplete="off" aria-label="Unité de l'entreprise pour ${esc(r.titre)}" title="${PD.units[r.id]?"Unité de l'entreprise (BPU : "+esc(r.u)+")":"Unité du BPU : modifiable si l'entreprise a changé l'unité"}"></td><td class="n">${fmt(r.tva,r.tva%1?1:0)} %</td>

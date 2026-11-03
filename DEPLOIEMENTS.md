@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°104** — v0.104.0 — 2026-11-03 — Options et variantes : nom complet dans le BPU, le CCTP et les totaux
 - **n°103** — v0.103.0 — 2026-11-02 — Clic droit lot : dérouler sur 1, 2 ou 3 niveaux
 - **n°102** — v0.102.0 — 2026-11-02 — Clic droit chapitre : dérouler sur 1, 2 ou 3 niveaux
 - **n°101** — v0.101.0 — 2026-11-01 — Animation colorée sur les articles créés ou insérés
