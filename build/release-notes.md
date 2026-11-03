@@ -1,1 +1,1 @@
-Déploiement n°106 — BPU : retrait des mentions Base variante derrière les articles
+Déploiement n°107 — Correctif BPU Excel : apostrophe dans le nom d'onglet (réparation Excel)

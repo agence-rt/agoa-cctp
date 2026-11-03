@@ -1097,7 +1097,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.106.0", deploiement: 106};
+const APP = {version: "0.107.0", deploiement: 107};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -4506,7 +4506,7 @@ async function buildBpuStyled(E,en,info,opts){
   const EUR='#,##0.00\\ "€";\\-#,##0.00\\ "€";;', EUR0='#,##0.00\\ "€";\\-#,##0.00\\ "€"';
   const thin=c=>({style:"thin",color:{argb:c}}), box={top:thin(LINE),left:thin(LINE),bottom:thin(LINE),right:thin(LINE)};
   const wb=new E.Workbook(); wb.creator="AGOA CCTP"; wb.created=new Date(); wb.calcProperties={fullCalcOnLoad:true};
-  const used=new Set(), snMap=new Map(); const sheetName=l=>{if(snMap.has(l))return snMap.get(l);let n=`LOT ${l.code}  ${l.titre}`.replace(/[\\/?*\[\]:]/g,"-").slice(0,31);while(used.has(n.toLowerCase()))n=n.slice(0,28)+" "+(used.size+1);used.add(n.toLowerCase());snMap.set(l,n);return n;};
+  const used=new Set(), snMap=new Map(); const sheetName=l=>{if(snMap.has(l))return snMap.get(l);let n=`LOT ${l.code}  ${l.titre}`.replace(/[\\/?*\[\]:]/g,"-").replace(/['’]/g,"’").replace(/^\u2019+|\u2019+$/g,"").slice(0,31);while(used.has(n.toLowerCase()))n=n.slice(0,28)+" "+(used.size+1);used.add(n.toLowerCase());snMap.set(l,n);return n;};
   const ref=[o.ref,o.immeuble].filter(Boolean).join("-")||"AFFAIRE", oper=[o.objet,o.adresse,[o.cp,o.ville].filter(Boolean).join(" ")].filter(Boolean).join(" ").toUpperCase();
   const pct=r=>String(Number(r).toFixed(1)).replace(".",",")+"%";
   const runs=rows=>{rows=[...rows].sort((a,b)=>a-b);const out=[];let a=null,b=null;rows.forEach(r=>{if(a===null){a=b=r;}else if(r===b+1){b=r;}else{out.push(a===b?`I${a}`:`I${a}:I${b}`);a=b=r;}});if(a!==null)out.push(a===b?`I${a}`:`I${a}:I${b}`);return out.join(",");};
@@ -4624,7 +4624,7 @@ async function buildBpuStyled(E,en,info,opts){
     rec.push({sn,code:lot.code,titre:lot.titre,rHT,rTTC,ht,ttc:Math.round((ht+tvaTot)*100)/100,ovs:ovRec});
   }
   // récapitulatif
-  const rs=wb.addWorksheet("Total de l'affaire",{views:[{showGridLines:false}],pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  const rs=wb.addWorksheet("Total de l’affaire",{views:[{showGridLines:false}],pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});
   rs.columns=[{width:10},{width:58},{width:18},{width:18},{width:18}];
   rs.mergeCells(1,1,1,5); const t1=rs.getCell(1,1); t1.value="Bordereau des prix unitaires (BPU) - "+ref; t1.font=F(12,{bold:true}); t1.alignment={horizontal:"center"}; rs.getRow(1).height=24;
   rs.mergeCells(2,1,2,5); const t2=rs.getCell(2,1); {const f0=sheetName(bLots[0]).replace(/'/g,"''"); t2.value={formula:`"Total de l'affaire"&IF('${f0}'!C7=""," "," - "&'${f0}'!C7)`,result:"Total de l'affaire"+(en?" - "+en.nom:"")};} t2.font=F(11,{bold:true,color:{argb:BLUE}}); t2.alignment={horizontal:"center"}; rs.getRow(2).height=22;
