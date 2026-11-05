@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°108** — v0.108.0 — 2026-11-05 — Flèches clavier fiabilisées, Ctrl+C / Ctrl+V d'articles, chapitres et lots
 - **n°107** — v0.107.0 — 2026-11-03 — Correctif BPU Excel : apostrophe dans le nom d'onglet (réparation Excel)
 - **n°106** — v0.106.0 — 2026-11-03 — BPU : retrait des mentions Base variante derrière les articles
 - **n°105** — v0.105.0 — 2026-11-03 — Variantes : suppression des mentions répétées dans le paragraphe de la variante

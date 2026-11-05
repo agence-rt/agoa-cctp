@@ -177,6 +177,7 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .lv-sm{display:inline-flex;align-items:center;gap:2px;font-size:12px;cursor:pointer}.lv-sm input{margin:0;width:13px;height:13px}.lv-ico{display:flex;align-items:center;gap:8px;color:var(--muted)}
 .tree-top{padding:4px 10px!important}
 .ms-bar{margin:0 10px 8px;padding:7px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ms-bar b{color:var(--accent)}
+.tree summary.msel{background:var(--accent-soft)}
 .tree .art.msel{background:var(--accent-soft);border-left-color:var(--accent)}
 .tree .art.cur,.tree summary.cur,.tree .sub.cur{background:var(--accent-soft);border-left-color:var(--accent)}
 .tree .sub{border-left:2px solid transparent}
@@ -1097,7 +1098,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.107.0", deploiement: 107};
+const APP = {version: "0.108.0", deploiement: 108};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1514,7 +1515,7 @@ function nodeCtx(k){for(const lot of state.data){if(lot.nid===k)return{lot,ch:nu
 const ownNode=n=>0;
 const nodeTotal=n=>ownNode(n)+(n.art||[]).reduce((s,x)=>s+btotal(x),0)+(n.children||[]).reduce((s,c)=>s+nodeTotal(c),0);
 function curItem(){const f=locate(state.sel);if(f)return{it:f.art,lot:f.lot,f};const nc=nodeCtx(state.sel);return nc?{it:nc.node,lot:nc.lot,node:true,nc}:null;}
-function selectNode(k){state.sel=k;openPath(k);save();renderTree();renderEditor();}
+function selectNode(k){nsel.clear();state.sel=k;openPath(k);save();renderTree();renderEditor();}
 const countArts=lot=>{let n=0;lists((list,o,l)=>{if(l===lot)n+=list.length;});return n;};
 function migrate(){
   state.data.forEach(lot=>{
@@ -1814,7 +1815,7 @@ const ovTreeTag=it=>{const h=[];const o=it.ovIn&&ovById(it.ovIn);if(o){const c=o
 const noUnit=ar=>!ar.sub.length&&!isTitle(ar)&&!String(ar.u||"").trim();
 const dotsOf=(ar,noq)=>(noq?`<span class="pdot o" title="Quantité non renseignée"></span>`:"")+(noUnit(ar)?`<span class="pdot r" title="Unité non renseignée"></span>`:"");
 const hlBar=it=>`<div class="hl-bar" role="group" aria-label="Surligner dans la liste de gauche"><span class="flabel">Surlignage dans la liste</span>${HLC.map(([k,n,c])=>`<button type="button" class="hl-sw" data-hl="${k}" style="background:${c}" aria-pressed="${it.hl===k}" title="${n}" aria-label="${n}"></button>`).join("")}<button type="button" class="hl-sw none" data-hl="" aria-pressed="${!it.hl}" title="Aucun surlignage" aria-label="Aucun surlignage">×</button></div>`;
-const msel=new Set(); let msAnchor=null;
+const msel=new Set(), nsel=new Set(); let msAnchor=null, clip=null;
 function msBar(){
   const b=$("#msBar"); if(!b) return;
   b.hidden=msel.size<2; if(msel.size>=2) b.innerHTML=`<b>${msel.size} articles sélectionnés</b>  : glissez l'un d'eux pour les déplacer ensemble (Ctrl + glisser pour les copier), <kbd>Suppr</kbd> pour les supprimer, <kbd>Échap</kbd> pour désélectionner`;
@@ -1833,7 +1834,7 @@ async function msDelete(){
   if(!locate(state.sel)&&!nodeCtx(state.sel)) state.sel=last?((last.list[last.i-1]||last.list[last.i]||{}).id||last.owner.id||firstId()):firstId();
   refresh(); toast(`${fs.length} article${fs.length>1?"s":""} placé${fs.length>1?"s":""} dans la corbeille`);
 }
-function msClear(){if(!msel.size)return;msel.clear();renderTree();}
+function msClear(){if(!msel.size&&!nsel.size)return;msel.clear();nsel.clear();renderTree();}
 function msRange(toId){
   const ids=[...tree.querySelectorAll(".art")].map(x=>x.dataset.id), a=ids.indexOf(msAnchor||state.sel), b=ids.indexOf(toId);
   if(a<0||b<0){msel.clear();msel.add(toId);return;}
@@ -1866,10 +1867,10 @@ function renderTree(){
     return `<div class="ti">${row}${has&&op?`<div class="kids">${rows(ar.sub,b,n+1)}</div>`:""}</div>`;}).join("");
   let h="";
   state.data.forEach((lot,li)=>{
-    h+=`<details class="lotd" style="${lotStyle(lot)}" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
+    h+=`<details class="lotd" style="${lotStyle(lot)}" data-oid="${lot.nid}" ${openIds.has(lot.nid)?"open":""}><summary class="lot${lot.nid===state.sel?" cur":""}${nsel.has(lot.nid)?" msel":""}"><span class="lot-n"><b>Lot ${lot.code}</b> <span class="lot-name" data-renlot="${li}" data-lotnid="${lot.nid}"${hlStyle(lot)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(lot.titre)}</span>${ovTreeTag(lot)}${lot.noBpu?`<span class="pctb" style="background:#d9dde3;color:#444" title="Ce lot est masqué dans le BPU publié">hors BPU</span>`:""}</span><span class="lot-mv"><button class="x" data-lotmv="${li}:-1" ${li===0?"disabled":""} aria-label="Monter le lot" title="Monter le lot">▲</button><button class="x" data-lotmv="${li}:1" ${li===state.data.length-1?"disabled":""} aria-label="Descendre le lot" title="Descendre le lot">▼</button></span><button class="x lot-x" data-dellot="${li}" aria-label="Supprimer le lot ${lot.code}" title="Supprimer le lot">×</button></summary>`;
     h+=`<div class="kids lk">`;
     lot.children.forEach(ch=>{
-      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}" data-node="${ch.code}" data-chnid="${ch.nid}" draggable="true"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<span class="lot-mv"><button class="x" data-chmv="${ch.nid}|-1" aria-label="Monter le chapitre" title="Monter">▲</button><button class="x" data-chmv="${ch.nid}|1" aria-label="Descendre le chapitre" title="Descendre">▼</button></span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
+      h+=`<details class="chd ti" data-oid="${ch.nid}" ${openIds.has(ch.nid)?"open":""}><summary class="chs${ch.nid===state.sel?" cur":""}${nsel.has(ch.nid)?" msel":""}" data-node="${ch.code}" data-chnid="${ch.nid}" draggable="true"><span class="code">${ch.code}</span><span class="node-name" data-rennode="${ch.nid}"${hlStyle(ch)} title="Cliquer pour éditer, double-cliquer pour renommer">${esc(ch.titre)}</span>${ovTreeTag(ch)}<span class="lot-mv"><button class="x" data-chmv="${ch.nid}|-1" aria-label="Monter le chapitre" title="Monter">▲</button><button class="x" data-chmv="${ch.nid}|1" aria-label="Descendre le chapitre" title="Descendre">▼</button></span><button class="x node-x" data-delnode="${ch.nid}" aria-label="Supprimer le chapitre ${ch.code}" title="Supprimer le chapitre">×</button></summary>`;
       h+=`<div class="kids">${rows(ch.art||[],1,0)}</div></details>`;
     });
     h+=`</div></details>`;
@@ -2131,7 +2132,7 @@ function renderTotal(){let t=0;leaves(ar=>{if(!ovOf(ar).in)t+=qty(ar)*ar.pu;});$
   if(o)o.innerHTML=L.length?L.map(x=>{const q=S[x.id]||{in:0,base:0},net=q.in-q.base;return `<span title="${esc(ovLab(x))} : ${eur(q.in)} HT${q.base?`, dont base à déduire ${eur(q.base)} HT`:""}">${esc(ovShort(x))} : ${net>=0?"+":"−"}${eur(Math.abs(net))}</span>`;}).join(" · "):"";}
 
 /* ---------- Actions ---------- */
-function select(id){state.sel=id;openPath(id);save();renderTree();renderEditor();}
+function select(id){nsel.clear();state.sel=id;openPath(id);save();renderTree();renderEditor();}
 function refresh(){renumberAll();openPath(state.sel);save();renderTree();renderEditor();}
 const lostCost=ar=>!ar.sub.length&&qty(ar)*ar.pu>0;
 
@@ -2700,10 +2701,10 @@ $("#chkBody").addEventListener("click",e=>{const g=e.target.closest("[data-goto]
 $("#closeChk").onclick=()=>$("#chkDlg").close();
 $("#chkGo").onclick=()=>{const r=chkResolve;chkResolve=null;$("#chkDlg").close();if(r)r(true);};
 $("#chkDlg").addEventListener("close",()=>{if($("#chkDlg").open)return;const r=chkResolve;chkResolve=null;if(r)r(false);});
-tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(at){e.stopPropagation();const k=at.dataset.arttg;openIds.has(k)?openIds.delete(k):openIds.add(k);renderTree();return;}const ln=e.target.closest(".lot-name[data-lotnid]");if(ln){e.preventDefault();const k=ln.dataset.lotnid;ln.closest("details").open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const da=e.target.closest("[data-delart]");if(da){e.preventDefault();e.stopPropagation();delArt(da.dataset.delart);return;}const dn=e.target.closest("[data-delnode]");if(dn){e.preventDefault();delNode(dn.dataset.delnode);return;}const nn=e.target.closest(".node-name[data-rennode]");if(nn){e.preventDefault();const k=nn.dataset.rennode;const det=nn.closest("details");if(det)det.open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const nb=e.target.closest("[data-renbtnnode]");if(nb){e.preventDefault();renameNode(nb.dataset.renbtnnode);return;}const rb=e.target.closest("[data-renbtn]");if(rb){renameLot(+rb.dataset.renbtn);return;}const dl=e.target.closest("[data-dellot]");if(dl){delLot(+dl.dataset.dellot);return;}const a=e.target.closest(".art");if(a){const id=a.dataset.id;
+tree.addEventListener("click",e=>{const at=e.target.closest("[data-arttg]");if(at){e.stopPropagation();const k=at.dataset.arttg;openIds.has(k)?openIds.delete(k):openIds.add(k);renderTree();return;}const ln=e.target.closest(".lot-name[data-lotnid]");if(ln){e.preventDefault();const k=ln.dataset.lotnid;if(e.ctrlKey||e.metaKey||e.shiftKey){nodeMsel(k);return;}ln.closest("details").open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const da=e.target.closest("[data-delart]");if(da){e.preventDefault();e.stopPropagation();delArt(da.dataset.delart);return;}const dn=e.target.closest("[data-delnode]");if(dn){e.preventDefault();delNode(dn.dataset.delnode);return;}const nn=e.target.closest(".node-name[data-rennode]");if(nn){e.preventDefault();const k=nn.dataset.rennode;if(e.ctrlKey||e.metaKey||e.shiftKey){nodeMsel(k);return;}const det=nn.closest("details");if(det)det.open=true;clearTimeout(nodeClickT);nodeClickT=setTimeout(()=>selectNode(k),230);return;}const nb=e.target.closest("[data-renbtnnode]");if(nb){e.preventDefault();renameNode(nb.dataset.renbtnnode);return;}const rb=e.target.closest("[data-renbtn]");if(rb){renameLot(+rb.dataset.renbtn);return;}const dl=e.target.closest("[data-dellot]");if(dl){delLot(+dl.dataset.dellot);return;}const a=e.target.closest(".art");if(a){const id=a.dataset.id;
   if(e.shiftKey){e.preventDefault();msRange(id);state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
-  if(e.ctrlKey||e.metaKey){e.preventDefault();if(!msel.size&&state.sel&&locate(state.sel))msel.add(state.sel);msel.has(id)?msel.delete(id):msel.add(id);msAnchor=id;state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
-  msel.clear();msAnchor=id;select(id);}});
+  if(e.ctrlKey||e.metaKey){e.preventDefault();nsel.clear();if(!msel.size&&state.sel&&locate(state.sel))msel.add(state.sel);msel.has(id)?msel.delete(id):msel.add(id);msAnchor=id;state.sel=id;openPath(id);save();renderTree();renderEditor();return;}
+  msel.clear();nsel.clear();msAnchor=id;select(id);}});
 document.addEventListener("change",e=>{const t=e.target; if(t&&t.id==="lotNoBpu"){const nc=nodeCtx(state.sel); if(nc&&nc.level==="lot"){if(t.checked)nc.node.noBpu=true; else delete nc.node.noBpu; save(); renderTree(); toast(t.checked?`Lot ${nc.node.code} masqué dans le BPU publié`:`Lot ${nc.node.code} de nouveau présent dans le BPU publié`);}}});
 document.addEventListener("keydown",e=>{if(e.key==="Delete"&&msel.size>1&&!e.target.closest("input,textarea,select,[contenteditable],dialog")&&!document.querySelector("dialog[open]")){e.preventDefault();msDelete();}});
 document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();
@@ -2712,7 +2713,7 @@ document.addEventListener("click",e=>{if(e.target.closest("#msClear"))msClear();
 document.addEventListener("change",e=>{if(e.target.id!=="lotColorPick")return;const nc=nodeCtx(state.sel);if(nc&&nc.level==="lot"){nc.node.color=e.target.value.toLowerCase();save();renderEditor();renderPreview();toast(`Couleur du lot ${nc.node.code} personnalisée`);}});
 $("#addLotBtn").onclick=()=>{const c=addLot();toast(`Lot ${c} créé. Renommez-le et réglez sa charge et sa TVA dans les options de l'opération`);};
 tree.addEventListener("keydown",e=>{
-  if(e.key==="Escape"&&msel.size){msClear();return;}
+  if(e.key==="Escape"&&(msel.size||nsel.size)){msClear();return;}
   if(e.target.closest("input,textarea,select,[contenteditable]")) return;
   const rid=el=>el.classList.contains("art")?el.dataset.id:(el.closest("details[data-oid]")||{dataset:{}}).dataset.oid;
   const rowEl=e.target.closest(".art,summary.lot,summary.chs");
@@ -2730,6 +2731,69 @@ tree.addEventListener("keydown",e=>{
   if(!e.altKey) return;
   const m={ArrowUp:()=>step(-1),ArrowDown:()=>step(1),ArrowLeft:outdent,ArrowRight:indent}[e.key];
   if(m){e.preventDefault();if(a.dataset.id!==state.sel)select(a.dataset.id);m();focusCur();}
+});
+document.addEventListener("keydown",e=>{
+  if(e.defaultPrevented||e.altKey||e.ctrlKey||e.metaKey) return;
+  if(!["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Enter"].includes(e.key)) return;
+  const ae=document.activeElement; if(ae&&ae!==document.body) return;
+  if(document.querySelector("dialog[open]:not(.floating):not(.detached)")) return;
+  if(!tree.offsetParent) return;
+  const row=tree.querySelector(".art.cur,summary.cur"); if(!row) return;
+  if(e.key==="Enter"&&row.classList.contains("art")) return;
+  if((e.key==="ArrowLeft"||e.key==="ArrowRight")&&row.classList.contains("art")) return;
+  e.preventDefault(); row.focus();
+  row.dispatchEvent(new KeyboardEvent("keydown",{key:e.key,shiftKey:e.shiftKey,bubbles:true,cancelable:true}));
+});
+
+/* ---------- Copier / coller (Ctrl+C, Ctrl+V) dans la colonne de gauche ---------- */
+function nodeMsel(k){
+  const nc=nodeCtx(k); if(!nc) return;
+  if(!nsel.size&&state.sel&&state.sel!==k&&nodeCtx(state.sel))nsel.add(state.sel);
+  msel.clear(); nsel.has(k)?nsel.delete(k):nsel.add(k); state.sel=k; save(); renderTree(); renderEditor();
+}
+const cloneJ=x=>JSON.parse(JSON.stringify(x));
+function clipCopy(){
+  let c=null;
+  if(msel.size) c={kind:"arts",items:msTop().map(i=>{const f=locate(i);return f&&cloneJ(f.art);}).filter(Boolean)};
+  else if(nsel.size){const items=[];state.data.forEach(l=>{if(nsel.has(l.nid))items.push(l);(function w(list){(list||[]).forEach(ch=>{if(nsel.has(ch.nid))items.push(ch);w(ch.children);});})(l.children);});
+    c={kind:items.length&&items.every(x=>state.data.includes(x))?"lots":"nodes",items:items.map(cloneJ)};}
+  else{const f=locate(state.sel);if(f)c={kind:"arts",items:[cloneJ(f.art)]};else{const nc=nodeCtx(state.sel);if(nc)c={kind:nc.level==="lot"?"lots":"nodes",items:[cloneJ(nc.node)]};}}
+  if(!c||!c.items.length){toast("Rien à copier");return;}
+  clip=c; const n=c.items.length, w=c.kind==="arts"?"article":c.kind==="lots"?"lot":"chapitre";
+  toast(`${n} ${w}${n>1?"s":""} copié${n>1?"s":""} : placez-vous à l'endroit voulu puis Ctrl + V`);
+}
+function clipPaste(){
+  if(!clip||!clip.items.length){toast("Rien à coller : sélectionnez d'abord des éléments puis Ctrl + C");return;}
+  const nq=n=>{(n.art||[]).forEach(noQty);(n.children||[]).forEach(nq);return n;};
+  const f=locate(state.sel), nc=f?null:nodeCtx(state.sel); if(!f&&!nc){toast("Choisissez l'emplacement du collage");return;}
+  let first=null;
+  if(clip.kind==="arts"){
+    const cs=clip.items.map(x=>noQty(reid(cloneJ(x))));
+    if(f)f.list.splice(f.i+1,0,...cs);
+    else{let n=nc.node;if(nc.level==="lot"){n=nc.lot.children[nc.lot.children.length-1];if(!n){toast("Ce lot ne contient aucun chapitre");return;}}
+      (n.art=n.art||[]).push(...cs);openIds.add(n.nid);}
+    first=cs[0].id;
+  }else if(clip.kind==="lots"){
+    const lot=f?f.lot:nc.lot, cs=clip.items.map(x=>nq(stripNid(cloneJ(x))));
+    state.data.splice(state.data.indexOf(lot)+1,0,...cs); first=null; ensureNodeIds(); first=cs[0].nid;
+  }else{
+    const cs=clip.items.map(x=>nq(stripNid(cloneJ(x))));
+    if(f){const l=f.lot.children,i=l.indexOf(f.ch);l.splice(i<0?l.length:i+1,0,...cs);}
+    else if(nc.level==="lot")nc.lot.children.push(...cs);
+    else if(nc.level==="chapitre"){const l=nc.lot.children;l.splice(l.indexOf(nc.ch)+1,0,...cs);}
+    else{const l=nc.ch.children;l.splice(l.indexOf(nc.node)+1,0,...cs);}
+    ensureNodeIds(); first=cs[0].nid;
+  }
+  ensureNodeIds(); renumberAll(); msel.clear(); nsel.clear(); state.sel=first; openPath(first); save(); refresh();
+  toast(`${clip.items.length} élément${clip.items.length>1?"s":""} collé${clip.items.length>1?"s":""}`);
+}
+document.addEventListener("keydown",e=>{
+  if(!(e.ctrlKey||e.metaKey)||e.altKey||e.shiftKey) return;
+  const k=e.key.toLowerCase(); if(k!=="c"&&k!=="v") return;
+  if(e.target.closest&&e.target.closest("input,textarea,select,[contenteditable]")) return;
+  if(document.querySelector("dialog[open]:not(.floating):not(.detached)")||!tree.offsetParent||!state) return;
+  if(String(getSelection()).trim()) return;
+  e.preventDefault(); k==="c"?clipCopy():clipPaste();
 });
 const clearDrop=()=>tree.querySelectorAll(".drop-before,.drop-after,.drop-in").forEach(x=>x.classList.remove("drop-before","drop-after","drop-in"));
 function zone(t,e){const r=t.getBoundingClientRect(),y=(e.clientY-r.top)/r.height;return y<.28?"before":y>.72?"after":"inside";}
