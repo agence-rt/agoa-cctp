@@ -177,6 +177,8 @@ select.avanc.av0{background:#fff1d6;color:#7a4b00}select.avanc.av1{background:#d
 .lv-sm{display:inline-flex;align-items:center;gap:2px;font-size:12px;cursor:pointer}.lv-sm input{margin:0;width:13px;height:13px}.lv-ico{display:flex;align-items:center;gap:8px;color:var(--muted)}
 .tree-top{padding:4px 10px!important}
 .ms-bar{margin:0 10px 8px;padding:7px 10px;border:1px solid var(--accent);border-radius:6px;background:var(--accent-soft);font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ms-bar b{color:var(--accent)}
+.tchip{font-size:11px;color:var(--muted,#7a8190);opacity:.75;white-space:nowrap;padding:2px 7px;border-radius:10px;border:1px solid transparent;align-self:center;font-variant-numeric:tabular-nums;cursor:default}
+.tchip.run{opacity:.95}.tchip.pause{opacity:.5;font-style:italic}
 .tree summary.msel{background:var(--accent-soft)}
 .tree .art.msel{background:var(--accent-soft);border-left-color:var(--accent)}
 .tree .art.cur,.tree summary.cur,.tree .sub.cur{background:var(--accent-soft);border-left-color:var(--accent)}
@@ -783,6 +785,7 @@ select.st-ok{border-color:#2e7d32;background:#E8F5E9;color:#1b5e20;font-weight:6
     <b id="hdrSub"></b>
     <span id="hdrTitle"></span>
   </div>
+  <span id="timeChip" class="tchip" title="Temps passé sur la rédaction de ce CCTP. Le compteur tourne tant que vous travaillez et se met en pause après 5 min sans action." hidden>⏱ 0 min</span>
   <nav class="steps" aria-label="Étapes de l'opération">
     <button data-view="redaction" aria-current="page"><i>1</i><span>Rédaction</span></button>
     <button data-view="consultation"><i>2</i><span>Consultation</span></button>
@@ -1098,7 +1101,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.108.0", deploiement: 108};
+const APP = {version: "0.109.0", deploiement: 109};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2745,6 +2748,33 @@ document.addEventListener("keydown",e=>{
   row.dispatchEvent(new KeyboardEvent("keydown",{key:e.key,shiftKey:e.shiftKey,bubbles:true,cancelable:true}));
 });
 
+
+/* ---------- Compteur de temps de rédaction (par affaire) ---------- */
+(function(){
+  const TM={}, IDLE=300; let lastAct=Date.now(), pend=0, last="", dirtyT=0;
+  ["keydown","mousedown","wheel","input","touchstart","paste"].forEach(ev=>addEventListener(ev,()=>{lastAct=Date.now();},true));
+  const fmt=t=>{const m=Math.floor(t/60),h=Math.floor(m/60);return h?`${h} h ${String(m%60).padStart(2,"0")}`:`${m} min`;};
+  function persist(){try{if(state&&TM[state.id]!=null){state.temps=Math.max(state.temps||0,TM[state.id]);LS.setItem(KEY,JSON.stringify(store));}}catch(_){}}
+  setInterval(()=>{
+    const chip=document.getElementById("timeChip"); if(!chip) return;
+    const hdr=document.querySelector("header.top"), open=state&&state.id&&hdr&&hdr.offsetParent&&store.cur===state.id;
+    if(!open){chip.hidden=true;return;}
+    const id=state.id; if(TM[id]==null)TM[id]=state.temps||0;
+    const idle=(Date.now()-lastAct)/1000, focused=document.visibilityState==="visible"&&document.hasFocus();
+    let run=false;
+    if(focused){
+      if(idle<5){TM[id]+=1+pend;pend=0;run=true;}
+      else if(idle<IDLE){pend+=1;run=true;}
+      else pend=0;
+    }
+    state.temps=Math.max(state.temps||0,TM[id]);
+    chip.hidden=false; const t="⏱ "+fmt(TM[id])+(run?"":" · pause");
+    if(t!==last){chip.textContent=t;last=t;} chip.classList.toggle("run",run);chip.classList.toggle("pause",!run);
+    if(++dirtyT>=20){dirtyT=0;persist();}
+  },1000);
+  addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persist();});
+  addEventListener("beforeunload",persist);
+})();
 /* ---------- Copier / coller (Ctrl+C, Ctrl+V) dans la colonne de gauche ---------- */
 function nodeMsel(k){
   const nc=nodeCtx(k); if(!nc) return;
