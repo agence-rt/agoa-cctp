@@ -1,1 +1,1 @@
-Déploiement n°109 — Compteur de temps de rédaction par affaire
+Déploiement n°110 — Volet Ouvrir affaire (copie d'articles depuis une autre affaire), poignées de redimensionnement élargies

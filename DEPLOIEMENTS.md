@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°110** — v0.110.0 — 2026-11-06 — Volet Ouvrir affaire (copie d'articles depuis une autre affaire), poignées de redimensionnement élargies
 - **n°109** — v0.109.0 — 2026-11-05 — Compteur de temps de rédaction par affaire
 - **n°108** — v0.108.0 — 2026-11-05 — Flèches clavier fiabilisées, Ctrl+C / Ctrl+V d'articles, chapitres et lots
 - **n°107** — v0.107.0 — 2026-11-03 — Correctif BPU Excel : apostrophe dans le nom d'onglet (réparation Excel)

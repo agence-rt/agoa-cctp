@@ -663,8 +663,15 @@ dialog h3{margin:0 0 12px;font-size:17px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .redac>.tree{position:relative}
-.tree-grip{position:absolute;top:0;bottom:0;right:0;width:8px;cursor:col-resize;z-index:5;touch-action:none}
-.tree-grip::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;border-radius:2px;background:transparent;transition:background .15s}
+#preview{position:relative}#preview.edge,#preview.rz{box-shadow:inset 3px 0 0 var(--accent)}
+.xa-list{overflow:auto;flex:1;padding:4px 0;min-height:0}
+.xa-row{display:flex;align-items:center;gap:6px;padding:3px 10px;font-size:12.5px;cursor:pointer;border-left:3px solid transparent;user-select:none}
+.xa-row:hover{background:var(--accent-soft)}.xa-row.on{background:var(--accent-soft);border-left-color:var(--accent)}
+.xa-row .cd{color:var(--muted,#7a8190);font-size:11px;min-width:34px}.xa-row .xa-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.xa-row .b{font-weight:600}
+.xa-tg{width:18px;height:18px;flex:none;border:0;background:transparent;cursor:pointer;color:var(--muted,#7a8190)}
+.xa-act{display:flex;gap:8px;margin-top:4px}#xaSel{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:var(--paper)}
+.tree-grip{position:absolute;top:0;bottom:0;right:0;width:14px;cursor:col-resize;z-index:5;touch-action:none}
+.tree-grip::after{content:"";position:absolute;top:0;bottom:0;left:8px;width:3px;border-radius:2px;background:transparent;transition:background .15s}
 .tree-grip:hover::after,.tree-grip.on::after{background:var(--accent)}
 .btn.maj{background:#e8820c;border-color:#c96d00;color:#fff;font-weight:650}
 .btn.maj:hover{background:#d4740a}
@@ -1101,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.109.0", deploiement: 109};
+const APP = {version: "0.110.0", deploiement: 110};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2057,15 +2064,15 @@ function nodeRow(n,lot,mode,cls="chap"){
   return h;
 }
 /* ---------- Aperçu ---------- */
-const prevModes=()=>{const o=["bpu","cctp","lib"],p=(state.prevs&&state.prevs.length?state.prevs:[state.prev||"bpu"]).filter(k=>o.includes(k));return p.length?o.filter(k=>p.includes(k)):["bpu"];};
+const prevModes=()=>{const o=["bpu","cctp","lib","aff"],p=(state.prevs&&state.prevs.length?state.prevs:[state.prev||"bpu"]).filter(k=>o.includes(k));return p.length?o.filter(k=>p.includes(k)):["bpu"];};
 function renderPreview(){
   const el=$("#preview"), M=prevModes();
-  if(M.length===1){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";state.prev=M[0];if(M[0]==="lib"){renderLibPanel();return;}return renderPreviewOne(el,M[0],false);}
+  if(M.length===1){el.classList.remove("multi");if(el.querySelector(".pv-sec"))el.innerHTML="";state.prev=M[0];if(M[0]==="lib"){renderLibPanel();return;}if(M[0]==="aff"){renderAffPanel(el,false);return;}return renderPreviewOne(el,M[0],false);}
   el.classList.add("multi"); state.prev=M[0];
   const keep=el.querySelector("#plQ")?{q:$("#plQ").value,st:$("#plList")?$("#plList").scrollTop:0}:null;
   const sc={};el.querySelectorAll(".pv-sec").forEach(x=>sc[x.dataset.pv]=x.scrollTop);
   el.innerHTML=`<div class="prev-h"><b>Aperçu</b>${prevSeg()}</div><div class="pv-secs">${M.map(m=>`<section class="pv-sec" data-pv="${m}"></section>`).join("")}</div>`;
-  M.forEach(m=>{const s=el.querySelector(`[data-pv="${m}"]`); if(m==="lib")renderLibPanel(true,s,keep&&keep.q); else renderPreviewOne(s,m,true); if(sc[m])s.scrollTop=sc[m]; if(m!=="lib"){const c=s.querySelector(".cur");if(c){const r=c.getBoundingClientRect(),q=s.getBoundingClientRect();if(r.top<q.top+30||r.bottom>q.bottom-30)s.scrollTop+=r.top-q.top-q.height/4;}}});
+  M.forEach(m=>{const s=el.querySelector(`[data-pv="${m}"]`); if(m==="lib")renderLibPanel(true,s,keep&&keep.q); else if(m==="aff")renderAffPanel(s,true); else renderPreviewOne(s,m,true); if(sc[m])s.scrollTop=sc[m]; if(m!=="lib"){const c=s.querySelector(".cur");if(c){const r=c.getBoundingClientRect(),q=s.getBoundingClientRect();if(r.top<q.top+30||r.bottom>q.bottom-30)s.scrollTop+=r.top-q.top-q.height/4;}}});
   if(keep&&$("#plList"))$("#plList").scrollTop=keep.st;
 }
 function renderPreviewOne(el,mode,multi){
@@ -2104,7 +2111,7 @@ function coverHtml(){
 </div>`;
 }
 const prevMulti=()=>state.prevMulti!==undefined?!!state.prevMulti:prevModes().length>1;
-const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${prevModes().includes(k)}" title="${prevMulti()?"Afficher ou masquer ce volet (plusieurs possibles)":"Afficher ce volet"}">${l}</button>`).join("")}</div><button class="btn sm" data-prevmulti="1" aria-pressed="${prevMulti()}" title="Multi-fenêtre : afficher plusieurs volets en même temps">Multi-fenêtre</button><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
+const prevSeg=()=>`<div class="prev-ctl"><div class="seg" role="group" aria-label="Affichage du panneau">${[["bpu","BPU"],["cctp","CCTP"],["lib","Bibliothèque"],["aff","Ouvrir affaire"]].map(([k,l])=>`<button data-prev="${k}" aria-pressed="${prevModes().includes(k)}" title="${prevMulti()?"Afficher ou masquer ce volet (plusieurs possibles)":"Afficher ce volet"}">${l}</button>`).join("")}</div><button class="btn sm" data-prevmulti="1" aria-pressed="${prevMulti()}" title="Multi-fenêtre : afficher plusieurs volets en même temps">Multi-fenêtre</button><button class="btn sm" id="prevHide" title="Masquer le volet Aperçu" aria-label="Masquer le volet Aperçu">Masquer ›</button></div>`;
 function renderLibPanel(force,sec,q0){
   const el=sec||$("#preview"), multi=!!sec;
   if(!force&&el.querySelector("#plQ")){$("#plTarget").textContent=libTargetText();return;}
@@ -2651,8 +2658,8 @@ $("#preview").addEventListener("click",e=>{
   const setW=w=>{document.documentElement.style.setProperty("--prevW",w?w+"px":"");};
   const keep=w=>{try{if(AG){UI.prevW=w||0;LS.setItem(KEY,"");}else localStorage.setItem("agoa-prevW",w||0);}catch(e){}};
   const w0=W(); if(w0) setW(w0);
-  const edge=e=>window.innerWidth>1150&&e.clientX-pv.getBoundingClientRect().left<8;
-  pv.addEventListener("pointermove",e=>{if(!pv.classList.contains("rz"))pv.style.cursor=edge(e)?"col-resize":"";});
+  const edge=e=>window.innerWidth>1150&&e.clientX-pv.getBoundingClientRect().left<16;
+  pv.addEventListener("pointermove",e=>{if(!pv.classList.contains("rz")){const g=edge(e);pv.style.cursor=g?"col-resize":"";pv.classList.toggle("edge",g);}});pv.addEventListener("pointerleave",()=>pv.classList.remove("edge"));
   pv.addEventListener("pointerdown",e=>{if(!edge(e))return;e.preventDefault();const x0=e.clientX,w=pv.getBoundingClientRect().width;let nw=w;pv.classList.add("rz");pv.setPointerCapture(e.pointerId);
     const mv=ev=>{nw=Math.max(280,Math.min(Math.round(w+x0-ev.clientX),Math.round(window.innerWidth*0.6)));setW(nw);};
     const up=()=>{pv.classList.remove("rz");pv.removeEventListener("pointermove",mv);pv.removeEventListener("pointerup",up);keep(nw);};
@@ -2775,6 +2782,53 @@ document.addEventListener("keydown",e=>{
   addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persist();});
   addEventListener("beforeunload",persist);
 })();
+
+/* ---------- Volet « Ouvrir affaire » : consulter une autre affaire pour en copier des éléments ---------- */
+let xaId=null, xaSeen=null; const xaSel=new Set(), xaOpen=new Set(); let xaMap={}, xaPar={}, xaScroll=0;
+const xaLab=a=>[a.op&&a.op.ref,a.op&&a.op.immeuble].filter(Boolean).join(" – ")||"Sans nom";
+function renderAffPanel(el,multi){
+  const old=el.querySelector(".xa-list"); if(old)xaScroll=old.scrollTop;
+  const others=store.affaires.filter(a=>state&&a.id!==state.id);
+  if(!others.find(a=>a.id===xaId))xaId=others[0]&&others[0].id||null;
+  const A=others.find(a=>a.id===xaId); xaMap={};xaPar={};
+  let rows="";
+  if(A){
+    const art=(list,d,par)=>list.map(ar=>{const k="a:"+ar.id,has=(ar.sub||[]).length;xaMap[k]={kind:"art",o:ar};xaPar[k]=par;const op=xaOpen.has(k);
+      return `<div class="xa-row${xaSel.has(k)?" on":""}" data-xk="${k}" style="padding-left:${10+d*14}px">${has?`<button class="xa-tg" data-xtg="${k}">${op?"−":"+"}</button>`:`<span class="xa-tg"></span>`}<span class="cd">${esc(ar.code||"")}</span><span class="xa-t${isTitle(ar)?" b":""}">${esc(ar.titre)}</span></div>`+(has&&op?art(ar.sub,d+1,k):"");}).join("");
+    const node=(n,d,par,kind)=>{const k="n:"+n.nid,op=xaOpen.has(k);xaMap[k]={kind,o:n};xaPar[k]=par;
+      return `<div class="xa-row nd${xaSel.has(k)?" on":""}" data-xk="${k}" style="padding-left:${6+d*14}px"><button class="xa-tg" data-xtg="${k}">${op?"−":"+"}</button><span class="cd">${esc(n.code||"")}</span><span class="xa-t b">${esc(n.titre)}</span></div>`
+        +(op?art(n.art||[],d+1,k)+(n.children||[]).map(c=>node(c,d+1,k,"node")).join(""):"");};
+    try{A.data.forEach(l=>{if(!l.nid)l.nid=nid();(function w(n){(n.children||[]).forEach(c=>{if(!c.nid)c.nid=nid();w(c);});})(l);});}catch(_){}
+    if(xaSeen!==A.id){xaSeen=A.id;A.data.forEach(l=>xaOpen.add("n:"+l.nid));}
+    rows=A.data.map(l=>node(l,0,null,"lot")).join("");
+  }
+  el.innerHTML=`<div class="prev-h"><b>Ouvrir une affaire</b>${multi?"":prevSeg()}</div>
+    <div class="pl-top"><select id="xaSel" aria-label="Affaire à consulter">${others.length?others.map(a=>`<option value="${a.id}"${a.id===xaId?" selected":""}>${esc(xaLab(a))}</option>`).join(""):`<option>Aucune autre affaire</option>`}</select>
+      <p class="hint">Cliquez pour sélectionner (Ctrl + clic pour plusieurs : articles, chapitres ou lots), puis copiez. Double-clic : copie et colle à l'emplacement choisi à gauche.</p>
+      <div class="xa-act"><button class="btn sm" data-xacopy="1">Copier la sélection (${xaSel.size})</button><button class="btn sm" data-xapaste="1" title="Colle à l'emplacement choisi dans la colonne de gauche (Ctrl + V)">Coller à gauche</button></div></div>
+    <div class="xa-list">${rows||`<p class="hint" style="padding:14px">${others.length?"Cette affaire est vide.":"Créez ou importez une autre affaire pour pouvoir en copier des articles."}</p>`}</div>`;
+  const l=el.querySelector(".xa-list"); if(l)l.scrollTop=xaScroll;
+}
+function xaCopy(){
+  const ks=[...xaSel].filter(k=>xaMap[k]); if(!ks.length){toast("Sélectionnez d'abord des éléments à copier");return false;}
+  const top=ks.filter(k=>{let p=xaPar[k];while(p){if(xaSel.has(p))return false;p=xaPar[p];}return true;});
+  const arts=top.filter(k=>xaMap[k].kind==="art");
+  let c;
+  if(arts.length)c={kind:"arts",items:arts.map(k=>cloneJ(xaMap[k].o))};
+  else{const nodes=top.map(k=>xaMap[k]);c={kind:nodes.every(x=>x.kind==="lot")?"lots":"nodes",items:nodes.map(x=>cloneJ(x.o))};}
+  clip=c; toast(`${c.items.length} élément${c.items.length>1?"s":""} copié${c.items.length>1?"s":""} : choisissez l'emplacement à gauche puis Ctrl + V`); return true;
+}
+document.addEventListener("click",e=>{
+  const pv=e.target.closest("#preview,.pv-sec"); if(!pv) return;
+  const tg=e.target.closest("[data-xtg]"); if(tg){const k=tg.dataset.xtg;xaOpen.has(k)?xaOpen.delete(k):xaOpen.add(k);renderPreview();return;}
+  if(e.target.closest("[data-xacopy]")){xaCopy();return;}
+  if(e.target.closest("[data-xapaste]")){clipPaste();return;}
+  const r=e.target.closest(".xa-row"); if(!r) return;
+  const k=r.dataset.xk; if(e.ctrlKey||e.metaKey||e.shiftKey){xaSel.has(k)?xaSel.delete(k):xaSel.add(k);}else{xaSel.clear();xaSel.add(k);}
+  renderPreview();
+});
+document.addEventListener("dblclick",e=>{const r=e.target.closest(".xa-row"); if(!r)return; const k=r.dataset.xk; xaSel.clear();xaSel.add(k); renderPreview(); if(xaCopy())clipPaste();});
+document.addEventListener("change",e=>{if(e.target.id==="xaSel"){xaId=e.target.value;xaSel.clear();xaOpen.clear();xaSeen=null;xaScroll=0;renderPreview();}});
 /* ---------- Copier / coller (Ctrl+C, Ctrl+V) dans la colonne de gauche ---------- */
 function nodeMsel(k){
   const nc=nodeCtx(k); if(!nc) return;
