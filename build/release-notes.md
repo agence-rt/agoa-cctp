@@ -1,1 +1,1 @@
-Déploiement n°111 — Journal de temps partagé avec le launcher AGOA (suivi du temps par opération)
+Déploiement n°112 — Zone de saisie du calcul élargie, explication réduite
