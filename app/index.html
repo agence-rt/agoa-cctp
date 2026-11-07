@@ -1108,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.110.0", deploiement: 110};
+const APP = {version: "0.111.0", deploiement: 111};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -2759,6 +2759,9 @@ document.addEventListener("keydown",e=>{
 /* ---------- Compteur de temps de rédaction (par affaire) ---------- */
 (function(){
   const TM={}, IDLE=300; let lastAct=Date.now(), pend=0, last="", dirtyT=0;
+  // Journal partagé avec le launcher AGOA : un créneau par minute de travail réel, rattaché à la référence de l'affaire.
+  const TJ={ref:null,sec:0,add(ref,s){if(this.ref!==ref){this.flush();this.ref=ref;}this.sec+=s;if(this.sec>=60)this.flush();},
+    flush(){if(this.sec>=1&&window.agoa&&window.agoa.logTime)window.agoa.logTime(this.ref||"",this.sec);this.sec=0;}};
   ["keydown","mousedown","wheel","input","touchstart","paste"].forEach(ev=>addEventListener(ev,()=>{lastAct=Date.now();},true));
   const fmt=t=>{const m=Math.floor(t/60),h=Math.floor(m/60);return h?`${h} h ${String(m%60).padStart(2,"0")}`:`${m} min`;};
   function persist(){try{if(state&&TM[state.id]!=null){state.temps=Math.max(state.temps||0,TM[state.id]);LS.setItem(KEY,JSON.stringify(store));}}catch(_){}}
@@ -2770,17 +2773,18 @@ document.addEventListener("keydown",e=>{
     const idle=(Date.now()-lastAct)/1000, focused=document.visibilityState==="visible"&&document.hasFocus();
     let run=false;
     if(focused){
-      if(idle<5){TM[id]+=1+pend;pend=0;run=true;}
+      if(idle<5){TM[id]+=1+pend;TJ.add((state.op&&state.op.ref)||"",1+pend);pend=0;run=true;}
       else if(idle<IDLE){pend+=1;run=true;}
       else pend=0;
     }
+    if(!run)TJ.flush();
     state.temps=Math.max(state.temps||0,TM[id]);
     chip.hidden=false; const t="⏱ "+fmt(TM[id])+(run?"":" · pause");
     if(t!==last){chip.textContent=t;last=t;} chip.classList.toggle("run",run);chip.classList.toggle("pause",!run);
     if(++dirtyT>=20){dirtyT=0;persist();}
   },1000);
   addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")persist();});
-  addEventListener("beforeunload",persist);
+  addEventListener("beforeunload",()=>{TJ.flush();persist();});
 })();
 
 /* ---------- Volet « Ouvrir affaire » : consulter une autre affaire pour en copier des éléments ---------- */

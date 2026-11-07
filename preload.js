@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("agoa", {
   saveData: text => ipcRenderer.send("save-data", text),
   getConfig: () => ipcRenderer.sendSync("get-config"),
   whoami: () => ipcRenderer.sendSync("whoami"),
+  logTime: (ref, sec) => ipcRenderer.send("temps-log", ref, sec),      // journal de temps partagé avec le launcher AGOA
   dbxScan: dir => ipcRenderer.invoke("dbx-scan", dir),
   dbxRead: (dir, rel) => ipcRenderer.invoke("dbx-read", dir, rel),
   mailGet: () => ipcRenderer.invoke("mail-get"),

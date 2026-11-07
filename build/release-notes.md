@@ -1,1 +1,1 @@
-Déploiement n°110 — Volet Ouvrir affaire (copie d'articles depuis une autre affaire), poignées de redimensionnement élargies
+Déploiement n°111 — Journal de temps partagé avec le launcher AGOA (suivi du temps par opération)

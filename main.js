@@ -744,6 +744,7 @@ ipcMain.handle("mail-draft", (e, to, subject, body) => { shell.openExternal("mai
 /* sauvegardes versionnées locales (dans le profil de l'application, hors Dropbox) */
 const bkDir = id => path.join(app.getPath("userData"), "sauvegardes", String(id).replace(/[^\w.-]+/g, "_"));
 const bkStrip = t => String(t).replace(/"enregistre_le":\s*"[^"]*"/, "");
+ipcMain.on("temps-log", (e, ref, sec) => { try { require("./temps").logTime("cctp", ref, sec); } catch {} });   // temps de rédaction -> journal du launcher
 ipcMain.on("whoami", e => { try { e.returnValue = require("os").userInfo().username; } catch { e.returnValue = ""; } });
 ipcMain.handle("bk-write", (e, id, text) => {
   const d = bkDir(id); fs.mkdirSync(d, { recursive: true });
