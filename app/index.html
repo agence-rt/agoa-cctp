@@ -1108,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.112.0", deploiement: 112};
+const APP = {version: "0.113.0", deploiement: 113};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3361,10 +3361,10 @@ function buildSynthPdf(J,info){
     if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,TGD);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
       Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(wa(nf(base*t/Q.base)),R-1,y+3.6,{align:"right"});y+=5;});}}}
   /* 3. tableau comparatif global */
-  land=n>2; np(); h2("2. Tableau comparatif global");
-  const showPU=n<=5, fs=n>4?6.6:7.2, eurS=v=>wa(fmt(v,2)+" €");
+  land=n>3; np(); h2("2. Tableau comparatif global");
+  const showPU=n<=5&&n!==3, fs=n>4?6.6:7.2, eurS=v=>wa(fmt(v,2)+" €");
   const cCode=15,cU=7,cQ=11, avail=Math.max(1,W-cCode-cU-cQ-60), per=Math.min(avail/n,n<=3?56:50);
-  const cEq=Math.min(12,Math.max(9,per*.2)), cEp=showPU?Math.min(16,per*.3):0, cEm=per-cEq-cEp;
+  const cEq=showPU?Math.min(12,Math.max(9,per*.2)):Math.min(14,Math.max(11.5,per*.38)), cEp=showPU?Math.min(16,per*.3):0, cEm=per-cEq-cEp;
   const cDes=W-cCode-cU-cQ-n*per;
   const fit=(t,w)=>{t=wa(t);if(doc.getTextWidth(t)<=w)return t;while(t.length>1&&doc.getTextWidth(t+"...")>w)t=t.slice(0,-1);return t.trimEnd()+"...";};
   const xs={code:L,des:L+cCode,q:L+cCode+cDes,u:L+cCode+cDes+cQ};
@@ -3402,12 +3402,15 @@ function buildSynthPdf(J,info){
       doc.text(lines[0],xs.des+1+ind,y+3.3);
       if(w.leaf){
         font("normal",fs); doc.text(wa(fq(w.q,w.o.u)),xs.q+cQ-1,y+3.3,{align:"right"}); doc.text(wa(w.o.u||""),xs.u+cU/2,y+3.3,{align:"center"});
-        E.forEach((e,j)=>{if(LOUT[j])return;const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!w.ex&&d!=null&&Math.abs(d)>=A.seuil, qc=qChg(w,j);
+        E.forEach((e,j)=>{if(LOUT[j])return;const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!SY.noEcart&&!w.ex&&d!=null&&Math.abs(d)>=A.seuil, qc=qChg(w,j);
           if(fl){fill(d>0?UP:DN);doc.rect(xp(j),y,cEp+cEm,h,"F");}
           if(qc){fill(QCH);doc.rect(xq(j),y,cEq,h,"F");font("bold",fs,INK);doc.text(wa(fq(w.qe[j],(w.ue&&w.ue[j])||w.o.u)),xq(j)+cEq-1,y+3.3,{align:"right"});}
           font("normal",fs,m?MUTED:INK);
           const mk=(w.mk&&w.mk[j])||"";
-          if(mk&&MKC[mk]){fill(MKC[mk][0]);doc.rect(xp(j),y,cEp+cEm,h,"F");font("bold",fs-0.4,MKC[mk][1]);doc.text(wa(MARKS[mk][0]),xmt(j)+cEm-1,y+3.3,{align:"right"});}
+          if(mk&&MKC[mk]){font("bold",fs-0.4,MKC[mk][1]);const mt=wa(MARKS[mk][0]);
+            if(mk==="inc"){const tw=doc.getTextWidth(mt);fill(MKC.inc[0]);doc.roundedRect(xmt(j)+cEm-1-tw-1.4,y+0.5,tw+2.8,h-1,0.9,0.9,"F");font("bold",fs-0.4,MKC.inc[1]);}
+            else{fill(MKC[mk][0]);doc.rect(xp(j),y,cEp+cEm,h,"F");font("bold",fs-0.4,MKC[mk][1]);}
+            doc.text(mt,xmt(j)+cEm-1,y+3.3,{align:"right"});}
           else if(m){doc.text("-",xmt(j)+cEm-1,y+3.3,{align:"right"});}
           else{if(showPU){doc.text(nf(p),xp(j)+cEp-1,y+3.3,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xp(j)+0.8,y+3.3);font("normal",fs,INK);}}doc.text(nf(w.a[j]),xmt(j)+cEm-1,y+3.3,{align:"right"});}});
       }else if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});
@@ -4475,6 +4478,7 @@ function renderSynth(){
   const td=(r,j)=>r.out&&r.out[j]?`<td class="n out">–</td>`:`<td class="n${r.best===j?" best":""}">${r.k==="tva"?eur2(r.v[j]):eur2(r.v[j])}</td>`;
   $("#synth").innerHTML=`
    <div class="syn-bar"><button class="btn primary" id="expSynth">Exporter synthèse (PDF)</button><button class="btn" id="expSynthX">Exporter tableaux (Excel)</button>
+<label class="chk" style="margin-left:14px" title="Surligne en orange (plus cher) ou en bleu (moins cher) les prix qui s'écartent de la moyenne dans le tableau comparatif global du PDF"><input type="checkbox" id="syEcart" ${S.noEcart?"":"checked"}> Afficher les couleurs d'écart de prix</label>
 </div>
    <details class="syn-ed" open><summary>Lettre d'analyse des offres (première page du PDF)</summary>
    <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
@@ -4493,6 +4497,7 @@ function renderSynth(){
   {const b=$("#syBestAuto");if(b)b.onclick=()=>{delete synObj().best;save();renderSynth();};}
   sy.querySelectorAll("[data-syreset]").forEach(b=>b.onclick=()=>{delete synObj().txt[b.dataset.syreset];save();renderSynth();});
   sy.querySelectorAll("input[data-sydv]").forEach(i=>{i.addEventListener("input",()=>{synObj().devis[i.dataset.sydv]=i.value.trim();save();});i.addEventListener("change",()=>renderSynth());});
+  {const c=$("#syEcart");if(c)c.onchange=()=>{synObj().noEcart=!c.checked;save();};}
   $("#sy-date").addEventListener("input",e=>{synObj().date=e.target.value;save();});
   $("#sy-lieu").addEventListener("input",e=>{synObj().lieu=e.target.value;save();});
 }

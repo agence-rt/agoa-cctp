@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°113** — v0.113.0 — 2026-11-08 — Synthèse : couleurs d'écart optionnelles, « Compris » en pastille verte, tableau global en portrait pour 3 entreprises
 - **n°112** — v0.112.0 — 2026-11-07 — Zone de saisie du calcul élargie, explication réduite
 - **n°111** — v0.111.0 — 2026-11-07 — Journal de temps partagé avec le launcher AGOA (suivi du temps par opération)
 - **n°110** — v0.110.0 — 2026-11-06 — Volet Ouvrir affaire (copie d'articles depuis une autre affaire), poignées de redimensionnement élargies
