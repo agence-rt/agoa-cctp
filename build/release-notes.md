@@ -1,1 +1,1 @@
-Déploiement n°113 — Synthèse : couleurs d'écart optionnelles, « Compris » en pastille verte, tableau global en portrait pour 3 entreprises
+Déploiement n°114 — Synthèse PDF : mise en page du modèle (lettre, encadré gris, signature), paragraphe diagnostics en option (rouge), € sur les prix, ligne blanche entre lots, annotation de bas de tableau retirée

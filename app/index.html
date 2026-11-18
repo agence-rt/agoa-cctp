@@ -1108,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.113.0", deploiement: 113};
+const APP = {version: "0.114.0", deploiement: 114};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1151,6 +1151,7 @@ const AGENCE={get nom(){return archCur().nom;},get marque(){return archCur().mar
 const OP_DEF={get moe(){return AGENCE.nom;},get moeTel(){return AGENCE.tel;},get moeAdresse(){return AGENCE.adresse;},get moeWeb(){return AGENCE.web;},get moeEmail(){return AGENCE.email;}};
 const archFoot=()=>[AGENCE.marque.toUpperCase(),AGENCE.adresse,AGENCE.web].filter(Boolean).join("   ·   ");
 const archLogo=()=>{try{return ARCH_LOGOS[archCur().key]||null;}catch(e){return null;}};
+const archSig=()=>{try{return (typeof ARCH_SIGS!=="undefined"&&ARCH_SIGS[archCur().key])||null;}catch(e){return null;}};
 function coverInfo(o){
   const v=k=>String(o[k]||"").trim(), d=(k,def)=>v(k)||def;
   const adr=[v("adresse"),[v("cp"),v("ville")].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -3244,15 +3245,16 @@ function pdfRichLetter(doc,wa,src,x0,w,y,o){
   const stl=r=>{const b=r.b||o.bold;return b&&r.i?"bolditalic":b?"bold":r.i?"italic":"normal";};
   const fnt=(st,sz)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);doc.setTextColor(ink[0],ink[1],ink[2]);};
   let num=0, prevLi=false, prevOrd=false;
-  rtParse(rtSrc(src)).forEach(bk=>{
+  (o.blocks||rtParse(rtSrc(src))).forEach(bk=>{
     const toks=[]; bk.runs.forEach(r=>{ if(r.br){toks.push({br:1});return;}
       const sz=(r.sz?r.sz/RT_BASE:1)*base; wa(r.t).split(/( +)/).forEach(p=>{if(p==="")return;fnt(stl(r),sz);toks.push(p[0]===" "?{sp:1,r,sz,w:doc.getTextWidth(" ")*p.length}:{t:p,r,sz,w:doc.getTextWidth(p)});});});
     const lh0=base*0.3528*LH;
-    if(!toks.length){y+=lh0*0.6;prevLi=false;return;}
+    if(!toks.length||bk.runs.every(r=>r.br)){y+=lh0;prevLi=false;return;} // ligne vide = une vraie ligne blanche
     if(bk.li){num=(prevLi&&bk.ord&&prevOrd)?num+1:1;} prevLi=bk.li; prevOrd=bk.ord;
     const ind=(bk.li?6:0)+(bk.ind||0)*5, avl=w-ind; let line=[],lw=0,first=true;
     const emit=last=>{ while(line.length&&line[line.length-1].sp){lw-=line.pop().w;} if(!line.length){return;}
-      const lh=Math.max(lh0,...line.map(t=>t.sz*0.3528*LH)), al=bk.align||"left"; let x=x0+ind, extra=0, ns=line.filter(t=>t.sp).length;
+      const lh=Math.max(lh0,...line.map(t=>t.sz*0.3528*LH)), al=bk.align||(bk.li?"left":(o.align||"left"));
+      if(o.pg&&y+lh>o.pg.B)y=o.pg.brk(); let x=x0+ind, extra=0, ns=line.filter(t=>t.sp).length;
       if(al==="justify"&&!last&&ns>0)extra=Math.max(0,(avl-lw)/ns); else if(al==="center")x+=Math.max(0,(avl-lw)/2); else if(al==="right")x+=Math.max(0,avl-lw);
       const yb=y+lh*0.78; let cx=x;
       line.forEach(t=>{const ww=t.w+(t.sp?extra:0); if(t.r&&t.r.hl){doc.setFillColor(255,241,118);doc.rect(cx,y+lh*0.1,ww,t.sz*0.3528*1.12,"F");} cx+=ww;});
@@ -3260,7 +3262,9 @@ function pdfRichLetter(doc,wa,src,x0,w,y,o){
       if(bk.li&&first){ if(bk.ord){fnt("normal",base);doc.text(num+".",x0+ind-5.2,yb);} else {doc.setFillColor(o.red[0],o.red[1],o.red[2]);doc.circle(x0+ind-3,yb-1.2,0.7,"F");} }
       first=false; y+=lh; line=[]; lw=0; };
     toks.forEach(t=>{ if(t.br){emit(true);return;}
-      if(!t.sp&&lw+t.w>avl+0.01&&line.length){emit(false);}
+      if(!t.sp&&lw+t.w>avl+0.01&&line.length){
+        if(/^[:;!?»]$/.test(t.t)&&line.length>=3&&line[line.length-1].sp){const sp=line.pop();lw-=sp.w;const wd=line.pop();lw-=wd.w;emit(false);line.push(wd);lw+=wd.w;line.push(sp);lw+=sp.w;}
+        else emit(false);}
       if(t.sp&&!line.length)return; line.push(t); lw+=t.w; });
     emit(true);
     y+=lh0*0.28;
@@ -3272,99 +3276,130 @@ function buildSynthPdf(J,info){
   const RED=[193,0,3], INK=[51,51,51], MUTED=[95,107,118], PALE=[251,232,232], LINE=[235,201,201], WHITE=[255,255,255], OUTG=[243,243,241], UP=[255,224,196], DN=[220,232,247], GRN=[30,120,90], TGP=[238,238,238], TGD=[80,80,80], QCH=[255,243,168], MKC={inc:[[221,241,231],[31,107,79]],ninc:[[251,224,221],[163,42,31]],so:[[230,233,237],[77,89,100]]};
   const wa=t=>String(t==null?"":t).replace(/[  -​ ]/g," ").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/≥/g,">=").replace(/≤/g,"<=").replace(/→/g,"->").replace(/−/g,"-").replace(/★/g,"*").replace(/[^\x09\x0A\x20-\x7E¡-ÿŒœ–—…€•]/g,"");
   const doc=new J({unit:"mm",format:"a4",orientation:"portrait",compress:true});
-  let PW=210,PH=297,R=PW-12,B=PH-17,W=R-12; const L=12,T=24; let land=false;
+  let PW=210,PH=297,R=PW-12,B=PH-17,W=R-12,MR=12,BM=17; let L=12; const T=24; let land=false;
   const font=(st,sz,c)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);const k=c||INK;doc.setTextColor(k[0],k[1],k[2]);};
   const fill=c=>doc.setFillColor(c[0],c[1],c[2]);
   const ref=[o.ref,o.immeuble].filter(Boolean).join(" - ")||"Affaire";
   const nf=v=>wa(fmt(v,2)), sgn2=v=>wa((v>=0?"+":"-")+fmt(Math.abs(v),2)), pc=v=>v==null?"-":wa((v>=0?"+":"-")+fmt(Math.abs(v),1)+" %");
   let y=T;
-  const np=()=>{doc.addPage("a4",land?"landscape":"portrait");PW=land?297:210;PH=land?210:297;R=PW-12;B=PH-17;W=R-L;y=T;};
+  const np=()=>{doc.addPage("a4",land?"landscape":"portrait");PW=land?297:210;PH=land?210:297;R=PW-MR;B=PH-BM;W=R-L;y=T;};
   const need=h=>{if(y+h>B){np();return true;}return false;};
   const cut=(x,yy,w,h,c,col)=>{fill(col||RED);doc.lines([[w-c,0],[0,h],[-w,0],[0,-(h-c)]],x+c,yy,[1,1],"F",true);};
   const h2=t=>{need(16);y+=3;cut(L,y,W,7,2.6);font("bold",10,WHITE);doc.text(wa(t),L+3.5,y+4.9);y+=11;};
   const para=(t,sz=9.5,st="normal",c)=>{font(st,sz,c);const lh=sz*0.3528*1.45;doc.splitTextToSize(wa(t),W).forEach(l=>{need(lh);doc.text(l,L,y+lh*0.8);y+=lh;});y+=1.2;};
   const bullet=(t,sz=9.2)=>{font("normal",sz);const lh=sz*0.3528*1.45;doc.splitTextToSize(wa(t),W-6).forEach((l,i)=>{need(lh);if(!i){fill(RED);doc.circle(L+1.6,y+lh*0.55,0.6,"F");}doc.text(l,L+5,y+lh*0.8);y+=lh;});y+=0.8;};
 
-  /* page 1 : lettre d'analyse des offres (portrait) */
+  /* lettre d'analyse des offres, mise en page du modèle : marges de 25 mm, encadré gris, bandeau « ANALYSE DES OFFRES » */
   const RET=synthRet(M), SD=synthDefaults(M,BD,RET), SY=synObj(), txt=k=>synText(k,SD);
+  const GBOX=[242,242,242], GBAND=[217,217,217], BLK=[0,0,0];
+  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
+  const nE=v=>wa(fmt(v,2)+" €"), sgnE=v=>wa((v>=0?"+":"-")+fmt(Math.abs(v),2)+" €");
+  const letter=on=>{L=on?25:12;MR=on?25:12;BM=on?27:17;R=PW-MR;B=PH-BM;W=R-L;};
+  letter(true);
+  const rich=(blocks,o2)=>{if(!blocks||!blocks.length)return;
+    y=pdfRichLetter(doc,wa,null,L,W,y,Object.assign({base:10.5,ink:INK,red:BLK,blocks,align:"justify",pg:{get B(){return B;},brk:()=>{np();return y;}}},o2||{}));};
+  const heading=t=>{need(26);y+=5;font("bold",10,BLK);doc.text(wa(t),L,y+3.5);y+=9;};
   {
-    const lx=20, lw=170; let yy=22; const LG=archLogo();
-    if(LG){let lh=LG.w>LG.h?26:32, lw2=lh*LG.w/LG.h; if(lw2>80){lw2=80;lh=lw2*LG.h/LG.w;} try{doc.addImage(LG.src,"JPEG",lx,10,lw2,lh,undefined,"FAST");}catch(e){console.error(e);} yy=Math.max(22,10+lh+9);}
-    font("bold",10,INK);
-    [["Code travaux",o.ref],["Objet",(o.objet||"").toUpperCase()],["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Gestionnaire",o.gestionnaire]].forEach(([k,v])=>{
-      if(!v)return; font("normal",9.5,MUTED); doc.text(wa(k+" :"),lx,yy); font("bold",10,INK);
-      doc.splitTextToSize(wa(v),lw-36).forEach((l,i)=>{doc.text(l,lx+36,yy);yy+=5;}); yy+=0.6;});
-    yy+=8; font("bold",17,RED); doc.text("ANALYSE DES OFFRES",lx,yy); doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(lx,yy+2.5,lx+lw,yy+2.5); yy+=14;
-    font("normal",10.5,INK); doc.text(wa(((SY.lieu!=null?SY.lieu:"Paris")?(SY.lieu!=null?SY.lieu:"Paris")+" le ":"")+(SY.date||dateFr())),lx,yy); yy+=10;
-    doc.text("Madame, Monsieur,",lx,yy); yy+=8;
-    const blk=(t,st,gap)=>{ if(!String(t||"").trim())return;
-      if(isRich(t)){const y2=pdfRichLetter(doc,wa,t,lx,lw,yy,{base:10.5,ink:INK,red:RED,bold:st==="bold"}); yy=y2+(gap==null?4:gap); return;}
-      font(st||"normal",10.5,INK);
-      String(t).split("\n").forEach(raw=>{const bl=/^\s*[-•]\s+/.test(raw), line=raw.replace(/^\s*[-•]\s+/,""); const ind=bl?8:0;
-        const ls=doc.splitTextToSize(wa(line),lw-ind-(bl?0:0)); ls.forEach((l,i)=>{ if(bl&&!i){fill(RED);doc.circle(lx+3,yy-1.2,0.7,"F");} doc.text(l,lx+ind,yy); yy+=5.4;}); });
-      yy+=gap==null?4:gap;};
-    blk(txt("letter"),"normal",0);
-    if(yy>270)console.warn("lettre trop longue");
+    let yy=15; const LG=archLogo();
+    if(LG){const lw2=LG.w>LG.h?68:34, lh=lw2*LG.h/LG.w; try{doc.addImage(LG.src,"JPEG",L+1,yy,lw2,lh,undefined,"FAST");}catch(e){console.error(e);} yy+=lh+8;} else yy=22;
+    const vx=L+36.5, vw=R-vx-3; font("normal",10,INK);
+    const FL=[["Code travaux",o.ref,1],["Objet",(o.objet||"").toUpperCase()],["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Gestionnaire",o.gestionnaire]].filter(f=>f[1]).map(f=>({k:f[0],red:!!f[2],ls:doc.splitTextToSize(wa(f[1]),vw)}));
+    const hBox=FL.reduce((a,f)=>a+f.ls.length*5+1.2,0)+5;
+    fill(GBOX); doc.rect(L-1,yy,W+1,hBox,"F");
+    let ty=yy+6;
+    FL.forEach(f=>{font("normal",10,INK);doc.text(wa(f.k+" :"),vx-2,ty,{align:"right"});
+      if(f.red)font("bold",10.5,RED);else font("normal",10,INK);
+      f.ls.forEach(l=>{doc.text(l,vx,ty);ty+=5;}); ty+=1.2;});
+    yy+=hBox+12;
+    fill(GBAND); doc.rect(L-1,yy-4.8,W+1,6.6,"F"); font("bold",10,BLK); doc.text("ANALYSE DES OFFRES",L-1+(W+1)/2,yy-0.2,{align:"center"}); yy+=14;
+    font("normal",10.5,INK); doc.text(wa(((SY.lieu!=null?SY.lieu:"Paris")?(SY.lieu!=null?SY.lieu:"Paris")+" le ":"")+(SY.date||dateFr())),L,yy); yy+=10;
+    doc.text("Madame, Monsieur,",L,yy); yy+=7;
+    y=yy;
   }
-  doc.addPage("a4","portrait"); y=T;
-  /* titre */
-  font("bold",10.5,RED); doc.text("SYNTHÈSE DE LA CONSULTATION DES ENTREPRISES",L,y+4);
-  doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.4); doc.line(L,y+7,R,y+7); y+=14;
-  y+=2;
+  /* la lettre est découpée en trois : [introduction] / [observations → mieux-disants → pièces jointes] / [politesse + signature] */
+  const BL=rtParse(rtSrc(txt("letter"))), bT=b=>b.runs.map(r=>r.t||"").join("").trim();
+  const iO=BL.findIndex(b=>/^observations?\b/i.test(bT(b))), iC=BL.findIndex((b,i)=>i>Math.max(iO,-1)&&/^nous restons/i.test(bT(b)));
+  const e2=iC<0?BL.length:iC, partA=BL.slice(0,iO<0?e2:iO), partB=iO<0?[]:BL.slice(iO,e2), partC=BL.slice(e2);
+  rich(partA);
 
-  /* 1. tableau de synthèse */
-  h2("TABLEAU DE SYNTHÈSE");
-  const labW=Math.max(62,W-n*Math.min(32,(W-62)/n)), cw=(W-labW)/n;
-  const head=()=>{fill(TGP);doc.rect(L,y,W,7,"F");font("bold",8.5,TGD);doc.text("Lot / chapitre",L+2,y+4.8);
+  /* tableau de synthèse (sous « SYNTHESE DES TRAVAUX ») */
+  heading("SYNTHESE DES TRAVAUX");
+  let sfs=8.5, cw, labW;
+  {const mxT=E.reduce((m,e)=>Math.max(m,Math.abs(T0[e.id+"T"]||0),Math.abs(T0[e.id]||0)),1);
+   for(;;){font("bold",sfs);const wm=doc.getTextWidth(wa("+"+fmt(mxT,2)+" €"))+3.2;cw=Math.min(32,Math.max(wm,(W-62)/n));labW=Math.max(30,W-n*cw);cw=(W-labW)/n;if(labW>=50||sfs<=6.2)break;sfs=Math.round((sfs-0.3)*10)/10;}}
+  const head=()=>{fill(TGP);doc.rect(L,y,W,7,"F");font("bold",sfs,TGD);doc.text("Lot / chapitre",L+2,y+4.8);
     E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
     y+=7;};
   head();
   const row=(lab,vals,o2={})=>{
-    font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);
+    const sz=o2.sz||sfs;
+    font(o2.b?"bold":"normal",sz,o2.c);
     const lines=doc.splitTextToSize(wa(lab),labW-4-(o2.ind||0)).slice(0,2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
     if(o2.fill){fill(o2.fill);doc.rect(L,y,W,h,"F");}
-    font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);
+    font(o2.b?"bold":"normal",sz,o2.c);
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
-    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;const best=false;font(o2.b?"bold":"normal",o2.sz||8.5,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
+    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;font(o2.b?"bold":"normal",sz,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
     y+=h;};
-  const bestOf=vals=>{let b=-1,m=Infinity;vals.forEach((v,j)=>{if(v>0&&v<m){m=v;b=j;}});return b;};
   M.lots.forEach(({l,li,rows,tot},k)=>{
     const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), lc=lotCol(lotById(l.id)), lp=hexRgb(lc.pale), ls=hexRgb(lc.strong);
     if(k)y+=4;
     row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:true,fill:lp,c:ls});
     rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;const cv=E.map(e=>w.sub.e[e.id].ht);
-      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nf),{ind:3,best:bestOf(cv),out:OUT});});
-    row(`Sous-total lot ${pad(li+1)} HT`,ht.map(nf),{b:true,fill:lp,c:ls,best:bestOf(ht),out:OUT});
+      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nE),{ind:3,out:OUT});});
+    row(`Sous-total lot ${pad(li+1)} HT`,ht.map(nE),{b:true,fill:lp,c:ls,out:OUT});
   });
-  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
-  const vals=(o3,sfx)=>E.map(e=>nf(o3[e.id+(sfx||"")]));
+  const vals=(o3,sfx)=>E.map(e=>nE(o3[e.id+(sfx||"")]));
   y+=4; need(34); const yFr=y; row("TOTAL HT",vals(T0),{b:true,fill:TGP});
-  if(V0.est||E.some(e=>V0[e.id])){row("dont parties communes (HT)",vals(C0),{ind:3,sz:8});row("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:8});}
-  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];row(`TVA à ${pct(tx)}`,E.map(e=>nf(Rr.e[e.id]*tx/100)),{sz:8});});
+  if(V0.est||E.some(e=>V0[e.id])){row("dont parties communes (HT)",vals(C0),{ind:3,sz:sfs-0.5});row("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:sfs-0.5});}
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];row(`TVA à ${pct(tx)}`,E.map(e=>nE(Rr.e[e.id]*tx/100)),{sz:sfs-0.5});});
   row("TOTAL TTC",vals(T0,"T"),{b:true,fill:TGP});
   doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yFr,W,y-yFr);
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){y+=3;need(16);font("bold",9,TGD);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
-    OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgn2(nt(O.e[e.id]))),{ind:3});});}
+    OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgnE(nt(O.e[e.id]))),{ind:3});});}
+  y+=6;
 
-  {const P=pickSummary(M), LO=lotOffers(M);
-   if(M.lots.length>1&&P.rows.length){
-    y+=3;need(20);font("bold",9,TGD);doc.text("Entreprises consultées par lot",L,y+3.5);y+=6;
-    LO.filter(z=>z.list.length).forEach(z=>{need(12+z.list.length*8);{const zc=lotCol(lotById(z.x.l.id));fill(hexRgb(zc.pale));doc.rect(L,y,W,5.6,"F");font("bold",8.5,hexRgb(zc.strong));doc.text(wa(`Lot ${pad(z.x.li+1)} - ${doc.splitTextToSize(wa(z.x.l.titre),W-60)[0]}`),L+2,y+3.9);y+=5.6;}
-      z.list.forEach(o=>{need(9);const a2=entAdr(o.e);const bs=o.e.id===z.best;font(bs?"bold":"normal",8.5,INK);doc.text(wa(doc.splitTextToSize(entShort(o.e)+(bs?" (mieux-disant)":"")+(o.inc?" (incomplète)":""),90)[0]),L+2,y+3.6);
-        font(bs?"bold":"normal",8.5,INK);doc.text(wa(nf(o.ht)+" HT"),R-34,y+3.6,{align:"right"});doc.text(wa(nf(o.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
+  /* observations, mieux-disants, pièces jointes, puis mise en garde diagnostics (case à cocher, en rouge) */
+  rich(partB);
+  if(SY.diag!==false){y+=5;rich([{li:false,ord:false,ck:null,align:"justify",ind:0,runs:[{t:DIAG_TXT,u:true}]}],{ink:RED});}
+
+  /* tableau récapitulatif : meilleures offres par lot, total, quote-part des copropriétaires */
+  {const P=pickSummary(M), LO=lotOffers(M), Q=quoteCfg(), retE=E.find(e=>e.id===state.retenue)||E[0], hasP=M.lots.length>1&&P.rows.length,
+   base=hasP?P.cttc:(retE?C0[retE.id+"T"]:0), hasQ=Q.on&&base>0;
+   if(hasP||hasQ){
+    heading("TABLEAU RECAPITULATIF");
+    if(hasP){
+     LO.filter(z=>z.list.length).forEach(z=>{need(12+z.list.length*8);{const zc=lotCol(lotById(z.x.l.id));fill(hexRgb(zc.pale));doc.rect(L,y,W,5.6,"F");font("bold",8.5,hexRgb(zc.strong));doc.text(wa(`Lot ${pad(z.x.li+1)} - ${doc.splitTextToSize(wa(z.x.l.titre),W-60)[0]}`),L+2,y+3.9);y+=5.6;}
+      z.list.forEach(o2=>{need(9);const a2=entAdr(o2.e);const bs=o2.e.id===z.best;font(bs?"bold":"normal",8.5,INK);doc.text(wa(doc.splitTextToSize(entShort(o2.e)+(bs?" (mieux-disant)":"")+(o2.inc?" (incomplète)":""),80)[0]),L+2,y+3.6);
+        font(bs?"bold":"normal",8.5,INK);doc.text(wa(nE(o2.ht)+" HT"),R-38,y+3.6,{align:"right"});doc.text(wa(nE(o2.ttc)+" TTC"),R-1,y+3.6,{align:"right"});y+=4.6;
         if(a2){font("normal",7.5,MUTED);doc.text(wa(doc.splitTextToSize(a2,W-8)[0]),L+4,y+2.6);y+=3.8;}});y+=1.5;});
-    y+=1;need(10);fill(TGP);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nf(P.ht)+" HT"),R-34,y+4,{align:"right"});doc.text(wa(nf(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
-   const Q=quoteCfg();
-   if(Q.on){const retE=E.find(e=>e.id===state.retenue)||E[0], base=(M.lots.length>1&&P.rows.length)?P.cttc:(retE?T0[retE.id+"T"]*0+C0[retE.id+"T"]:0);
-    if(base>0){y+=2;need(14+Q.tant.length*5);font("bold",9,TGD);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+wa(nf(base))+")",L,y+3.5);y+=6;
-      Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(wa(nf(base*t/Q.base)),R-1,y+3.6,{align:"right"});y+=5;});}}}
+     y+=1;need(10);fill(TGP);doc.rect(L,y,W,5.8,"F");font("bold",8.8,INK);doc.text("TOTAL DES MEILLEURES OFFRES (HT / TTC)",L+2,y+4);doc.text(wa(nE(P.ht)+" HT"),R-38,y+4,{align:"right"});doc.text(wa(nE(P.ttc)+" TTC"),R-1,y+4,{align:"right"});y+=8;}
+    if(hasQ){y+=2;need(14+Q.tant.length*5);font("bold",9,TGD);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+nE(base)+")",L,y+3.5);y+=6;
+      Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(nE(base*t/Q.base),R-1,y+3.6,{align:"right"});y+=5;});}
+    y+=3;}}
+
+  /* formule de politesse, signature (nom + signature manuscrite) */
+  need(58); y+=3;
+  rich(partC);
+  {const SG=archSig(); if(SG){const sw=52, sh=sw*SG.h/SG.w; try{doc.addImage(SG.src,"PNG",R-sw-12,y-9,sw,sh,undefined,"FAST");}catch(e){console.error(e);}}}
+
   /* 3. tableau comparatif global */
-  land=n>3; np(); h2("2. Tableau comparatif global");
-  const showPU=n<=5&&n!==3, fs=n>4?6.6:7.2, eurS=v=>wa(fmt(v,2)+" €");
-  const cCode=15,cU=7,cQ=11, avail=Math.max(1,W-cCode-cU-cQ-60), per=Math.min(avail/n,n<=3?56:50);
-  const cEq=showPU?Math.min(12,Math.max(9,per*.2)):Math.min(14,Math.max(11.5,per*.38)), cEp=showPU?Math.min(16,per*.3):0, cEm=per-cEq-cEp;
+  letter(false); land=n>3; const annexP=doc.getNumberOfPages()+1; np(); h2("Tableau comparatif global");
+  const showPU=n<=5&&n!==3, eurS=nE; let fs=n>4?6.6:7.2;
+  const cCode=15,cU=7,cQ=11, avail=Math.max(1,W-cCode-cU-cQ-60); let per=Math.min(avail/n,n<=3?56:50);
+  /* largeur des colonnes d'après les plus grands montants (le signe € ne doit jamais déborder) */
+  let mxA=1,mxP=1; const fin=Number.isFinite;
+  M.lots.forEach(({rows})=>rows.forEach(w=>{
+    if(w.leaf){(w.a||[]).forEach(v=>{if(fin(v))mxA=Math.max(mxA,Math.abs(v));});(w.p||[]).forEach(v=>{if(fin(v))mxP=Math.max(mxP,Math.abs(v));});}
+    if(w.sub)E.forEach(e=>{const sb=w.sub.e[e.id];if(sb&&fin(sb.ht))mxA=Math.max(mxA,Math.abs(sb.ht));});}));
+  E.forEach(e=>{mxA=Math.max(mxA,Math.abs(T0[e.id]||0),Math.abs(T0[e.id+"T"]||0));});
+  const mw=(t,st,sz)=>{doc.setFont("helvetica",st);doc.setFontSize(sz);return doc.getTextWidth(t);};
+  const need3=()=>[mw(eurS(mxA),"bold",fs+1)+2.6, showPU?mw(eurS(mxP),"normal",fs)+2.6:0, Math.max(mw("0 000,00","normal",fs)+2.2,mw("Qté ent.","bold",7.6)+1.8)];
+  let [wA,wP,wQ]=need3();
+  while(wA+wP+wQ>per&&fs>5.4){fs=Math.round((fs-0.2)*10)/10;[wA,wP,wQ]=need3();}
+  per=Math.max(per,Math.min(wA+wP+wQ,(W-cCode-cU-cQ-40)/n));
+  const spare=Math.max(0,per-wA-wP-wQ), cEq=Math.min(wQ+spare*.3,16), cEp=showPU?Math.min(wP+spare*.2,18):0, cEm=per-cEq-cEp;
   const cDes=W-cCode-cU-cQ-n*per;
   const fit=(t,w)=>{t=wa(t);if(doc.getTextWidth(t)<=w)return t;while(t.length>1&&doc.getTextWidth(t+"...")>w)t=t.slice(0,-1);return t.trimEnd()+"...";};
   const xs={code:L,des:L+cCode,q:L+cCode+cDes,u:L+cCode+cDes+cQ};
@@ -3379,7 +3414,7 @@ function buildSynthPdf(J,info){
     sepV(y,hh); y+=hh;};
   gh();
   const gneed=h=>{if(y+h>B){np();gh();}};
-  M.lots.forEach(({l,li,rows,tot})=>{
+  M.lots.forEach(({l,li,rows,tot},kk)=>{
     LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
     const lcg=lotCol(lotById(l.id)), lcs=hexRgb(lcg.strong), lcp=hexRgb(lcg.pale);
     gneed(14); cut(L,y,W,6,2.2,lcs); font("bold",8.6,WHITE); doc.text(wa(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`),L+3.2,y+4.2); y+=6;
@@ -3412,10 +3447,11 @@ function buildSynthPdf(J,info){
             else{fill(MKC[mk][0]);doc.rect(xp(j),y,cEp+cEm,h,"F");font("bold",fs-0.4,MKC[mk][1]);}
             doc.text(mt,xmt(j)+cEm-1,y+3.3,{align:"right"});}
           else if(m){doc.text("-",xmt(j)+cEm-1,y+3.3,{align:"right"});}
-          else{if(showPU){doc.text(nf(p),xp(j)+cEp-1,y+3.3,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xp(j)+0.8,y+3.3);font("normal",fs,INK);}}doc.text(nf(w.a[j]),xmt(j)+cEm-1,y+3.3,{align:"right"});}});
+          else{if(showPU){doc.text(eurS(p),xp(j)+cEp-1,y+3.3,{align:"right"});if(w.ue&&w.ue[j]){font("italic",fs-1.8,MUTED);doc.text(wa("/"+w.ue[j]).slice(0,7),xp(j)+0.8,y+3.3);font("normal",fs,INK);}}doc.text(eurS(w.a[j]),xmt(j)+cEm-1,y+3.3,{align:"right"});}});
       }else if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});
       sepV(y,h);y+=h;});
     closeTo({d:-1,leaf:false,o:{}});
+    if(kk<M.lots.length-1&&y+4.6<=B){sepV(y,4.6);y+=4.6;} // ligne blanche entre les sous-totaux et le lot suivant
   });
   /* totaux : présentation comptable, encadrés */
   y+=3; gneed(26); const yT=y;
@@ -3424,20 +3460,21 @@ function buildSynthPdf(J,info){
   Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];tl(`TVA à ${pct(tx)}`,e=>Rr.e[e.id]*tx/100,false);});
   tl("TOTAL TTC",e=>T0[e.id+"T"],true);
   doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yT,W,y-yT);y+=3;
-  font("normal",7.4,MUTED); gneed(8);
-  doc.text(doc.splitTextToSize(wa(`Cases orangées : prix supérieur d'au moins ${A.seuil} % à la référence (${A.ref==="moe"?"estimation de la MOE":"médiane des offres"}) ; cases bleues : inférieur d'au moins ${A.seuil} % ; Qté ent. surlignée en jaune : quantité modifiée par l'entreprise (elle prévaut sur la quantité du BPU) ; Compris / Non compris / Sans objet : mention de l'architecte ; "-" : prix non renseigné.`),W),L,y+3);
 
-  /* en-têtes et pieds */
+  /* en-têtes et pieds : pages de la lettre = pied du modèle (« Page 1 sur 2 » à droite) ; annexes = en-tête habituel */
   const N=doc.getNumberOfPages();
   for(let p=1;p<=N;p++){
-    doc.setPage(p); font("normal",8,MUTED); const PWp=doc.internal.pageSize.getWidth(), PHp=doc.internal.pageSize.getHeight(), Rp=PWp-12;
-    if(p===1){doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(20,283,190,283);
-      doc.text(wa(ref),20,288); doc.text(`Page ${p} / ${N}`,190,288,{align:"right"});
-      font("bold",7,RED); doc.text(wa(archFoot()),105,293,{align:"center"}); continue;}
+    doc.setPage(p);
+    if(p<annexP){
+      const parts=[["Page ",0],[String(p),1],[" sur ",0],[String(N),1]]; font("normal",8,INK);
+      let tw=0; parts.forEach(([t,b])=>{doc.setFont("helvetica",b?"bold":"normal");tw+=doc.getTextWidth(t);});
+      let x=185-tw; parts.forEach(([t,b])=>{doc.setFont("helvetica",b?"bold":"normal");doc.text(t,x,277);x+=doc.getTextWidth(t);});
+      continue;}
+    font("normal",8,MUTED); const PWp=doc.internal.pageSize.getWidth(), PHp=doc.internal.pageSize.getHeight(), Rp=PWp-12;
     doc.text(wa("SYNTHÈSE - "+(o.objet||"")).slice(0,100),L,13); if(info){font("bold",8,RED);doc.text(wa(docTag(info)),Rp,13,{align:"right"});font("normal",8,MUTED);}
     doc.setDrawColor(RED[0],RED[1],RED[2]); doc.setLineWidth(0.2); doc.line(L,15.5,Rp,15.5);
     doc.setDrawColor(LINE[0],LINE[1],LINE[2]);doc.setLineWidth(0.2);doc.line(L,PHp-14,Rp,PHp-14);
-    doc.text(wa(ref),L,PHp-9.5); doc.text(`Page ${p} / ${N}`,Rp,PHp-9.5,{align:"right"});
+    doc.text(wa(ref),L,PHp-9.5); doc.text(`Page ${p} sur ${N}`,Rp,PHp-9.5,{align:"right"});
     font("bold",7,RED); doc.text(wa(archFoot()),L+(Rp-L)/2,PHp-5.6,{align:"center"});
   }
   doc.setProperties({title:"Synthèse - "+wa(ref),subject:wa(o.objet||""),creator:"AGOA CCTP"});
@@ -4389,6 +4426,7 @@ const SY_KEYS=[
  ["retours","Retour des entreprises (PDF, une ligne par puce)",6],
  ["ecarts","Principaux écarts (PDF, une ligne par puce)",5]];
 const dateFr=()=>new Date().toLocaleDateString("fr-FR");
+const DIAG_TXT="Attention ! Cette étude a été réalisée sans que les diagnostics plomb et amiante nous aient été transmis. De fait si des matériaux à risque sont détectés avant l'exécution des travaux, les devis devront être corrigés afin de répondre aux exigences de sécurité obligatoires. Nous invitons la copropriété à diligenter ces diagnostics au plus tôt.";
 function synObj(){if(!state.synth||typeof state.synth!=="object")state.synth={};const S=state.synth;if(!S.txt)S.txt={};if(!S.devis)S.devis={};return S;}
 function synthRet(M){const E=M.E;return E.find(e=>e.id===state.retenue)||E[0];}
 function synthDefaults(M,BD,ret){
@@ -4445,7 +4483,8 @@ function letterHtml(D){ // assemble les parties de la lettre en un seul texte en
     String(t||"").split("\n").forEach(l=>{const m=/^\s*[-•]\s+(.*)$/.exec(l); if(m){if(!ul){out.push("<ul>");ul=true;}out.push("<li>"+esc2(m[1])+"</li>");}else{if(ul){out.push("</ul>");ul=false;}if(l.trim())out.push("<p>"+esc2(l)+"</p>");}});
     if(ul)out.push("</ul>"); return out.join("");};
   const g=k=>synText(k,D), bold=h=>h?h.replace(/<p>/g,"<p><b>").replace(/<\/p>/g,"</b></p>"):"";
-  return RT+conv(g("intro"))+"<p><br></p><p><b>OBSERVATIONS :</b></p>"+conv(g("obs"))+"<p><br></p>"+bold(conv(g("reco")))+"<p><br></p>"+conv(g("pj"))+"<p><br></p>"+conv(g("conclu"))+"<p><br></p>"+bold(conv(g("sign")));
+  const boldRest=h=>{let i=0;return h?h.replace(/<p>([\s\S]*?)<\/p>/g,(m,t)=>(i++?"<p><b>"+t+"</b></p>":m)):"";}; // 1re phrase normale, entreprises et montants en gras
+  return RT+conv(g("intro"))+"<p><br></p><p><b>OBSERVATIONS :</b></p>"+conv(g("obs"))+"<p><br></p>"+boldRest(conv(g("reco")))+"<p><br></p>"+conv(g("pj"))+"<p><br></p>"+conv(g("conclu"))+"<p><br></p>"+conv(g("sign"));
 }
 function synText(k,D){const S=synObj(); if(k==="letter"&&S.txt.letter==null)return letterHtml(D); return S.txt[k]!=null?S.txt[k]:(D[k]||"");}
 
@@ -4479,6 +4518,7 @@ function renderSynth(){
   $("#synth").innerHTML=`
    <div class="syn-bar"><button class="btn primary" id="expSynth">Exporter synthèse (PDF)</button><button class="btn" id="expSynthX">Exporter tableaux (Excel)</button>
 <label class="chk" style="margin-left:14px" title="Surligne en orange (plus cher) ou en bleu (moins cher) les prix qui s'écartent de la moyenne dans le tableau comparatif global du PDF"><input type="checkbox" id="syEcart" ${S.noEcart?"":"checked"}> Afficher les couleurs d'écart de prix</label>
+<label class="chk" style="margin-left:14px" title="Ajoute en rouge, avant la formule de politesse, la mise en garde sur l'absence des diagnostics plomb et amiante"><input type="checkbox" id="syDiag" ${S.diag===false?"":"checked"}> Paragraphe sur les diagnostics avant travaux (en rouge)</label>
 </div>
    <details class="syn-ed" open><summary>Lettre d'analyse des offres (première page du PDF)</summary>
    <div class="syn-b"><label for="sy-date">Date de la lettre</label><input type="text" id="sy-date" value="${esc(S.date||dateFr())}"> <label for="sy-lieu" style="margin-left:10px">Lieu</label><input type="text" id="sy-lieu" value="${esc(S.lieu!=null?S.lieu:"Paris")}" style="max-width:140px"></div>
@@ -4498,6 +4538,7 @@ function renderSynth(){
   sy.querySelectorAll("[data-syreset]").forEach(b=>b.onclick=()=>{delete synObj().txt[b.dataset.syreset];save();renderSynth();});
   sy.querySelectorAll("input[data-sydv]").forEach(i=>{i.addEventListener("input",()=>{synObj().devis[i.dataset.sydv]=i.value.trim();save();});i.addEventListener("change",()=>renderSynth());});
   {const c=$("#syEcart");if(c)c.onchange=()=>{synObj().noEcart=!c.checked;save();};}
+  {const c=$("#syDiag");if(c)c.onchange=()=>{synObj().diag=c.checked;save();};}
   $("#sy-date").addEventListener("input",e=>{synObj().date=e.target.value;save();});
   $("#sy-lieu").addEventListener("input",e=>{synObj().lieu=e.target.value;save();});
 }
