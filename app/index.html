@@ -1108,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.115.0", deploiement: 115};
+const APP = {version: "0.116.0", deploiement: 116};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3366,8 +3366,16 @@ function buildSynthPdf(J,info){
     if(s2.mark==="frameEnd"){doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yFr,W,y-yFr);return;}
     row(s2);});
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
-  if(OV.length){y+=3;need(16);font("bold",9,TGD);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
-    OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgnE(nt(O.e[e.id]))),{ind:3});});}
+  if(OV.length){y+=5;need(40);font("bold",10,TGD);doc.text("OPTIONS ET VARIANTES",L,y+3.5);font("normal",7.6,MUTED);doc.text("Plus-values (+) et moins-values (-), non comprises dans le total ci-dessus",L+52,y+3.5);y+=6;
+    head();
+    const rgb=h=>[1,3,5].map(k=>parseInt(h.substr(k,2),16));
+    OV.forEach(o4=>{const O=M.ov[o4.id],c=ovC(o4),bg=rgb(c.bg),fg=rgb(c.fg),nh=x=>x.in-x.base,nt=x=>x.inT-x.baseT;
+      need(7*4+4); const y0=y;
+      row({lab:ovLab(o4),vals:[],o2:{b:true,fill:bg,c:fg,sz:sfs+0.5}});
+      row({lab:"Total HT",vals:E.map(e=>sgnE(nh(O.e[e.id]))),o2:{b:true,fill:bg,c:fg}});
+      row({lab:"TVA",vals:E.map(e=>sgnE(nt(O.e[e.id])-nh(O.e[e.id]))),o2:{fill:bg,c:fg,sz:sfs-0.5}});
+      row({lab:"Total TTC",vals:E.map(e=>sgnE(nt(O.e[e.id]))),o2:{b:true,fill:bg,c:fg}});
+      doc.setDrawColor(fg[0],fg[1],fg[2]);doc.setLineWidth(0.4);doc.rect(L,y0,W,y-y0);y+=3;});}
   y+=6;
 
   /* observations, mieux-disants, pièces jointes, puis mise en garde diagnostics (case à cocher, en rouge) */
@@ -3583,8 +3591,14 @@ function buildSynthDocx(info){
     return trow([cell(x.lab,mk(lw,"left",0,false)),...E.map((e,j)=>cell(x.vals[j]||"",mk(cwd,"right",j+1,j===n-1)))]);})));
   /* options et variantes */
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
-  if(OV.length){body.push(para(run("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",{font:"Arial",sz:9,b:true,col:TGD}),{bef:200,aft:60,keep:true}));
-    body.push(table(wS,OV.map(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;return trow([cell(ovLab(o4),{w:lw,sz:sz1,ind:170}),...E.map(e=>cell(sgn(nt(O.e[e.id])),{w:cwd,al:"right",sz:sz1}))]);})));}
+  if(OV.length){body.push(para(run("OPTIONS ET VARIANTES",{font:"Arial",sz:10,b:true,col:TGD})+run("   plus-values (+) et moins-values (-), non comprises dans le total ci-dessus",{font:"Arial",sz:8,col:"5F6B76"}),{bef:200,aft:60,keep:true}));
+    OV.forEach(o4=>{const O=M.ov[o4.id],c=ovC(o4),bg=c.bg.slice(1),fg=c.fg.slice(1),nh=x=>x.in-x.base,nt=x=>x.inT-x.baseT;
+      const r=(lab,vals,b,sm)=>trow([cell(lab,{w:lw,sz:sm?sz1-0.5:sz1,b,col:fg,fill:bg,keep:1,ind:b?0:170}),...E.map((e,j)=>cell(vals?vals[j]:"",{w:cwd,al:"right",sz:sm?sz1-0.5:sz1,b,col:fg,fill:bg,keep:1}))]);
+      body.push(table(wS,[r(ovLab(o4),null,1),
+        r("Total HT",E.map(e=>sgn(nh(O.e[e.id]))),1),
+        r("TVA",E.map(e=>sgn(nt(O.e[e.id])-nh(O.e[e.id]))),0,1),
+        r("Total TTC",E.map(e=>sgn(nt(O.e[e.id]))),1)]));
+      body.push(para("",{aft:80}));});}
   body.push(para("",{aft:120}));
   /* --- observations, mieux-disants, pièces jointes, diagnostics (en option, en rouge) --- */
   body.push(rich(partB));

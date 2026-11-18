@@ -1,1 +1,1 @@
-Déploiement n°115 — Synthèse : export Word (.docx) ; PDF : le tableau de synthèse n'est plus coupé (passe entier à la page suivante)
+Déploiement n°116 — Synthèse : options et variantes en blocs colorés (couleurs du CCTP) avec totaux HT, TVA et TTC (PDF et Word)
