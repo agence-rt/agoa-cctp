@@ -1108,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.114.0", deploiement: 114};
+const APP = {version: "0.115.0", deploiement: 115};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3322,39 +3322,49 @@ function buildSynthPdf(J,info){
   const e2=iC<0?BL.length:iC, partA=BL.slice(0,iO<0?e2:iO), partB=iO<0?[]:BL.slice(iO,e2), partC=BL.slice(e2);
   rich(partA);
 
-  /* tableau de synthèse (sous « SYNTHESE DES TRAVAUX ») */
-  heading("SYNTHESE DES TRAVAUX");
+  /* tableau de synthèse (sous « SYNTHESE DES TRAVAUX ») : construit d'abord, mesuré, puis dessiné d'un seul tenant si possible */
   let sfs=8.5, cw, labW;
   {const mxT=E.reduce((m,e)=>Math.max(m,Math.abs(T0[e.id+"T"]||0),Math.abs(T0[e.id]||0)),1);
    for(;;){font("bold",sfs);const wm=doc.getTextWidth(wa("+"+fmt(mxT,2)+" €"))+3.2;cw=Math.min(32,Math.max(wm,(W-62)/n));labW=Math.max(30,W-n*cw);cw=(W-labW)/n;if(labW>=50||sfs<=6.2)break;sfs=Math.round((sfs-0.3)*10)/10;}}
+  const SP=[]; // lignes : {lab,vals,o2} ou {gap} ou {mark:"frameStart"|"frameEnd"}
+  const sr=(lab,vals,o2)=>SP.push({lab,vals,o2:o2||{}});
+  M.lots.forEach(({l,li,rows,tot},k)=>{
+    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), lc=lotCol(lotById(l.id)), lp=hexRgb(lc.pale), ls=hexRgb(lc.strong);
+    if(k)SP.push({gap:4});
+    sr(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:true,fill:lp,c:ls});
+    rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;const cv=E.map(e=>w.sub.e[e.id].ht);
+      sr(`${w.o.code||""}  ${w.o.titre}`,cv.map(nE),{ind:3,out:OUT});});
+    sr(`Sous-total lot ${pad(li+1)} HT`,ht.map(nE),{b:true,fill:lp,c:ls,out:OUT});
+  });
+  const vals=(o3,sfx)=>E.map(e=>nE(o3[e.id+(sfx||"")]));
+  SP.push({gap:4}); SP.push({mark:"frameStart"}); sr("TOTAL HT",vals(T0),{b:true,fill:TGP});
+  if(V0.est||E.some(e=>V0[e.id])){sr("dont parties communes (HT)",vals(C0),{ind:3,sz:sfs-0.5});sr("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:sfs-0.5});}
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];sr(`TVA à ${pct(tx)}`,E.map(e=>nE(Rr.e[e.id]*tx/100)),{sz:sfs-0.5});});
+  sr("TOTAL TTC",vals(T0,"T"),{b:true,fill:TGP}); SP.push({mark:"frameEnd"});
+  const rowLines=s2=>{font(s2.o2.b?"bold":"normal",s2.o2.sz||sfs,s2.o2.c);return doc.splitTextToSize(wa(s2.lab),labW-4-(s2.o2.ind||0)).slice(0,2);};
+  const rowH=s2=>s2.gap?s2.gap:s2.mark?0:Math.max(6,rowLines(s2).length*4+2);
+  const tblH=7+SP.reduce((a,s2)=>a+rowH(s2),0);
+  /* si le tableau tient sur une page mais pas sur ce qui reste de celle-ci : on le passe en entier à la page suivante, avec son titre */
+  if(tblH+14<=B-T&&y+tblH+14>B)np();
+  heading("SYNTHESE DES TRAVAUX");
   const head=()=>{fill(TGP);doc.rect(L,y,W,7,"F");font("bold",sfs,TGD);doc.text("Lot / chapitre",L+2,y+4.8);
     E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
     y+=7;};
   head();
-  const row=(lab,vals,o2={})=>{
-    const sz=o2.sz||sfs;
-    font(o2.b?"bold":"normal",sz,o2.c);
-    const lines=doc.splitTextToSize(wa(lab),labW-4-(o2.ind||0)).slice(0,2), h=Math.max(6,lines.length*4+2);
+  const row=(s2)=>{const o2=s2.o2, lab=s2.lab, vals=s2.vals, sz=o2.sz||sfs;
+    const lines=rowLines(s2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
     if(o2.fill){fill(o2.fill);doc.rect(L,y,W,h,"F");}
     font(o2.b?"bold":"normal",sz,o2.c);
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
     vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;font(o2.b?"bold":"normal",sz,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
     y+=h;};
-  M.lots.forEach(({l,li,rows,tot},k)=>{
-    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), ht=E.map(e=>tot.e[e.id].ht), lc=lotCol(lotById(l.id)), lp=hexRgb(lc.pale), ls=hexRgb(lc.strong);
-    if(k)y+=4;
-    row(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:true,fill:lp,c:ls});
-    rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;const cv=E.map(e=>w.sub.e[e.id].ht);
-      row(`${w.o.code||""}  ${w.o.titre}`,cv.map(nE),{ind:3,out:OUT});});
-    row(`Sous-total lot ${pad(li+1)} HT`,ht.map(nE),{b:true,fill:lp,c:ls,out:OUT});
-  });
-  const vals=(o3,sfx)=>E.map(e=>nE(o3[e.id+(sfx||"")]));
-  y+=4; need(34); const yFr=y; row("TOTAL HT",vals(T0),{b:true,fill:TGP});
-  if(V0.est||E.some(e=>V0[e.id])){row("dont parties communes (HT)",vals(C0),{ind:3,sz:sfs-0.5});row("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:sfs-0.5});}
-  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];row(`TVA à ${pct(tx)}`,E.map(e=>nE(Rr.e[e.id]*tx/100)),{sz:sfs-0.5});});
-  row("TOTAL TTC",vals(T0,"T"),{b:true,fill:TGP});
-  doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yFr,W,y-yFr);
+  let yFr=0;
+  SP.forEach(s2=>{
+    if(s2.gap){y+=s2.gap;return;}
+    if(s2.mark==="frameStart"){need(34);yFr=y;return;}
+    if(s2.mark==="frameEnd"){doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yFr,W,y-yFr);return;}
+    row(s2);});
   const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){y+=3;need(16);font("bold",9,TGD);doc.text("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",L,y+3.5);y+=6;
     OV.forEach(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;row(ovLab(o4),E.map(e=>sgnE(nt(O.e[e.id]))),{ind:3});});}
@@ -3480,6 +3490,202 @@ function buildSynthPdf(J,info){
   doc.setProperties({title:"Synthèse - "+wa(ref),subject:wa(o.objet||""),creator:"AGOA CCTP"});
   return doc.output("arraybuffer");
 }
+
+/* ---------- Synthèse au format Word (.docx), même contenu que le PDF, modifiable ---------- */
+function zipStore(files){ // archive ZIP sans compression (suffisant pour un .docx)
+  const te=new TextEncoder(), tb=new Uint32Array(256);
+  for(let i=0;i<256;i++){let c=i;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;tb[i]=c>>>0;}
+  const crc=d=>{let c=0xFFFFFFFF;for(let i=0;i<d.length;i++)c=tb[(c^d[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+  const u16=v=>[v&255,(v>>8)&255], u32=v=>[v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];
+  const parts=[], cd=[]; let off=0;
+  files.forEach(f=>{const nm=te.encode(f.name), c=crc(f.data), sz=f.data.length;
+    const lh=new Uint8Array([0x50,0x4b,3,4,...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(sz),...u32(sz),...u16(nm.length),...u16(0)]);
+    parts.push(lh,nm,f.data);
+    cd.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c),...u32(sz),...u32(sz),...u16(nm.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nm);
+    off+=lh.length+nm.length+sz;});
+  const cdLen=cd.reduce((a,x)=>a+x.length,0);
+  const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(files.length),...u16(files.length),...u32(cdLen),...u32(off),0,0]);
+  const all=[...parts,...cd,end], out=new Uint8Array(all.reduce((a,x)=>a+x.length,0)); let p=0; all.forEach(x=>{out.set(x,p);p+=x.length;}); return out;
+}
+function buildSynthDocx(info){
+  const o=state.op||{}, M=anaModel(), A=M.A, E=M.E, n=E.length, BD=bilanData(M), SY=synObj();
+  const RETE=synthRet(M), SD=synthDefaults(M,BD,RETE), txt=k=>synText(k,SD);
+  const T0=anaSums(M,()=>true), C0=anaSums(M,l=>l.charge==="Commune"), V0=anaSums(M,l=>l.charge!=="Commune");
+  const X=t=>String(t==null?"":t).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const hex=c=>c.map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase();
+  const RED="C10003", INK="333333", GREY="F2F2F2", BAND="D9D9D9", TGP="EEEEEE", TGD="505050";
+  const eur=v=>fmt(v,2).replace(/[  ]/g," ")+" €", sgn=v=>(v>=0?"+":"-")+eur(Math.abs(v));
+  const dataBytes=u=>{const b=atob(String(u).split(",")[1]||""),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;};
+  const emu=mm=>Math.round(mm*36000);
+  /* --- briques XML --- */
+  const run=(t,f={})=>`<w:r><w:rPr>${f.font?`<w:rFonts w:ascii="${f.font}" w:hAnsi="${f.font}" w:cs="${f.font}"/>`:""}${f.b?"<w:b/>":""}${f.i?"<w:i/>":""}${f.col?`<w:color w:val="${f.col}"/>`:""}${f.sz?`<w:sz w:val="${Math.round(f.sz*2)}"/><w:szCs w:val="${Math.round(f.sz*2)}"/>`:""}${f.hl?'<w:highlight w:val="yellow"/>':""}${f.u?'<w:u w:val="single"/>':""}</w:rPr><w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+  const para=(inner,f={})=>`<w:p><w:pPr>${f.keep?"<w:keepNext/>":""}${f.shd?`<w:shd w:val="clear" w:color="auto" w:fill="${f.shd}"/>`:""}<w:spacing w:before="${f.bef||0}" w:after="${f.aft||0}" w:line="${f.line||259}" w:lineRule="auto"/>${f.ind!=null?`<w:ind w:left="${f.ind}" w:hanging="${f.hang||0}"/>`:""}${f.jc?`<w:jc w:val="${f.jc}"/>`:""}</w:pPr>${inner}</w:p>`;
+  let imgN=0; const imgs=[];
+  const pic=(src,wmm,hmm,ext)=>{const id=++imgN, rid="rIdI"+id, nm=`media/img${id}.${ext}`; imgs.push({rid,nm,data:dataBytes(src)});
+    return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${emu(wmm)}" cy="${emu(hmm)}"/><wp:docPr id="${id}" name="Image ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="img${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${emu(wmm)}" cy="${emu(hmm)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;};
+  /* cellule / ligne / tableau */
+  const bd=(side,c,sz)=>`<w:${side} w:val="single" w:sz="${sz||6}" w:space="0" w:color="${c}"/>`;
+  const cell=(t,f={})=>{const tx=Array.isArray(t)?t.join(""):(t===""||t==null?"":run(t,{font:"Arial",sz:f.sz||8,b:f.b,i:f.i,col:f.col}));
+    const bs=(f.bT?bd("top",TGD,8):"")+(f.bL?bd("left",TGD,8):"")+(f.bB?bd("bottom",TGD,8):"")+(f.bR?bd("right",TGD,8):"");
+    return `<w:tc><w:tcPr><w:tcW w:w="${f.w}" w:type="dxa"/>${f.span?`<w:gridSpan w:val="${f.span}"/>`:""}${f.vm?(f.vm==="r"?'<w:vMerge w:val="restart"/>':"<w:vMerge/>"):""}${bs?`<w:tcBorders>${bs}</w:tcBorders>`:""}${f.fill?`<w:shd w:val="clear" w:color="auto" w:fill="${f.fill}"/>`:""}<w:vAlign w:val="center"/></w:tcPr>${para(tx,{jc:f.al||"left",keep:f.keep,bef:f.bef==null?25:f.bef,aft:f.aft==null?25:f.aft,ind:f.ind||0,line:240})}</w:tc>`;};
+  const trow=(cells,f={})=>`<w:tr><w:trPr><w:cantSplit/>${f.hdr?"<w:tblHeader/>":""}</w:trPr>${cells.join("")}</w:tr>`;
+  const table=(widths,rows,f={})=>`<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a,b)=>a+b,0)}" w:type="dxa"/>${f.grid?`<w:tblBorders>${bd("top","BEBEB9",4)}${bd("left","BEBEB9",4)}${bd("bottom","BEBEB9",4)}${bd("right","BEBEB9",4)}${bd("insideV","BEBEB9",4)}</w:tblBorders>`:""}<w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="70" w:type="dxa"/><w:right w:w="70" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w=>`<w:gridCol w:w="${w}"/>`).join("")}</w:tblGrid>${rows.join("")}</w:tbl>`;
+  /* texte enrichi : mêmes blocs que le PDF */
+  let ord=0, prevLi=false, prevOrd=false;
+  const richPar=(bk,f={})=>{
+    if(!bk.runs.length||bk.runs.every(r=>r.br)){prevLi=false;return para("",{line:259});}
+    if(bk.li){ord=(prevLi&&bk.ord&&prevOrd)?ord+1:1;} prevLi=bk.li; prevOrd=bk.ord;
+    const base=10.5, rs=bk.runs.map(r=>r.br?"<w:r><w:br/></w:r>":run(r.t,{font:"Calibri",sz:(r.sz?r.sz/RT_BASE:1)*base,b:r.b||f.b,i:r.i,u:r.u||f.u,hl:r.hl,col:f.col})).join("");
+    const lead=bk.li?`${run(bk.ord?ord+".":"•",{font:"Calibri",sz:base,col:f.col})}<w:r><w:tab/></w:r>`:"";
+    const ind=(bk.li?567:0)+(bk.ind||0)*283;
+    return para(lead+rs,{jc:bk.align||(bk.li?"left":"both"),ind:bk.li?ind:(bk.ind?ind:undefined),hang:bk.li?283:0});};
+  const rich=(blocks,f)=>(blocks||[]).map(b=>richPar(b,f)).join("");
+  const heading=t=>para(run(t,{font:"Arial",sz:10,b:true}),{bef:240,aft:120,keep:true});
+  const body=[]; const WL=9072; // largeur utile de la lettre (marges de 25 mm)
+  /* --- en-tête : logo, encadré gris --- */
+  const LG=archLogo();
+  if(LG){const wm=LG.w>LG.h?68:34; body.push(para(pic(LG.src,wm,wm*LG.h/LG.w,"jpeg"),{aft:200}));}
+  const FD=[["Code travaux",o.ref,1],["Objet",(o.objet||"").toUpperCase()],["Maître d'ouvrage",o.mo],["Syndic",o.syndic],["Gestionnaire",o.gestionnaire]].filter(f=>f[1]);
+  body.push(table([2300,WL-2300],FD.map((f,i)=>trow([cell(f[0]+" :",{w:2300,al:"right",sz:10,fill:GREY,bef:i?20:90,aft:20}),cell(f[2]?[run(f[1],{font:"Arial",sz:10.5,b:true,col:RED})]:f[1],{w:WL-2300,sz:10,fill:GREY,bef:i?20:90,aft:20})]))));
+  body.push(para(run("ANALYSE DES OFFRES",{font:"Arial",sz:10,b:true}),{shd:BAND,jc:"center",bef:360,aft:240,line:300}));
+  body.push(para(run(((SY.lieu!=null?SY.lieu:"Paris")?(SY.lieu!=null?SY.lieu:"Paris")+" le ":"")+(SY.date||dateFr()),{font:"Calibri",sz:10.5}),{aft:200}));
+  body.push(para(run("Madame, Monsieur,",{font:"Calibri",sz:10.5}),{aft:160}));
+  /* --- lettre découpée en 3 : introduction / observations… / politesse --- */
+  const BL=rtParse(rtSrc(txt("letter"))), bT=b=>b.runs.map(r=>r.t||"").join("").trim();
+  const iO=BL.findIndex(b=>/^observations?\b/i.test(bT(b))), iC=BL.findIndex((b,i)=>i>Math.max(iO,-1)&&/^nous restons/i.test(bT(b)));
+  const e2=iC<0?BL.length:iC, partA=BL.slice(0,iO<0?e2:iO), partB=iO<0?[]:BL.slice(iO,e2), partC=BL.slice(e2);
+  body.push(rich(partA));
+  /* --- tableau de synthèse : lignes liées pour qu'il ne soit pas coupé --- */
+  body.push(heading("SYNTHESE DES TRAVAUX"));
+  const sz1=n>5?7:n>4?7.5:8.5, cwd=Math.max(n>5?1000:1250,Math.min(1900,Math.floor((WL-2400)/n))), lw=WL-n*cwd, wS=[lw,...E.map(()=>cwd)];
+  const SR=[]; // {lab,vals,f}
+  const sr=(lab,vals,f)=>SR.push({lab,vals,f:f||{}});
+  SR.push({hdr:1});
+  M.lots.forEach(({l,li,rows,tot},k)=>{
+    const OUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), lc=lotCol(lotById(l.id)), lp=hex(hexRgb(lc.pale)), ls=hex(hexRgb(lc.strong));
+    if(k)SR.push({gap:1});
+    sr(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,[],{b:1,fill:lp,col:ls});
+    rows.forEach((w,wi)=>{if(w.k!=="ch"||w.d>0||w.ex||!w.sub||anaOvOnly(rows,wi))return;sr(`${w.o.code||""}  ${w.o.titre}`,E.map((e,j)=>OUT[j]?"":eur(w.sub.e[e.id].ht)),{ind:170});});
+    sr(`Sous-total lot ${pad(li+1)} HT`,E.map((e,j)=>OUT[j]?"":eur(tot.e[e.id].ht)),{b:1,fill:lp,col:ls});
+  });
+  SR.push({gap:1});
+  const tv=(o3,sfx)=>E.map(e=>eur(o3[e.id+(sfx||"")]));
+  sr("TOTAL HT",tv(T0),{b:1,fill:TGP,box:"T"});
+  if(V0.est||E.some(e=>V0[e.id])){sr("dont parties communes (HT)",tv(C0),{ind:170,box:"M",sm:1});sr("dont lots à charge privative (HT)",tv(V0),{ind:170,box:"M",sm:1});}
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];sr(`TVA à ${pct(tx)}`,E.map(e=>eur(Rr.e[e.id]*tx/100)),{box:"M",sm:1});});
+  sr("TOTAL TTC",tv(T0,"T"),{b:1,fill:TGP,box:"B"});
+  const sRows=SR.filter(x=>!x.gap).length; let ri=0;
+  body.push(table(wS,SR.map(x=>{
+    if(x.hdr)return trow([cell("Lot / chapitre",{w:lw,b:1,sz:sz1,fill:TGP,col:TGD,keep:1}),...E.map(e=>cell(entShort(e),{w:cwd,al:"right",b:1,sz:sz1,fill:TGP,col:TGD,keep:1}))],{hdr:1});
+    if(x.gap)return trow([cell("",{w:lw,sz:4,keep:1,bef:0,aft:0}),...E.map(()=>cell("",{w:cwd,sz:4,keep:1,bef:0,aft:0}))]);
+    const keep=++ri<sRows-0&&true, f=x.f, bx=f.box, sz=f.sm?sz1-0.5:sz1, bT=bx==="T", bB=bx==="B";
+    const mk=(w,al,i,last)=>({w,al,sz,b:f.b,col:f.col,fill:f.fill,keep:1,bT:bT,bB:bB,bL:!!bx&&i===0,bR:!!bx&&last,ind:i===0?f.ind:0});
+    return trow([cell(x.lab,mk(lw,"left",0,false)),...E.map((e,j)=>cell(x.vals[j]||"",mk(cwd,"right",j+1,j===n-1)))]);})));
+  /* options et variantes */
+  const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
+  if(OV.length){body.push(para(run("Options et variantes (plus-value + / moins-value -, HT, non comprises ci-dessus)",{font:"Arial",sz:9,b:true,col:TGD}),{bef:200,aft:60,keep:true}));
+    body.push(table(wS,OV.map(o4=>{const O=M.ov[o4.id], nt=x=>x.in-x.base;return trow([cell(ovLab(o4),{w:lw,sz:sz1,ind:170}),...E.map(e=>cell(sgn(nt(O.e[e.id])),{w:cwd,al:"right",sz:sz1}))]);})));}
+  body.push(para("",{aft:120}));
+  /* --- observations, mieux-disants, pièces jointes, diagnostics (en option, en rouge) --- */
+  body.push(rich(partB));
+  if(SY.diag!==false){body.push(para("",{}));body.push(para(run(DIAG_TXT,{font:"Calibri",sz:10.5,col:RED,u:true}),{jc:"both"}));}
+  /* --- tableau récapitulatif --- */
+  {const P=pickSummary(M), LO=lotOffers(M), Q=quoteCfg(), hasP=M.lots.length>1&&P.rows.length, retE=E.find(e=>e.id===state.retenue)||E[0],
+   base=hasP?P.cttc:(retE?C0[retE.id+"T"]:0), hasQ=Q.on&&base>0;
+   if(hasP||hasQ){
+    body.push(heading("TABLEAU RECAPITULATIF"));
+    const w3=[WL-3900,1900,2000], rr=[];
+    if(hasP){
+      LO.filter(z=>z.list.length).forEach(z=>{const zc=lotCol(lotById(z.x.l.id));
+        rr.push(trow([cell(`Lot ${pad(z.x.li+1)} - ${z.x.l.titre}`,{w:WL,span:3,b:1,sz:8.5,fill:hex(hexRgb(zc.pale)),col:hex(hexRgb(zc.strong)),keep:1})]));
+        z.list.forEach(o2=>{const bs=o2.e.id===z.best, a2=entAdr(o2.e);
+          rr.push(trow([cell(entShort(o2.e)+(bs?" (mieux-disant)":"")+(o2.inc?" (incomplète)":"")+(a2?"  -  "+a2:""),{w:w3[0],b:bs,sz:8.5,keep:1}),cell(eur(o2.ht)+" HT",{w:w3[1],al:"right",b:bs,sz:8.5,keep:1}),cell(eur(o2.ttc)+" TTC",{w:w3[2],al:"right",b:bs,sz:8.5,keep:1})]));});});
+      rr.push(trow([cell("TOTAL DES MEILLEURES OFFRES (HT / TTC)",{w:w3[0],b:1,sz:8.8,fill:TGP}),cell(eur(P.ht)+" HT",{w:w3[1],al:"right",b:1,sz:8.8,fill:TGP}),cell(eur(P.ttc)+" TTC",{w:w3[2],al:"right",b:1,sz:8.8,fill:TGP})]));}
+    if(hasQ){rr.push(trow([cell("Calcul par copropriétaire (quote-part TTC des parties communes : "+eur(base)+")",{w:WL,span:3,b:1,sz:9,col:TGD,bef:140,keep:1})]));
+      Q.tant.forEach(t=>rr.push(trow([cell(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`,{w:w3[0]+w3[1],span:2,sz:8.8,keep:1}),cell(eur(base*t/Q.base),{w:w3[2],al:"right",sz:8.8,keep:1})])));}
+    body.push(table(w3,rr));}}
+  /* --- politesse, signature --- */
+  body.push(para("",{}));
+  body.push(rich(partC));
+  {const SG=archSig(); if(SG)body.push(para(pic(SG.src,52,52*SG.h/SG.w,"png"),{jc:"right",bef:0,aft:0}));}
+  /* fin de la 1re section (lettre, portrait) */
+  const pgW=11906,pgH=16838;
+  const sect=(land,mg,last)=>`<w:sectPr><w:footerReference w:type="default" r:id="rIdF"/>${last?"":'<w:type w:val="nextPage"/>'}<w:pgSz w:w="${land?pgH:pgW}" w:h="${land?pgW:pgH}"${land?' w:orient="landscape"':""}/><w:pgMar w:top="${mg.t}" w:right="${mg.r}" w:bottom="${mg.b}" w:left="${mg.l}" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr>`;
+  body.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/>${sect(false,{t:1134,r:1417,b:1134,l:1417},false)}</w:pPr></w:p>`);
+  /* --- annexe : tableau comparatif global --- */
+  const land=n>3, TW=land?pgH-1360:pgW-1360, showPU=n<=5&&n!==3, szg=n>5?6:n>4?6.5:7;
+  body.push(para(run("Tableau comparatif global",{font:"Arial",sz:11,b:true,col:RED}),{aft:120,keep:true}));
+  let cCode=760,cU=430,cQ=760,cEq=680,cEp=showPU?950:0,cEm=1250;
+  const gw=()=>TW-cCode-cU-cQ-n*(cEq+cEp+cEm);
+  while(gw()<2400&&cEm>900){cEm-=50;if(showPU)cEp=Math.max(750,cEp-30);cEq=Math.max(520,cEq-20);}
+  const cDes=Math.max(1800,gw()), per=cEq+cEp+cEm, wG=[cCode,cDes,cQ,cU,...E.flatMap(()=>showPU?[cEq,cEp,cEm]:[cEq,cEm])], nc=wG.length;
+  const GR=[], hd=(t,f)=>cell(t,Object.assign({sz:szg+0.4,b:1,fill:TGP,col:TGD,keep:1},f));
+  GR.push(trow([hd("N°",{w:cCode,vm:"r"}),hd("Désignation",{w:cDes,vm:"r"}),hd("Qté",{w:cQ,al:"right",vm:"r"}),hd("U",{w:cU,al:"center",vm:"r"}),...E.map(e=>hd(entShort(e),{w:per,span:showPU?3:2,al:"center"}))],{hdr:1}));
+  GR.push(trow([hd("",{w:cCode,vm:"c"}),hd("",{w:cDes,vm:"c"}),hd("",{w:cQ,vm:"c"}),hd("",{w:cU,vm:"c"}),...E.flatMap(()=>showPU?[hd("Qté ent.",{w:cEq,al:"right"}),hd("PU",{w:cEp,al:"right"}),hd("Montant",{w:cEm,al:"right"})]:[hd("Qté ent.",{w:cEq,al:"right"}),hd("Montant",{w:cEm,al:"right"})])],{hdr:1}));
+  const MKC={inc:["DDF1E7","1F6B4F"],ninc:["FBE0DD","A32A1F"],so:["E6E9ED","4D5964"]};
+  const filler=(f,i0)=>E.flatMap(()=>showPU?[cell("",Object.assign({w:cEq},f)),cell("",Object.assign({w:cEp},f)),cell("",Object.assign({w:cEm},f))]:[cell("",Object.assign({w:cEq},f)),cell("",Object.assign({w:cEm},f))]);
+  const rowG=(code,des,q,u,ents,f={})=>{const base={sz:szg,b:f.b,fill:f.fill,col:f.col,bef:15,aft:15};
+    return trow([cell(code,Object.assign({w:cCode},base)),cell(des,Object.assign({w:cDes,ind:f.ind||0},base)),cell(q,Object.assign({w:cQ,al:"right"},base)),cell(u,Object.assign({w:cU,al:"center"},base)),...ents]);};
+  const emptyEnts=f=>filler({sz:szg,fill:f&&f.fill},0);
+  M.lots.forEach(({l,li,rows,tot},kk)=>{
+    const LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), lc=lotCol(lotById(l.id)), ls=hex(hexRgb(lc.strong));
+    GR.push(trow([cell(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,{w:TW,span:nc,b:1,sz:szg+1,fill:ls,col:"FFFFFF",bef:40,aft:40})]));
+    const open=[];
+    const subLine=b=>{const w=b.w, ents=E.flatMap((e,j)=>{const m=LOUT[j]?"":eur(w.sub.e[e.id].ht), c=Object.assign({sz:szg,b:1,col:TGD,fill:w.k==="ch"?TGP:undefined});
+      return showPU?[cell("",Object.assign({w:cEq},c)),cell("",Object.assign({w:cEp},c)),cell(m,Object.assign({w:cEm,al:"right"},c))]:[cell("",Object.assign({w:cEq},c)),cell(m,Object.assign({w:cEm,al:"right"},c))];});
+      GR.push(trow([cell("",{w:cCode,sz:szg,fill:w.k==="ch"?TGP:undefined}),cell("Sous-total HT de "+w.o.titre,{w:cDes,b:1,sz:szg,col:TGD,fill:w.k==="ch"?TGP:undefined,ind:Math.min(w.d,4)*70}),cell("",{w:cQ,sz:szg,fill:w.k==="ch"?TGP:undefined}),cell("",{w:cU,sz:szg,fill:w.k==="ch"?TGP:undefined}),...ents]));};
+    const closeTo=x=>{while(open.length&&!inBlk(open[open.length-1].w,x))subLine(open.pop());};
+    rows.forEach((w,wi)=>{
+      if(w.ex||anaOvOnly(rows,wi))return;
+      closeTo(w);
+      const ind=Math.min(w.d,4)*70, isCh=w.k==="ch";
+      if(w.leaf){
+        const ents=E.flatMap((e,j)=>{
+          if(LOUT[j])return filler({sz:szg},0).slice(0,showPU?3:2).map((c,ix)=>c);
+          const m=w.miss[j], p=w.p[j], d=w.dev[j], fl=!SY.noEcart&&d!=null&&Math.abs(d)>=A.seuil, qc=qChg(w,j), mk=(w.mk&&w.mk[j])||"", flc=fl?(d>0?"FFE0C4":"DCE8F7"):undefined;
+          const qCell=cell(qc?fq(w.qe[j],(w.ue&&w.ue[j])||w.o.u):"",{w:cEq,al:"right",sz:szg,b:qc,fill:qc?"FFF3A8":undefined});
+          let pCell=null, mCell;
+          if(mk&&MKC[mk]){const t=MARKS[mk][0], c={sz:szg,b:1,col:MKC[mk][1],fill:MKC[mk][0]};
+            pCell=showPU?cell("",Object.assign({w:cEp},c)):null; mCell=cell(t,Object.assign({w:cEm,al:"right"},c));}
+          else if(m){pCell=showPU?cell("",{w:cEp,sz:szg}):null; mCell=cell("-",{w:cEm,al:"right",sz:szg,col:"5F6B76"});}
+          else{pCell=showPU?cell(eur(p)+(w.ue&&w.ue[j]?" /"+w.ue[j]:""),{w:cEp,al:"right",sz:szg,fill:flc}):null; mCell=cell(eur(w.a[j]),{w:cEm,al:"right",sz:szg,fill:flc});}
+          return pCell?[qCell,pCell,mCell]:[qCell,mCell];});
+        GR.push(rowG(w.o.code||"",w.o.titre,fq(w.q,w.o.u),w.o.u||"",ents,{ind}));
+      }else{
+        GR.push(rowG(w.o.code||"",w.o.titre,"","",emptyEnts({fill:isCh?TGP:undefined}),{b:1,ind,fill:isCh?TGP:undefined}));
+        if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});}
+    });
+    closeTo({d:-1,leaf:false,o:{}});
+    if(kk<M.lots.length-1)GR.push(trow([cell("",{w:TW,span:nc,sz:5,bef:0,aft:0})]));
+  });
+  GR.push(trow([cell("",{w:TW,span:nc,sz:5,bef:0,aft:0})]));
+  const totRow=(lab,get,b)=>trow([cell("",{w:cCode,fill:b?TGP:undefined}),cell(lab,{w:cDes,b,sz:szg+1,fill:b?TGP:undefined}),cell("",{w:cQ,fill:b?TGP:undefined}),cell("",{w:cU,fill:b?TGP:undefined}),...E.flatMap(e=>{const c={sz:szg+1,b,fill:b?TGP:undefined};return showPU?[cell("",Object.assign({w:cEq},c)),cell("",Object.assign({w:cEp},c)),cell(eur(get(e)),Object.assign({w:cEm,al:"right"},c))]:[cell("",Object.assign({w:cEq},c)),cell(eur(get(e)),Object.assign({w:cEm,al:"right"},c))];})]);
+  GR.push(totRow("TOTAL HT du marché de base",e=>T0[e.id],true));
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];GR.push(totRow(`TVA à ${pct(tx)}`,e=>Rr.e[e.id]*tx/100,false));});
+  GR.push(totRow("TOTAL TTC",e=>T0[e.id+"T"],true));
+  body.push(table(wG,GR,{grid:1}));
+  /* --- assemblage du paquet --- */
+  const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"';
+  const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body.join("")}${sect(land,{t:680,r:680,b:900,l:680},true)}</w:body></w:document>`;
+  const ftr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr ${NS}><w:p><w:pPr><w:jc w:val="right"/></w:pPr>${run("Page ",{font:"Arial",sz:8})}<w:fldSimple w:instr=" PAGE "><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:b/><w:sz w:val="16"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple>${run(" sur ",{font:"Arial",sz:8})}<w:fldSimple w:instr=" NUMPAGES "><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:b/><w:sz w:val="16"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple></w:p></w:ftr>`;
+  const sty=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri" w:eastAsia="Calibri"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="fr-FR"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+  const drels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdF" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>${imgs.map(i=>`<Relationship Id="${i.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${i.nm}"/>`).join("")}</Relationships>`;
+  const te=new TextEncoder();
+  return zipStore([{name:"[Content_Types].xml",data:te.encode(ct)},{name:"_rels/.rels",data:te.encode(rels)},{name:"word/document.xml",data:te.encode(doc)},{name:"word/styles.xml",data:te.encode(sty)},{name:"word/footer1.xml",data:te.encode(ftr)},{name:"word/_rels/document.xml.rels",data:te.encode(drels)},...imgs.map(i=>({name:"word/"+i.nm,data:i.data}))]);
+}
+async function exportSynthDocx(){
+  if(!state) return;
+  if(!offers().length){toast("Aucune offre reçue : la synthèse sera disponible dès qu'une offre aura été enregistrée.");return;}
+  try{
+    const info=await askDocInfo("la synthèse"); if(!info) return;
+    toast("Préparation du document Word…");
+    const buf=buildSynthDocx(info);
+    await saveFile(buf,safeName(fileBase(state)+" - Synthèse"+(info?" - V"+info.ver:""))+".docx","Synthèse Word",true);
+  }catch(err){console.error(err);toast("L'export Word de la synthèse a échoué.");}
+}
+document.addEventListener("click",e=>{if(e.target.closest("#expSynthW"))exportSynthDocx();});
 
 function renderOptions(){
   const o=state.op, tvSel=v=>state.tvas.map(t=>`<option value="${t.id}" ${t.id===v?"selected":""}>${pct(t.taux)}</option>`).join("");
@@ -4516,7 +4722,7 @@ function renderSynth(){
   const edit=ks=>ks.map(k=>edBlock(SY_KEYS.find(x=>x[0]===k))).join("");
   const td=(r,j)=>r.out&&r.out[j]?`<td class="n out">–</td>`:`<td class="n${r.best===j?" best":""}">${r.k==="tva"?eur2(r.v[j]):eur2(r.v[j])}</td>`;
   $("#synth").innerHTML=`
-   <div class="syn-bar"><button class="btn primary" id="expSynth">Exporter synthèse (PDF)</button><button class="btn" id="expSynthX">Exporter tableaux (Excel)</button>
+   <div class="syn-bar"><button class="btn primary" id="expSynth">Exporter synthèse (PDF)</button><button class="btn" id="expSynthW">Exporter synthèse (Word)</button><button class="btn" id="expSynthX">Exporter tableaux (Excel)</button>
 <label class="chk" style="margin-left:14px" title="Surligne en orange (plus cher) ou en bleu (moins cher) les prix qui s'écartent de la moyenne dans le tableau comparatif global du PDF"><input type="checkbox" id="syEcart" ${S.noEcart?"":"checked"}> Afficher les couleurs d'écart de prix</label>
 <label class="chk" style="margin-left:14px" title="Ajoute en rouge, avant la formule de politesse, la mise en garde sur l'absence des diagnostics plomb et amiante"><input type="checkbox" id="syDiag" ${S.diag===false?"":"checked"}> Paragraphe sur les diagnostics avant travaux (en rouge)</label>
 </div>

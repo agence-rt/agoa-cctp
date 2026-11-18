@@ -1,1 +1,1 @@
-Déploiement n°114 — Synthèse PDF : mise en page du modèle (lettre, encadré gris, signature), paragraphe diagnostics en option (rouge), € sur les prix, ligne blanche entre lots, annotation de bas de tableau retirée
+Déploiement n°115 — Synthèse : export Word (.docx) ; PDF : le tableau de synthèse n'est plus coupé (passe entier à la page suivante)
