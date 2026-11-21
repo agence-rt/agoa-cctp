@@ -1108,7 +1108,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.116.0", deploiement: 116};
+const APP = {version: "0.117.0", deploiement: 117};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -1783,16 +1783,17 @@ function renderTreeTop(){
 }
 function lvActive(L,lv){ // niveau k actif : niveaux 1..k ouverts, niveaux suivants fermés
   for(const k of lv){if(lv.every(j=>j<=k?L[j].every(id=>openIds.has(id)):L[j].every(id=>!openIds.has(id))))return k;}return 0;}
+const isPM=ar=>!!ar.pm||String(ar.u||"").trim().toUpperCase()==="PM"; // pour mémoire : aucune alerte de quantité
 function missingQty(){
   const r=[]; if(!state) return r;
-  leaves((ar,lot,ch)=>{if(!ar.id||ar.pm)return;
+  leaves((ar,lot,ch)=>{if(!ar.id||isPM(ar))return;
     const badLine=ar.lignes.some(x=>x.expr.trim()&&!Number.isFinite(evalMetre(x.expr)));
     if(qty(ar)<=0||badLine) r.push({ar,lot,ch,why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});});
   return r;
 }
 function allIssues(){
   const r=[]; if(!state) return r;
-  leaves((ar,lot,ch)=>{if(!ar.id||ar.pm)return;
+  leaves((ar,lot,ch)=>{if(!ar.id||isPM(ar))return;
     const badLine=(ar.lignes||[]).some(x=>x.expr.trim()&&!Number.isFinite(evalMetre(x.expr)));
     if(qty(ar)<=0||badLine) r.push({ar,sev:"err",why:badLine?"Ligne de métré à corriger":"Quantité non renseignée"});
     if(!String(ar.u||"").trim()) r.push({ar,sev:"err",why:"Unité manquante"});

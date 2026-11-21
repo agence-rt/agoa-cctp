@@ -1,1 +1,1 @@
-Déploiement n°116 — Synthèse : options et variantes en blocs colorés (couleurs du CCTP) avec totaux HT, TVA et TTC (PDF et Word)
+Déploiement n°117 — Unité PM (pour mémoire) : plus d'alerte de quantité manquante (rédaction, contrôle, export)
