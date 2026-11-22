@@ -1,1 +1,1 @@
-Déploiement n°117 — Unité PM (pour mémoire) : plus d'alerte de quantité manquante (rédaction, contrôle, export)
+Déploiement n°118 — BIBLE (fenêtre volante verrouillée, copier/coller par clic droit avec confirmation), aperçu BPU/CCTP sans multi-fenêtre, bouton Options / variantes dans le bandeau, code opération devant les titres de la recherche Ragic

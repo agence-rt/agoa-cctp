@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°118** — v0.118.0 — 2026-11-22 — BIBLE (fenêtre volante verrouillée, copier/coller par clic droit avec confirmation), aperçu BPU/CCTP sans multi-fenêtre, bouton Options / variantes dans le bandeau, code opération devant les titres de la recherche Ragic
 - **n°117** — v0.117.0 — 2026-11-21 — Unité PM (pour mémoire) : plus d'alerte de quantité manquante (rédaction, contrôle, export)
 - **n°116** — v0.116.0 — 2026-11-18 — Synthèse : options et variantes en blocs colorés (couleurs du CCTP) avec totaux HT, TVA et TTC (PDF et Word)
 - **n°115** — v0.115.0 — 2026-11-18 — Synthèse : export Word (.docx) ; PDF : le tableau de synthèse n'est plus coupé (passe entier à la page suivante)
