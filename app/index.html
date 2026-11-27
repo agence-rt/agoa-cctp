@@ -1113,7 +1113,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.120.0", deploiement: 120};
+const APP = {version: "0.121.0", deploiement: 121};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3361,7 +3361,7 @@ function buildSynthPdf(J,info){
   const vals=(o3,sfx)=>E.map(e=>nE(o3[e.id+(sfx||"")]));
   SP.push({gap:4}); SP.push({mark:"frameStart"}); sr("TOTAL HT",vals(T0),{b:true,fill:TGP});
   if(V0.est||E.some(e=>V0[e.id])){sr("dont parties communes (HT)",vals(C0),{ind:3,sz:sfs-0.5});sr("dont lots à charge privative (HT)",vals(V0),{ind:3,sz:sfs-0.5});}
-  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];sr(`TVA à ${pct(tx)}`,E.map(e=>nE(Rr.e[e.id]*tx/100)),{sz:sfs-0.5});});
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];sr(`TVA à ${pct(tx)}`,E.map(e=>nE(Rr.e[e.id]*tx/100)),{sz:sfs-0.5,it:true});});
   sr("TOTAL TTC",vals(T0,"T"),{b:true,fill:TGP}); SP.push({mark:"frameEnd"});
   const rowLines=s2=>{font(s2.o2.b?"bold":"normal",s2.o2.sz||sfs,s2.o2.c);return doc.splitTextToSize(wa(s2.lab),labW-4-(s2.o2.ind||0)).slice(0,2);};
   const rowH=s2=>s2.gap?s2.gap:s2.mark?0:Math.max(6,rowLines(s2).length*4+2);
@@ -3376,9 +3376,9 @@ function buildSynthPdf(J,info){
     const lines=rowLines(s2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
     if(o2.fill){fill(o2.fill);doc.rect(L,y,W,h,"F");}
-    font(o2.b?"bold":"normal",sz,o2.c);
+    font(o2.b?(o2.it?"bolditalic":"bold"):(o2.it?"italic":"normal"),sz,o2.c);
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
-    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;font(o2.b?"bold":"normal",sz,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
+    vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;font(o2.b?(o2.it?"bolditalic":"bold"):(o2.it?"italic":"normal"),sz,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
     y+=h;};
   const drawSP=(first,nm)=>{let yFr=0; bare=!!nm; head(); let stop=false;
   SP.forEach(s2=>{
@@ -3398,7 +3398,7 @@ function buildSynthPdf(J,info){
       need(7*4+4); const y0=y;
       row({lab:ovLab(o4),vals:[],o2:{b:true,fill:bg,c:fg,sz:sfs+0.5}});
       row({lab:"Total HT",vals:E.map(e=>sgnE(nh(O.e[e.id]))),o2:{b:true,fill:bg,c:fg}});
-      row({lab:"TVA",vals:E.map(e=>sgnE(nt(O.e[e.id])-nh(O.e[e.id]))),o2:{fill:bg,c:fg,sz:sfs-0.5}});
+      row({lab:"TVA",vals:E.map(e=>sgnE(nt(O.e[e.id])-nh(O.e[e.id]))),o2:{fill:bg,c:fg,sz:sfs-0.5,it:true}});
       row({lab:"Total TTC",vals:E.map(e=>sgnE(nt(O.e[e.id]))),o2:{b:true,fill:bg,c:fg}});
       doc.setDrawColor(fg[0],fg[1],fg[2]);doc.setLineWidth(0.4);doc.rect(L,y0,W,y-y0);y+=3;});}};
   y+=6;
@@ -3455,10 +3455,9 @@ function buildSynthPdf(J,info){
   M.lots.forEach(({l,li,rows,tot},kk)=>{
     LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0)));
     const lcg=lotCol(lotById(l.id)), lcs=hexRgb(lcg.strong), lcp=hexRgb(lcg.pale);
-    gneed(14); cut(L,y,W,6,2.2,lcs); font("bold",8.6,WHITE); doc.text(wa(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`),L+3.2,y+4.2); y+=6;
+    gneed(14); fill(lcp);doc.rect(L,y,W,6,"F"); font("bold",8.6,lcs); doc.text(wa(`${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`),L+2,y+4.2); sepV(y,6); y+=6;
     const open=[];
     const subLine=b=>{const w=b.w, ind=Math.min(w.d,4)*2, h=5; gneed(h);
-      if(w.k==="ch"){fill(TGP);doc.rect(L,y,W,h,"F");}
       font("bold",fs,TGD); doc.text(fit("Sous-total HT de "+w.o.titre,cDes-ind-2),xs.des+1+ind,y+3.5);
       E.forEach((e,j)=>{if(!LOUT[j])doc.text(eurS(w.sub.e[e.id].ht),xmt(j)+cEm-1,y+3.5,{align:"right"});});
       sepV(y,h); y+=h;};
@@ -3469,7 +3468,6 @@ function buildSynthPdf(J,info){
       const ind=Math.min(w.d,4)*2;
       font(w.k==="art"?"normal":"bold",fs);
       gneed(4.6);const lines=[fit(w.o.titre,cDes-ind-2)], h=4.6;
-      if(w.k==="ch"){fill(TGP);doc.rect(L,y,W,h,"F");}
       font(w.k==="art"?"normal":"bold",fs,w.k==="ch"?TGD:INK);
       doc.text(wa(w.o.code||""),xs.code+1,y+3.3);
       doc.text(lines[0],xs.des+1+ind,y+3.3);
@@ -3489,11 +3487,13 @@ function buildSynthPdf(J,info){
       }else if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});
       sepV(y,h);y+=h;});
     closeTo({d:-1,leaf:false,o:{}});
+    {const h=5.4; gneed(h); fill(lcp); doc.rect(L,y,W,h,"F"); font("bold",fs,lcs); doc.text(wa(`Sous-total lot ${pad(li+1)} HT`),xs.des+1,y+3.8);
+      E.forEach((e,j)=>{if(!LOUT[j])doc.text(eurS(tot.e[e.id].ht),xmt(j)+cEm-1,y+3.8,{align:"right"});}); sepV(y,h); y+=h;}
     if(kk<M.lots.length-1&&y+4.6<=B){sepV(y,4.6);y+=4.6;} // ligne blanche entre les sous-totaux et le lot suivant
   });
   /* totaux : présentation comptable, encadrés */
   y+=3; gneed(26); const yT=y;
-  const tl=(lab,get,b)=>{const h=5.6;fill(TGP);if(b)doc.rect(L,y,W,h,"F");font(b?"bold":"normal",fs+1,INK);doc.text(wa(lab),xs.des+1,y+4);E.forEach((e,j)=>doc.text(eurS(get(e)),xmt(j)+cEm-1,y+4,{align:"right"}));sepV(y,h);y+=h;};
+  const tl=(lab,get,b)=>{const h=5.6;fill(TGP);if(b)doc.rect(L,y,W,h,"F");font(b?"bold":(/^TVA/.test(lab)?"italic":"normal"),fs+1,INK);doc.text(wa(lab),xs.des+1,y+4);E.forEach((e,j)=>doc.text(eurS(get(e)),xmt(j)+cEm-1,y+4,{align:"right"}));sepV(y,h);y+=h;};
   tl("TOTAL HT du marché de base",e=>T0[e.id],true);
   Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];tl(`TVA à ${pct(tx)}`,e=>Rr.e[e.id]*tx/100,false);});
   tl("TOTAL TTC",e=>T0[e.id+"T"],true);
@@ -3600,14 +3600,14 @@ function buildSynthDocx(info){
   const tv=(o3,sfx)=>E.map(e=>eur(o3[e.id+(sfx||"")]));
   sr("TOTAL HT",tv(T0),{b:1,fill:TGP,box:"T"});
   if(V0.est||E.some(e=>V0[e.id])){sr("dont parties communes (HT)",tv(C0),{ind:170,box:"M",sm:1});sr("dont lots à charge privative (HT)",tv(V0),{ind:170,box:"M",sm:1});}
-  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];sr(`TVA à ${pct(tx)}`,E.map(e=>eur(Rr.e[e.id]*tx/100)),{box:"M",sm:1});});
+  Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];sr(`TVA à ${pct(tx)}`,E.map(e=>eur(Rr.e[e.id]*tx/100)),{box:"M",sm:1,i:1});});
   sr("TOTAL TTC",tv(T0,"T"),{b:1,fill:TGP,box:"B"});
   const sRows=SR.filter(x=>!x.gap).length; let ri=0;
   const synthTable=()=>table(wS,SR.map(x=>{
     if(x.hdr)return trow([cell("Lot / chapitre",{w:lw,b:1,sz:sz1,fill:TGP,col:TGD,keep:1}),...E.map(e=>cell(entShort(e),{w:cwd,al:"right",b:1,sz:sz1,fill:TGP,col:TGD,keep:1}))],{hdr:1});
     if(x.gap)return trow([cell("",{w:lw,sz:4,keep:1,bef:0,aft:0}),...E.map(()=>cell("",{w:cwd,sz:4,keep:1,bef:0,aft:0}))]);
     const keep=++ri<sRows-0&&true, f=x.f, bx=f.box, sz=f.sm?sz1-0.5:sz1, bT=bx==="T", bB=bx==="B";
-    const mk=(w,al,i,last)=>({w,al,sz,b:f.b,col:f.col,fill:f.fill,keep:1,bT:bT,bB:bB,bL:!!bx&&i===0,bR:!!bx&&last,ind:i===0?f.ind:0});
+    const mk=(w,al,i,last)=>({w,al,sz,b:f.b,i:f.i,col:f.col,fill:f.fill,keep:1,bT:bT,bB:bB,bL:!!bx&&i===0,bR:!!bx&&last,ind:i===0?f.ind:0});
     return trow([cell(x.lab,mk(lw,"left",0,false)),...E.map((e,j)=>cell(x.vals[j]||"",mk(cwd,"right",j+1,j===n-1)))]);}));
   const synthNames=()=>{const k=SR.findIndex(x=>x.lab==="TOTAL HT"), L2=SR.slice(0,k<0?SR.length:k).filter(x=>!(x.lab&&/^Sous-total/.test(x.lab)));
     return table([WL],L2.map(x=>{
@@ -3619,10 +3619,10 @@ function buildSynthDocx(info){
   const pushOV=()=>{const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){body.push(para(run("OPTIONS ET VARIANTES",{font:"Arial",sz:10,b:true,col:TGD})+run("   plus-values (+) et moins-values (-), non comprises dans le total ci-dessus",{font:"Arial",sz:8,col:"5F6B76"}),{bef:200,aft:60,keep:true}));
     OV.forEach(o4=>{const O=M.ov[o4.id],c=ovC(o4),bg=c.bg.slice(1),fg=c.fg.slice(1),nh=x=>x.in-x.base,nt=x=>x.inT-x.baseT;
-      const r=(lab,vals,b,sm)=>trow([cell(lab,{w:lw,sz:sm?sz1-0.5:sz1,b,col:fg,fill:bg,keep:1,ind:b?0:170}),...E.map((e,j)=>cell(vals?vals[j]:"",{w:cwd,al:"right",sz:sm?sz1-0.5:sz1,b,col:fg,fill:bg,keep:1}))]);
+      const r=(lab,vals,b,sm,it)=>trow([cell(lab,{w:lw,sz:sm?sz1-0.5:sz1,b,i:it,col:fg,fill:bg,keep:1,ind:b?0:170}),...E.map((e,j)=>cell(vals?vals[j]:"",{w:cwd,al:"right",sz:sm?sz1-0.5:sz1,b,i:it,col:fg,fill:bg,keep:1}))]);
       body.push(table(wS,[r(ovLab(o4),null,1),
         r("Total HT",E.map(e=>sgn(nh(O.e[e.id]))),1),
-        r("TVA",E.map(e=>sgn(nt(O.e[e.id])-nh(O.e[e.id]))),0,1),
+        r("TVA",E.map(e=>sgn(nt(O.e[e.id])-nh(O.e[e.id]))),0,1,1),
         r("Total TTC",E.map(e=>sgn(nt(O.e[e.id]))),1)]));
       body.push(para("",{aft:80}));});}};
   body.push(para("",{aft:120}));
@@ -3663,12 +3663,12 @@ function buildSynthDocx(info){
     return trow([cell(code,Object.assign({w:cCode},base)),cell(des,Object.assign({w:cDes,ind:f.ind||0},base)),cell(q,Object.assign({w:cQ,al:"right"},base)),cell(u,Object.assign({w:cU,al:"center"},base)),...ents]);};
   const emptyEnts=f=>filler({sz:szg,fill:f&&f.fill},0);
   M.lots.forEach(({l,li,rows,tot},kk)=>{
-    const LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), lc=lotCol(lotById(l.id)), ls=hex(hexRgb(lc.strong));
-    GR.push(trow([cell(`Lot ${pad(li+1)} - ${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,{w:TW,span:nc,b:1,sz:szg+1,fill:ls,col:"FFFFFF",bef:40,aft:40})]));
+    const LOUT=E.map(e=>!!(M.lots[li].out[e.id]||!(tot.e[e.id].ht>0))), lc=lotCol(lotById(l.id)), ls=hex(hexRgb(lc.strong)), lpw=hex(hexRgb(lc.pale));
+    GR.push(trow([cell(`${l.titre}${(l.charge||"Commune")!=="Commune"?" (charge privative)":""}`,{w:TW,span:nc,b:1,sz:szg+1,fill:lpw,col:ls,bef:40,aft:40})]));
     const open=[];
-    const subLine=b=>{const w=b.w, ents=E.flatMap((e,j)=>{const m=LOUT[j]?"":eur(w.sub.e[e.id].ht), c=Object.assign({sz:szg,b:1,col:TGD,fill:w.k==="ch"?TGP:undefined});
+    const subLine=b=>{const w=b.w, ents=E.flatMap((e,j)=>{const m=LOUT[j]?"":eur(w.sub.e[e.id].ht), c=Object.assign({sz:szg,b:1,col:TGD,fill:undefined});
       return showPU?[cell("",Object.assign({w:cEq},c)),cell("",Object.assign({w:cEp},c)),cell(m,Object.assign({w:cEm,al:"right"},c))]:[cell("",Object.assign({w:cEq},c)),cell(m,Object.assign({w:cEm,al:"right"},c))];});
-      GR.push(trow([cell("",{w:cCode,sz:szg,fill:w.k==="ch"?TGP:undefined}),cell("Sous-total HT de "+w.o.titre,{w:cDes,b:1,sz:szg,col:TGD,fill:w.k==="ch"?TGP:undefined,ind:Math.min(w.d,4)*70}),cell("",{w:cQ,sz:szg,fill:w.k==="ch"?TGP:undefined}),cell("",{w:cU,sz:szg,fill:w.k==="ch"?TGP:undefined}),...ents]));};
+      GR.push(trow([cell("",{w:cCode,sz:szg,fill:undefined}),cell("Sous-total HT de "+w.o.titre,{w:cDes,b:1,sz:szg,col:TGD,fill:undefined,ind:Math.min(w.d,4)*70}),cell("",{w:cQ,sz:szg,fill:undefined}),cell("",{w:cU,sz:szg,fill:undefined}),...ents]));};
     const closeTo=x=>{while(open.length&&!inBlk(open[open.length-1].w,x))subLine(open.pop());};
     rows.forEach((w,wi)=>{
       if(w.ex||anaOvOnly(rows,wi))return;
@@ -3687,14 +3687,16 @@ function buildSynthDocx(info){
           return pCell?[qCell,pCell,mCell]:[qCell,mCell];});
         GR.push(rowG(w.o.code||"",w.o.titre,fq(w.q,w.o.u),w.o.u||"",ents,{ind}));
       }else{
-        GR.push(rowG(w.o.code||"",w.o.titre,"","",emptyEnts({fill:isCh?TGP:undefined}),{b:1,ind,fill:isCh?TGP:undefined}));
+        GR.push(rowG(w.o.code||"",w.o.titre,"","",emptyEnts({fill:undefined}),{b:1,ind,fill:undefined}));
         if(w.sub&&(w.k==="ch"||w.k==="par"))open.push({w});}
     });
     closeTo({d:-1,leaf:false,o:{}});
+    {const c=Object.assign({sz:szg,b:1,col:ls,fill:lpw}); GR.push(trow([cell("",{w:cCode,sz:szg,fill:lpw}),cell(`Sous-total lot ${pad(li+1)} HT`,{w:cDes,b:1,sz:szg,col:ls,fill:lpw}),cell("",{w:cQ,sz:szg,fill:lpw}),cell("",{w:cU,sz:szg,fill:lpw}),
+      ...E.flatMap((e,j)=>{const m=LOUT[j]?"":eur(tot.e[e.id].ht);return showPU?[cell("",Object.assign({w:cEq},c)),cell("",Object.assign({w:cEp},c)),cell(m,Object.assign({w:cEm,al:"right"},c))]:[cell("",Object.assign({w:cEq},c)),cell(m,Object.assign({w:cEm,al:"right"},c))];})]));}
     if(kk<M.lots.length-1)GR.push(trow([cell("",{w:TW,span:nc,sz:5,bef:0,aft:0})]));
   });
   GR.push(trow([cell("",{w:TW,span:nc,sz:5,bef:0,aft:0})]));
-  const totRow=(lab,get,b)=>trow([cell("",{w:cCode,fill:b?TGP:undefined}),cell(lab,{w:cDes,b,sz:szg+1,fill:b?TGP:undefined}),cell("",{w:cQ,fill:b?TGP:undefined}),cell("",{w:cU,fill:b?TGP:undefined}),...E.flatMap(e=>{const c={sz:szg+1,b,fill:b?TGP:undefined};return showPU?[cell("",Object.assign({w:cEq},c)),cell("",Object.assign({w:cEp},c)),cell(eur(get(e)),Object.assign({w:cEm,al:"right"},c))]:[cell("",Object.assign({w:cEq},c)),cell(eur(get(e)),Object.assign({w:cEm,al:"right"},c))];})]);
+  const totRow=(lab,get,b)=>trow([cell("",{w:cCode,fill:b?TGP:undefined}),cell(lab,{w:cDes,b,i:!b,sz:szg+1,fill:b?TGP:undefined}),cell("",{w:cQ,fill:b?TGP:undefined}),cell("",{w:cU,fill:b?TGP:undefined}),...E.flatMap(e=>{const c={sz:szg+1,b,i:!b,fill:b?TGP:undefined};return showPU?[cell("",Object.assign({w:cEq},c)),cell("",Object.assign({w:cEp},c)),cell(eur(get(e)),Object.assign({w:cEm,al:"right"},c))]:[cell("",Object.assign({w:cEq},c)),cell(eur(get(e)),Object.assign({w:cEm,al:"right"},c))];})]);
   GR.push(totRow("TOTAL HT du marché de base",e=>T0[e.id],true));
   Object.keys(T0.rt).map(Number).sort((a,b)=>b-a).forEach(tx=>{const Rr=T0.rt[tx];GR.push(totRow(`TVA à ${pct(tx)}`,e=>Rr.e[e.id]*tx/100,false));});
   GR.push(totRow("TOTAL TTC",e=>T0[e.id+"T"],true));

@@ -1,1 +1,1 @@
-Déploiement n°120 — Analyse des offres (PDF et Word) : le tableau Synthèse des travaux n'affiche plus ni chiffrage ni noms d'entreprises ; chiffrage et options/variantes déplacés dans le tableau récapitulatif
+Déploiement n°121 — Analyse des offres (PDF et Word) : TVA en italique dans les tableaux ; tableau comparatif global aux couleurs de la synthèse et du récapitulatif (lots, sous-totaux de lot)
