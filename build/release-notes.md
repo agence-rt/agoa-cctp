@@ -1,1 +1,1 @@
-Déploiement n°119 — Analyse des offres (PDF et Word) : tableau de synthèse des travaux limité aux noms (chapitre en couleur, sous-chapitres dessous) ; le tableau récapitulatif reprend le même tableau
+Déploiement n°120 — Analyse des offres (PDF et Word) : le tableau Synthèse des travaux n'affiche plus ni chiffrage ni noms d'entreprises ; chiffrage et options/variantes déplacés dans le tableau récapitulatif

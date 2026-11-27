@@ -1,5 +1,6 @@
 # Déploiements AGOA CCTP
 
+- **n°120** — v0.120.0 — 2026-11-27 — Analyse des offres (PDF et Word) : le tableau Synthèse des travaux n'affiche plus ni chiffrage ni noms d'entreprises ; chiffrage et options/variantes déplacés dans le tableau récapitulatif
 - **n°119** — v0.119.0 — 2026-11-27 — Analyse des offres (PDF et Word) : tableau de synthèse des travaux limité aux noms (chapitre en couleur, sous-chapitres dessous) ; le tableau récapitulatif reprend le même tableau
 - **n°118** — v0.118.0 — 2026-11-22 — BIBLE (fenêtre volante verrouillée, copier/coller par clic droit avec confirmation), aperçu BPU/CCTP sans multi-fenêtre, bouton Options / variantes dans le bandeau, code opération devant les titres de la recherche Ragic
 - **n°117** — v0.117.0 — 2026-11-21 — Unité PM (pour mémoire) : plus d'alerte de quantité manquante (rédaction, contrôle, export)

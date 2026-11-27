@@ -1113,7 +1113,7 @@ const $=s=>document.querySelector(s)||(LIBWIN&&!LIBWIN.closed?LIBWIN.document.qu
 /* ---------- État ---------- */
 const KEY="atelier-cctp-v4", OLDKEY="atelier-cctp-364-v3";
 /* ---------- Pont Windows (application installée) : données, fichiers, mises à jour ---------- */
-const APP = {version: "0.119.0", deploiement: 119};
+const APP = {version: "0.120.0", deploiement: 120};
 const AG=window.agoa&&window.agoa.native?window.agoa:null;
 let UI={};
 const baseName=p=>String(p||"").split(/[\\/]/).pop();
@@ -3345,7 +3345,7 @@ function buildSynthPdf(J,info){
   rich(partA);
 
   /* tableau de synthèse (sous « SYNTHESE DES TRAVAUX ») : construit d'abord, mesuré, puis dessiné d'un seul tenant si possible */
-  let sfs=8.5, cw, labW;
+  let sfs=8.5, cw, labW, bare=false;
   {const mxT=E.reduce((m,e)=>Math.max(m,Math.abs(T0[e.id+"T"]||0),Math.abs(T0[e.id]||0)),1);
    for(;;){font("bold",sfs);const wm=doc.getTextWidth(wa("+"+fmt(mxT,2)+" €"))+3.2;cw=Math.min(32,Math.max(wm,(W-62)/n));labW=Math.max(30,W-n*cw);cw=(W-labW)/n;if(labW>=50||sfs<=6.2)break;sfs=Math.round((sfs-0.3)*10)/10;}}
   const SP=[]; // lignes : {lab,vals,o2} ou {gap} ou {mark:"frameStart"|"frameEnd"}
@@ -3370,9 +3370,8 @@ function buildSynthPdf(J,info){
   if(tblH+14<=B-T&&y+tblH+14>B)np();
   heading("SYNTHESE DES TRAVAUX");
   const head=()=>{fill(TGP);doc.rect(L,y,W,7,"F");font("bold",sfs,TGD);doc.text("Lot / chapitre",L+2,y+4.8);
-    E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
+    if(!bare)E.forEach((e,j)=>{const t=doc.splitTextToSize(wa(entShort(e)),cw-3)[0];doc.text(t,L+labW+cw*(j+1)-2,y+4.8,{align:"right"});});
     y+=7;};
-  head();
   const row=(s2)=>{const o2=s2.o2, lab=s2.lab, vals=s2.vals, sz=o2.sz||sfs;
     const lines=rowLines(s2), h=Math.max(6,lines.length*4+2);
     if(need(h)){head();}
@@ -3381,14 +3380,17 @@ function buildSynthPdf(J,info){
     lines.forEach((l,i)=>doc.text(l,L+2+(o2.ind||0),y+4.2+i*4));
     vals.forEach((v,j)=>{if(v==null||v===""||(o2.out&&o2.out[j]))return;font(o2.b?"bold":"normal",sz,o2.c);doc.text(wa(v),L+labW+cw*(j+1)-2,y+4.2,{align:"right"});});
     y+=h;};
-  const drawSP=(first)=>{let yFr=0; if(!first)head();
+  const drawSP=(first,nm)=>{let yFr=0; bare=!!nm; head(); let stop=false;
   SP.forEach(s2=>{
+    if(stop)return;
+    if(bare&&s2.mark==="frameStart"){stop=true;return;}
+    if(bare&&s2.o2&&/^Sous-total/.test(s2.lab))return;
     if(s2.gap){y+=s2.gap;return;}
     if(s2.mark==="frameStart"){need(34);yFr=y;return;}
     if(s2.mark==="frameEnd"){doc.setDrawColor(TGD[0],TGD[1],TGD[2]);doc.setLineWidth(0.45);doc.rect(L,yFr,W,y-yFr);return;}
-    row(s2);});};
-  drawSP(true);
-  const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
+    row(bare?{lab:s2.lab,vals:[],o2:s2.o2}:s2);});bare=false;};
+  drawSP(true,true);
+  const drawOV=()=>{const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){y+=5;need(40);font("bold",10,TGD);doc.text("OPTIONS ET VARIANTES",L,y+3.5);font("normal",7.6,MUTED);doc.text("Plus-values (+) et moins-values (-), non comprises dans le total ci-dessus",L+52,y+3.5);y+=6;
     head();
     const rgb=h=>[1,3,5].map(k=>parseInt(h.substr(k,2),16));
@@ -3398,7 +3400,7 @@ function buildSynthPdf(J,info){
       row({lab:"Total HT",vals:E.map(e=>sgnE(nh(O.e[e.id]))),o2:{b:true,fill:bg,c:fg}});
       row({lab:"TVA",vals:E.map(e=>sgnE(nt(O.e[e.id])-nh(O.e[e.id]))),o2:{fill:bg,c:fg,sz:sfs-0.5}});
       row({lab:"Total TTC",vals:E.map(e=>sgnE(nt(O.e[e.id]))),o2:{b:true,fill:bg,c:fg}});
-      doc.setDrawColor(fg[0],fg[1],fg[2]);doc.setLineWidth(0.4);doc.rect(L,y0,W,y-y0);y+=3;});}
+      doc.setDrawColor(fg[0],fg[1],fg[2]);doc.setLineWidth(0.4);doc.rect(L,y0,W,y-y0);y+=3;});}};
   y+=6;
 
   /* observations, mieux-disants, pièces jointes, puis mise en garde diagnostics (case à cocher, en rouge) */
@@ -3408,9 +3410,9 @@ function buildSynthPdf(J,info){
   /* tableau récapitulatif : meilleures offres par lot, total, quote-part des copropriétaires */
   {const P=pickSummary(M), LO=lotOffers(M), Q=quoteCfg(), retE=E.find(e=>e.id===state.retenue)||E[0], hasP=M.lots.length>1&&P.rows.length,
    base=hasP?P.cttc:(retE?C0[retE.id+"T"]:0), hasQ=Q.on&&base>0;
-   if(hasP||hasQ){
+   if(true){
     heading("TABLEAU RECAPITULATIF");
-    if(hasP){need(40);drawSP(false);y+=3;}
+    {need(40);drawSP(false);y+=3;drawOV();y+=3;}
     if(hasQ){y+=2;need(14+Q.tant.length*5);font("bold",9,TGD);doc.text("Calcul par copropriétaire (quote-part TTC des parties communes : "+nE(base)+")",L,y+3.5);y+=6;
       Q.tant.forEach(t=>{font("normal",8.8,INK);doc.text(wa(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`),L+2,y+3.6);doc.text(nE(base*t/Q.base),R-1,y+3.6,{align:"right"});y+=5;});}
     y+=3;}}
@@ -3607,9 +3609,14 @@ function buildSynthDocx(info){
     const keep=++ri<sRows-0&&true, f=x.f, bx=f.box, sz=f.sm?sz1-0.5:sz1, bT=bx==="T", bB=bx==="B";
     const mk=(w,al,i,last)=>({w,al,sz,b:f.b,col:f.col,fill:f.fill,keep:1,bT:bT,bB:bB,bL:!!bx&&i===0,bR:!!bx&&last,ind:i===0?f.ind:0});
     return trow([cell(x.lab,mk(lw,"left",0,false)),...E.map((e,j)=>cell(x.vals[j]||"",mk(cwd,"right",j+1,j===n-1)))]);}));
-  body.push(synthTable());
+  const synthNames=()=>{const k=SR.findIndex(x=>x.lab==="TOTAL HT"), L2=SR.slice(0,k<0?SR.length:k).filter(x=>!(x.lab&&/^Sous-total/.test(x.lab)));
+    return table([WL],L2.map(x=>{
+      if(x.hdr)return trow([cell("Lot / chapitre",{w:WL,b:1,sz:sz1,fill:TGP,col:TGD,keep:1})],{hdr:1});
+      if(x.gap)return trow([cell("",{w:WL,sz:4,keep:1,bef:0,aft:0})]);
+      const f=x.f; return trow([cell(x.lab,{w:WL,sz:sz1,b:f.b,col:f.col,fill:f.fill,keep:1,ind:f.ind})]);}));};
+  body.push(synthNames());
   /* options et variantes */
-  const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
+  const pushOV=()=>{const OV=ovl().filter(o4=>{const O=M.ov[o4.id];return O&&(O.est.in||O.est.base||E.some(e=>O.e[e.id].in||O.e[e.id].base));});
   if(OV.length){body.push(para(run("OPTIONS ET VARIANTES",{font:"Arial",sz:10,b:true,col:TGD})+run("   plus-values (+) et moins-values (-), non comprises dans le total ci-dessus",{font:"Arial",sz:8,col:"5F6B76"}),{bef:200,aft:60,keep:true}));
     OV.forEach(o4=>{const O=M.ov[o4.id],c=ovC(o4),bg=c.bg.slice(1),fg=c.fg.slice(1),nh=x=>x.in-x.base,nt=x=>x.inT-x.baseT;
       const r=(lab,vals,b,sm)=>trow([cell(lab,{w:lw,sz:sm?sz1-0.5:sz1,b,col:fg,fill:bg,keep:1,ind:b?0:170}),...E.map((e,j)=>cell(vals?vals[j]:"",{w:cwd,al:"right",sz:sm?sz1-0.5:sz1,b,col:fg,fill:bg,keep:1}))]);
@@ -3617,7 +3624,7 @@ function buildSynthDocx(info){
         r("Total HT",E.map(e=>sgn(nh(O.e[e.id]))),1),
         r("TVA",E.map(e=>sgn(nt(O.e[e.id])-nh(O.e[e.id]))),0,1),
         r("Total TTC",E.map(e=>sgn(nt(O.e[e.id]))),1)]));
-      body.push(para("",{aft:80}));});}
+      body.push(para("",{aft:80}));});}};
   body.push(para("",{aft:120}));
   /* --- observations, mieux-disants, pièces jointes, diagnostics (en option, en rouge) --- */
   body.push(rich(partB));
@@ -3625,10 +3632,10 @@ function buildSynthDocx(info){
   /* --- tableau récapitulatif --- */
   {const P=pickSummary(M), LO=lotOffers(M), Q=quoteCfg(), hasP=M.lots.length>1&&P.rows.length, retE=E.find(e=>e.id===state.retenue)||E[0],
    base=hasP?P.cttc:(retE?C0[retE.id+"T"]:0), hasQ=Q.on&&base>0;
-   if(hasP||hasQ){
+   if(true){
     body.push(heading("TABLEAU RECAPITULATIF"));
     const w3=[WL-3900,1900,2000], rr=[];
-    if(hasP){body.push(synthTable());body.push(para("",{aft:80}));}
+    {body.push(synthTable());body.push(para("",{aft:80}));pushOV();}
     if(hasQ){rr.push(trow([cell("Calcul par copropriétaire (quote-part TTC des parties communes : "+eur(base)+")",{w:WL,span:3,b:1,sz:9,col:TGD,bef:140,keep:1})]));
       Q.tant.forEach(t=>rr.push(trow([cell(`Lot de ${fmt(t,t%1?2:0)} / ${fmt(Q.base,0)}e`,{w:w3[0]+w3[1],span:2,sz:8.8,keep:1}),cell(eur(base*t/Q.base),{w:w3[2],al:"right",sz:8.8,keep:1})])));}
     if(rr.length)body.push(table(w3,rr));}}
